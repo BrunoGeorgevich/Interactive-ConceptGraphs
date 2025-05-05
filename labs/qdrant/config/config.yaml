@@ -1,0 +1,32 @@
+storage:
+  # Diretório onde os dados serão armazenados
+  storage_path: ./storage
+
+  # Configurações para otimizações e performance
+  optimizers:
+    # Intervalo de tempo entre as otimizações em segundos
+    flush_interval_sec: 5
+    # Tamanho máximo do segmento em MB
+    max_segment_size_kb: 100000
+
+  # Configurações do WAL (Write-Ahead Log)
+  wal:
+    # Tamanho máximo do WAL em MB antes de ser descarregado para o armazenamento
+    wal_capacity_mb: 100
+    # Intervalo para descarregar WAL em segundos
+    wal_segments_ahead: 2
+
+service:
+  # Configurações de rede
+  host: 0.0.0.0
+  # Porta HTTP para a API REST
+  http_port: 6333
+  # Porta para a API gRPC
+  grpc_port: 6334
+
+# Configurações de clustering (desativadas por padrão)
+cluster:
+  enabled: false
+
+# Configurações do telemetry (métricas)
+telemetry_disabled: false

@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  qdrant:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: qdrant_db
+    restart: always
+    ports:
+      - "6333:6333"  # API REST e GRPC
+      - "6334:6334"  # Interface Web do QDrant
+    volumes:
+      - qdrant_data:/qdrant/storage
+      - ./config/config.yaml:/qdrant/config/production.yaml:ro
+    environment:
+      - QDRANT_ALLOW_RECOVERY_MODE=true  # Permite recuperação em caso de falha
+      - RUST_LOG=info                    # Nível de log
+
+volumes:
+  qdrant_data:
+    driver: local

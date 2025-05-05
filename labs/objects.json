@@ -1,0 +1,6242 @@
+{
+  "object_1": {
+    "id": 0,
+    "object_tag": "tv stand",
+    "object_caption": "Black TV stand.",
+    "bbox_extent": [
+      0.89,
+      0.3,
+      0.35
+    ],
+    "bbox_center": [
+      5.57,
+      0.84,
+      1.13
+    ],
+    "bbox_volume": 0.09
+  },
+  "object_2": {
+    "id": 4,
+    "object_tag": "chair",
+    "object_caption": "A chair with a light brown back and pink seat.",
+    "bbox_extent": [
+      0.44,
+      0.42,
+      0.06
+    ],
+    "bbox_center": [
+      6.93,
+      0.09,
+      1.74
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_3": {
+    "id": 5,
+    "object_tag": "dining table",
+    "object_caption": "A black coffee pot is on the stove.",
+    "bbox_extent": [
+      1.87,
+      0.93,
+      0.43
+    ],
+    "bbox_center": [
+      6.7,
+      0.71,
+      0.89
+    ],
+    "bbox_volume": 0.75
+  },
+  "object_4": {
+    "id": 7,
+    "object_tag": "lamp",
+    "object_caption": "Floor lamp.",
+    "bbox_extent": [
+      1.7,
+      0.33,
+      0.05
+    ],
+    "bbox_center": [
+      5.55,
+      -0.13,
+      2.67
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_5": {
+    "id": 9,
+    "object_tag": "chair",
+    "object_caption": "A wooden dining chair with a blue seat.",
+    "bbox_extent": [
+      1.75,
+      1.59,
+      1.36
+    ],
+    "bbox_center": [
+      6.66,
+      0.88,
+      0.68
+    ],
+    "bbox_volume": 3.78
+  },
+  "object_6": {
+    "id": 11,
+    "object_tag": "chair",
+    "object_caption": "A dining chair with a wooden frame, a dark brown back, and a blue seat or cushion.",
+    "bbox_extent": [
+      1.9,
+      1.37,
+      1.4
+    ],
+    "bbox_center": [
+      6.73,
+      0.82,
+      1.74
+    ],
+    "bbox_volume": 3.64
+  },
+  "object_7": {
+    "id": 16,
+    "object_tag": "shelf",
+    "object_caption": "A white shelving unit with multiple square compartments against a light green wall.",
+    "bbox_extent": [
+      2.32,
+      1.79,
+      0.54
+    ],
+    "bbox_center": [
+      7.41,
+      0.81,
+      -1.61
+    ],
+    "bbox_volume": 2.24
+  },
+  "object_8": {
+    "id": 22,
+    "object_tag": "desk",
+    "object_caption": "A brown dining table.",
+    "bbox_extent": [
+      1.93,
+      0.87,
+      0.31
+    ],
+    "bbox_center": [
+      6.63,
+      0.67,
+      0.8
+    ],
+    "bbox_volume": 0.52
+  },
+  "object_9": {
+    "id": 25,
+    "object_tag": "tv stand",
+    "object_caption": "A black TV stand with a pink outline.",
+    "bbox_extent": [
+      0.71,
+      0.31,
+      0.14
+    ],
+    "bbox_center": [
+      5.74,
+      1.3,
+      1.18
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_10": {
+    "id": 28,
+    "object_tag": "lamp",
+    "object_caption": "A tall blue lamp.",
+    "bbox_extent": [
+      0.34,
+      0.12,
+      0.07
+    ],
+    "bbox_center": [
+      5.71,
+      1.38,
+      2.62
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_11": {
+    "id": 29,
+    "object_tag": "chair",
+    "object_caption": "A dark-colored chair.",
+    "bbox_extent": [
+      1.65,
+      1.63,
+      0.22
+    ],
+    "bbox_center": [
+      6.51,
+      0.97,
+      0.99
+    ],
+    "bbox_volume": 0.59
+  },
+  "object_12": {
+    "id": 30,
+    "object_tag": "lamp",
+    "object_caption": "A laptop is on a desk.",
+    "bbox_extent": [
+      1.09,
+      0.07,
+      0.02
+    ],
+    "bbox_center": [
+      5.59,
+      0.7,
+      2.5
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_13": {
+    "id": 43,
+    "object_tag": "coffee table",
+    "object_caption": "Small coffee table.",
+    "bbox_extent": [
+      0.8,
+      0.52,
+      0.39
+    ],
+    "bbox_center": [
+      4.41,
+      1.36,
+      1.45
+    ],
+    "bbox_volume": 0.16
+  },
+  "object_14": {
+    "id": 45,
+    "object_tag": "couch",
+    "object_caption": "A light blue sofa chair with pillows.",
+    "bbox_extent": [
+      2.72,
+      1.45,
+      1.05
+    ],
+    "bbox_center": [
+      3.58,
+      0.87,
+      2.28
+    ],
+    "bbox_volume": 4.14
+  },
+  "object_15": {
+    "id": 51,
+    "object_tag": "pillow",
+    "object_caption": "A yellow pillow on the armchair or sofa chair.",
+    "bbox_extent": [
+      1.04,
+      0.97,
+      0.61
+    ],
+    "bbox_center": [
+      5.4,
+      0.99,
+      1.3
+    ],
+    "bbox_volume": 0.62
+  },
+  "object_16": {
+    "id": 56,
+    "object_tag": "coffee table",
+    "object_caption": "A small coffee table in front of the couch.",
+    "bbox_extent": [
+      0.89,
+      0.63,
+      0.48
+    ],
+    "bbox_center": [
+      4.24,
+      1.23,
+      1.46
+    ],
+    "bbox_volume": 0.27
+  },
+  "object_17": {
+    "id": 65,
+    "object_tag": "chair",
+    "object_caption": "A dark wooden chair, possibly a dining chair or a folded chair, with some having a green outline.",
+    "bbox_extent": [
+      0.93,
+      0.47,
+      0.11
+    ],
+    "bbox_center": [
+      6.94,
+      0.72,
+      1.77
+    ],
+    "bbox_volume": 0.05
+  },
+  "object_18": {
+    "id": 67,
+    "object_tag": "dining table",
+    "object_caption": "A wooden dining table.",
+    "bbox_extent": [
+      1.67,
+      0.76,
+      0.42
+    ],
+    "bbox_center": [
+      6.75,
+      0.98,
+      0.94
+    ],
+    "bbox_volume": 0.53
+  },
+  "object_19": {
+    "id": 70,
+    "object_tag": "chair",
+    "object_caption": "A chair with a wooden frame is next to the desk.",
+    "bbox_extent": [
+      1.29,
+      0.83,
+      0.28
+    ],
+    "bbox_center": [
+      6.42,
+      1.15,
+      0.83
+    ],
+    "bbox_volume": 0.3
+  },
+  "object_20": {
+    "id": 71,
+    "object_tag": "chair",
+    "object_caption": "A folded wooden chair at the dining table.",
+    "bbox_extent": [
+      1.42,
+      0.82,
+      0.28
+    ],
+    "bbox_center": [
+      6.44,
+      1.1,
+      1.44
+    ],
+    "bbox_volume": 0.33
+  },
+  "object_21": {
+    "id": 72,
+    "object_tag": "coffee table",
+    "object_caption": "Green coffee table",
+    "bbox_extent": [
+      1.04,
+      0.69,
+      0.42
+    ],
+    "bbox_center": [
+      4.09,
+      1.24,
+      1.47
+    ],
+    "bbox_volume": 0.3
+  },
+  "object_22": {
+    "id": 82,
+    "object_tag": "desk",
+    "object_caption": "Wooden desk",
+    "bbox_extent": [
+      1.65,
+      0.69,
+      0.13
+    ],
+    "bbox_center": [
+      6.67,
+      0.97,
+      0.96
+    ],
+    "bbox_volume": 0.15
+  },
+  "object_23": {
+    "id": 85,
+    "object_tag": "coffee table",
+    "object_caption": "A small wooden coffee table with four legs.",
+    "bbox_extent": [
+      1.19,
+      0.67,
+      0.38
+    ],
+    "bbox_center": [
+      3.9,
+      1.3,
+      1.42
+    ],
+    "bbox_volume": 0.3
+  },
+  "object_24": {
+    "id": 92,
+    "object_tag": "dining table",
+    "object_caption": "A light brown dining table.",
+    "bbox_extent": [
+      1.42,
+      0.44,
+      0.14
+    ],
+    "bbox_center": [
+      6.61,
+      0.99,
+      1.15
+    ],
+    "bbox_volume": 0.09
+  },
+  "object_25": {
+    "id": 95,
+    "object_tag": "cabinet",
+    "object_caption": "A small brown wooden cabinet with drawers and shelves.",
+    "bbox_extent": [
+      2.24,
+      1.84,
+      0.48
+    ],
+    "bbox_center": [
+      6.69,
+      1.02,
+      2.59
+    ],
+    "bbox_volume": 1.98
+  },
+  "object_26": {
+    "id": 96,
+    "object_tag": "coffee table",
+    "object_caption": "A wooden coffee table in front of the couch.",
+    "bbox_extent": [
+      1.24,
+      0.69,
+      0.42
+    ],
+    "bbox_center": [
+      3.81,
+      1.4,
+      1.38
+    ],
+    "bbox_volume": 0.36
+  },
+  "object_27": {
+    "id": 98,
+    "object_tag": "couch",
+    "object_caption": "A blue sectional couch in the corner of the room.",
+    "bbox_extent": [
+      2.77,
+      2.08,
+      0.91
+    ],
+    "bbox_center": [
+      3.55,
+      0.92,
+      1.99
+    ],
+    "bbox_volume": 5.24
+  },
+  "object_28": {
+    "id": 106,
+    "object_tag": "tv",
+    "object_caption": "A large black television in the room.",
+    "bbox_extent": [
+      0.43,
+      0.25,
+      0.14
+    ],
+    "bbox_center": [
+      5.34,
+      0.26,
+      -0.62
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_29": {
+    "id": 107,
+    "object_tag": "dining table",
+    "object_caption": "A dining table.",
+    "bbox_extent": [
+      0.75,
+      0.19,
+      0.14
+    ],
+    "bbox_center": [
+      6.57,
+      0.97,
+      1.45
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_30": {
+    "id": 108,
+    "object_tag": "coffee table",
+    "object_caption": "A rectangular coffee table with a wooden surface.",
+    "bbox_extent": [
+      1.16,
+      0.67,
+      0.44
+    ],
+    "bbox_center": [
+      3.85,
+      1.44,
+      1.38
+    ],
+    "bbox_volume": 0.34
+  },
+  "object_31": {
+    "id": 111,
+    "object_tag": "couch",
+    "object_caption": "A blue sectional couch.",
+    "bbox_extent": [
+      3.19,
+      2.23,
+      1.12
+    ],
+    "bbox_center": [
+      3.31,
+      1.01,
+      2.1
+    ],
+    "bbox_volume": 7.97
+  },
+  "object_32": {
+    "id": 114,
+    "object_tag": "coffee table",
+    "object_caption": "A rectangular brown wooden coffee table with two shelves.",
+    "bbox_extent": [
+      1.57,
+      0.78,
+      0.7
+    ],
+    "bbox_center": [
+      3.98,
+      1.46,
+      1.36
+    ],
+    "bbox_volume": 0.86
+  },
+  "object_33": {
+    "id": 118,
+    "object_tag": "sofa chair",
+    "object_caption": "A gray sofa chair.",
+    "bbox_extent": [
+      0.96,
+      0.71,
+      0.45
+    ],
+    "bbox_center": [
+      5.16,
+      1.24,
+      1.38
+    ],
+    "bbox_volume": 0.31
+  },
+  "object_34": {
+    "id": 121,
+    "object_tag": "wall",
+    "object_caption": "A black microwave on a counter.",
+    "bbox_extent": [
+      4.3,
+      2.92,
+      0.06
+    ],
+    "bbox_center": [
+      5.18,
+      -0.57,
+      2.58
+    ],
+    "bbox_volume": 0.75
+  },
+  "object_35": {
+    "id": 125,
+    "object_tag": "cabinet",
+    "object_caption": "A tall black cabinet with multiple shelves.",
+    "bbox_extent": [
+      2.03,
+      1.1,
+      0.43
+    ],
+    "bbox_center": [
+      2.63,
+      0.82,
+      -0.66
+    ],
+    "bbox_volume": 0.96
+  },
+  "object_36": {
+    "id": 126,
+    "object_tag": "stool",
+    "object_caption": "A small, dark green stool near the doorway.",
+    "bbox_extent": [
+      1.36,
+      1.18,
+      0.7
+    ],
+    "bbox_center": [
+      0.08,
+      1.14,
+      -0.59
+    ],
+    "bbox_volume": 1.12
+  },
+  "object_37": {
+    "id": 127,
+    "object_tag": "lamp",
+    "object_caption": "A triangle lamp in the corner.",
+    "bbox_extent": [
+      0.36,
+      0.15,
+      0.11
+    ],
+    "bbox_center": [
+      5.15,
+      0.19,
+      2.23
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_38": {
+    "id": 129,
+    "object_tag": "tv stand",
+    "object_caption": "A small, dark brown TV stand with rounded edges and drawers.",
+    "bbox_extent": [
+      1.45,
+      1.3,
+      0.37
+    ],
+    "bbox_center": [
+      0.31,
+      1.13,
+      0.44
+    ],
+    "bbox_volume": 0.7
+  },
+  "object_39": {
+    "id": 130,
+    "object_tag": "closet wall",
+    "object_caption": "A tall, dark brown closet door next to the doorway.",
+    "bbox_extent": [
+      3.27,
+      1.14,
+      0.45
+    ],
+    "bbox_center": [
+      -0.41,
+      0.08,
+      0.26
+    ],
+    "bbox_volume": 1.68
+  },
+  "object_40": {
+    "id": 131,
+    "object_tag": "door",
+    "object_caption": "A white door with a blue frame leading to another room.",
+    "bbox_extent": [
+      3.67,
+      1.19,
+      0.18
+    ],
+    "bbox_center": [
+      -0.82,
+      -0.21,
+      -0.25
+    ],
+    "bbox_volume": 0.79
+  },
+  "object_41": {
+    "id": 132,
+    "object_tag": "couch",
+    "object_caption": "A light blue sectional couch",
+    "bbox_extent": [
+      2.88,
+      2.04,
+      0.99
+    ],
+    "bbox_center": [
+      2.97,
+      1.06,
+      2.04
+    ],
+    "bbox_volume": 5.82
+  },
+  "object_42": {
+    "id": 134,
+    "object_tag": "coffee table",
+    "object_caption": "A light green coffee table.",
+    "bbox_extent": [
+      0.8,
+      0.6,
+      0.41
+    ],
+    "bbox_center": [
+      3.47,
+      1.52,
+      1.31
+    ],
+    "bbox_volume": 0.2
+  },
+  "object_43": {
+    "id": 135,
+    "object_tag": "picture",
+    "object_caption": "A framed picture hanging on the wall.",
+    "bbox_extent": [
+      1.84,
+      1.58,
+      0.19
+    ],
+    "bbox_center": [
+      3.58,
+      -0.58,
+      2.6
+    ],
+    "bbox_volume": 0.55
+  },
+  "object_44": {
+    "id": 156,
+    "object_tag": "picture",
+    "object_caption": "A small, pink framed picture hanging on the wall.",
+    "bbox_extent": [
+      1.34,
+      0.88,
+      0.06
+    ],
+    "bbox_center": [
+      0.38,
+      -0.8,
+      -0.89
+    ],
+    "bbox_volume": 0.07
+  },
+  "object_45": {
+    "id": 180,
+    "object_tag": "ceiling",
+    "object_caption": "A black suitcase in a room.",
+    "bbox_extent": [
+      4.13,
+      1.0,
+      0.0
+    ],
+    "bbox_center": [
+      -6.26,
+      -6.85,
+      -0.21
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_46": {
+    "id": 189,
+    "object_tag": "soap dish",
+    "object_caption": "A white soap dish on top of the TV stand.",
+    "bbox_extent": [
+      0.45,
+      0.1,
+      0.02
+    ],
+    "bbox_center": [
+      0.37,
+      0.88,
+      0.47
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_47": {
+    "id": 191,
+    "object_tag": "sofa chair",
+    "object_caption": "A blue couch with two cushions in the corner of the room.",
+    "bbox_extent": [
+      2.35,
+      1.63,
+      0.89
+    ],
+    "bbox_center": [
+      2.68,
+      1.2,
+      1.8
+    ],
+    "bbox_volume": 3.41
+  },
+  "object_48": {
+    "id": 202,
+    "object_tag": "mirror",
+    "object_caption": "A tall, rectangular, full-length mirror with a dark frame, standing next to a cabinet.",
+    "bbox_extent": [
+      2.13,
+      1.11,
+      0.22
+    ],
+    "bbox_center": [
+      0.5,
+      0.2,
+      0.54
+    ],
+    "bbox_volume": 0.52
+  },
+  "object_49": {
+    "id": 243,
+    "object_tag": "cabinet",
+    "object_caption": "A brown cabinet next to the closet.",
+    "bbox_extent": [
+      0.86,
+      0.59,
+      0.3
+    ],
+    "bbox_center": [
+      0.12,
+      1.32,
+      0.39
+    ],
+    "bbox_volume": 0.15
+  },
+  "object_50": {
+    "id": 245,
+    "object_tag": "bottle",
+    "object_caption": "A small, round, white bottle on top of the cabinet.",
+    "bbox_extent": [
+      0.17,
+      0.13,
+      0.04
+    ],
+    "bbox_center": [
+      0.48,
+      1.27,
+      0.48
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_51": {
+    "id": 246,
+    "object_tag": "bench",
+    "object_caption": "A gray bench in the corner of the room.",
+    "bbox_extent": [
+      0.79,
+      0.67,
+      0.46
+    ],
+    "bbox_center": [
+      0.01,
+      1.36,
+      -0.64
+    ],
+    "bbox_volume": 0.24
+  },
+  "object_52": {
+    "id": 252,
+    "object_tag": "picture",
+    "object_caption": "A dark framed picture is on the wall.",
+    "bbox_extent": [
+      0.76,
+      0.78,
+      0.05
+    ],
+    "bbox_center": [
+      1.98,
+      -1.06,
+      5.1
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_53": {
+    "id": 253,
+    "object_tag": "desk",
+    "object_caption": "A black desk with a light yellow or tan outline.",
+    "bbox_extent": [
+      2.61,
+      2.15,
+      0.95
+    ],
+    "bbox_center": [
+      1.49,
+      0.36,
+      6.49
+    ],
+    "bbox_volume": 5.33
+  },
+  "object_54": {
+    "id": 254,
+    "object_tag": "chair",
+    "object_caption": "A purple chair is next to the desk.",
+    "bbox_extent": [
+      1.65,
+      1.54,
+      0.19
+    ],
+    "bbox_center": [
+      0.95,
+      0.43,
+      7.31
+    ],
+    "bbox_volume": 0.48
+  },
+  "object_55": {
+    "id": 255,
+    "object_tag": "towel",
+    "object_caption": "A tan and white towel hanging on a rack or ladder.",
+    "bbox_extent": [
+      1.17,
+      0.46,
+      0.23
+    ],
+    "bbox_center": [
+      0.23,
+      0.38,
+      2.24
+    ],
+    "bbox_volume": 0.12
+  },
+  "object_56": {
+    "id": 257,
+    "object_tag": "picture",
+    "object_caption": "A framed picture hanging on the wall.",
+    "bbox_extent": [
+      0.92,
+      1.02,
+      0.06
+    ],
+    "bbox_center": [
+      1.95,
+      -1.01,
+      5.08
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_57": {
+    "id": 260,
+    "object_tag": "tv",
+    "object_caption": "A television in the room.",
+    "bbox_extent": [
+      0.94,
+      0.68,
+      0.1
+    ],
+    "bbox_center": [
+      1.79,
+      -0.32,
+      6.83
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_58": {
+    "id": 261,
+    "object_tag": "tv",
+    "object_caption": "A small TV is located on the desk.",
+    "bbox_extent": [
+      1.36,
+      0.91,
+      0.18
+    ],
+    "bbox_center": [
+      1.86,
+      -0.25,
+      7.18
+    ],
+    "bbox_volume": 0.22
+  },
+  "object_59": {
+    "id": 268,
+    "object_tag": "coat rack",
+    "object_caption": "A pink coat rack and an orange shower curtain rod are mounted on the wall above a white radiator.",
+    "bbox_extent": [
+      1.03,
+      0.29,
+      0.19
+    ],
+    "bbox_center": [
+      0.43,
+      0.37,
+      2.23
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_60": {
+    "id": 271,
+    "object_tag": "window",
+    "object_caption": "A window on the wall.",
+    "bbox_extent": [
+      2.85,
+      2.03,
+      0.0
+    ],
+    "bbox_center": [
+      1.25,
+      -2.76,
+      11.62
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_61": {
+    "id": 274,
+    "object_tag": "toilet",
+    "object_caption": "A white toilet with a partially visible seat and a white toilet paper dispenser mounted on the wall.",
+    "bbox_extent": [
+      0.9,
+      0.6,
+      0.53
+    ],
+    "bbox_center": [
+      -0.81,
+      1.19,
+      2.11
+    ],
+    "bbox_volume": 0.29
+  },
+  "object_62": {
+    "id": 277,
+    "object_tag": "pillow",
+    "object_caption": "A blue pillow on a couch.",
+    "bbox_extent": [
+      0.62,
+      0.37,
+      0.18
+    ],
+    "bbox_center": [
+      3.65,
+      0.29,
+      7.5
+    ],
+    "bbox_volume": 0.04
+  },
+  "object_63": {
+    "id": 279,
+    "object_tag": "ladder",
+    "object_caption": "Orange ladder on the shower wall.",
+    "bbox_extent": [
+      0.89,
+      0.33,
+      0.1
+    ],
+    "bbox_center": [
+      0.02,
+      0.33,
+      2.23
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_64": {
+    "id": 280,
+    "object_tag": "sofa chair",
+    "object_caption": "A sofa chair with a pillow.",
+    "bbox_extent": [
+      1.64,
+      1.17,
+      0.38
+    ],
+    "bbox_center": [
+      3.63,
+      0.5,
+      7.6
+    ],
+    "bbox_volume": 0.73
+  },
+  "object_65": {
+    "id": 283,
+    "object_tag": "mouse",
+    "object_caption": "A black suitcase is on top of a gray suitcase.",
+    "bbox_extent": [
+      0.6,
+      0.18,
+      0.02
+    ],
+    "bbox_center": [
+      1.37,
+      0.06,
+      6.87
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_66": {
+    "id": 284,
+    "object_tag": "shower wall",
+    "object_caption": "Shower wall.",
+    "bbox_extent": [
+      2.9,
+      1.58,
+      0.04
+    ],
+    "bbox_center": [
+      -0.19,
+      0.38,
+      2.28
+    ],
+    "bbox_volume": 0.18
+  },
+  "object_67": {
+    "id": 285,
+    "object_tag": "window",
+    "object_caption": "Window with black frame.",
+    "bbox_extent": [
+      2.72,
+      1.57,
+      0.0
+    ],
+    "bbox_center": [
+      1.36,
+      -2.8,
+      11.9
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_68": {
+    "id": 291,
+    "object_tag": "mouse",
+    "object_caption": "Computer mouse on a desk.",
+    "bbox_extent": [
+      0.62,
+      0.17,
+      0.02
+    ],
+    "bbox_center": [
+      1.38,
+      0.14,
+      6.89
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_69": {
+    "id": 294,
+    "object_tag": "window",
+    "object_caption": "Window in the room.",
+    "bbox_extent": [
+      2.97,
+      1.57,
+      0.0
+    ],
+    "bbox_center": [
+      1.56,
+      -2.84,
+      12.52
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_70": {
+    "id": 304,
+    "object_tag": "ladder",
+    "object_caption": "Silver towel ladder on the wall.",
+    "bbox_extent": [
+      0.82,
+      0.29,
+      0.11
+    ],
+    "bbox_center": [
+      0.06,
+      0.43,
+      2.25
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_71": {
+    "id": 307,
+    "object_tag": "toilet",
+    "object_caption": "The toilet is located in the bottom right corner of the frame.",
+    "bbox_extent": [
+      0.42,
+      0.14,
+      0.08
+    ],
+    "bbox_center": [
+      -0.92,
+      0.94,
+      2.11
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_72": {
+    "id": 308,
+    "object_tag": "ladder",
+    "object_caption": "White ladder mounted on the wall.",
+    "bbox_extent": [
+      0.56,
+      0.24,
+      0.17
+    ],
+    "bbox_center": [
+      0.09,
+      0.39,
+      2.24
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_73": {
+    "id": 315,
+    "object_tag": "picture",
+    "object_caption": "A picture hanging on the wall.",
+    "bbox_extent": [
+      0.91,
+      0.8,
+      0.08
+    ],
+    "bbox_center": [
+      1.8,
+      -0.95,
+      5.09
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_74": {
+    "id": 316,
+    "object_tag": "bed",
+    "object_caption": "A bed with a blue frame in another room.",
+    "bbox_extent": [
+      1.62,
+      0.99,
+      0.72
+    ],
+    "bbox_center": [
+      3.81,
+      0.72,
+      6.37
+    ],
+    "bbox_volume": 1.15
+  },
+  "object_75": {
+    "id": 317,
+    "object_tag": "tv",
+    "object_caption": "A small black flat-screen TV on the desk.",
+    "bbox_extent": [
+      1.57,
+      1.18,
+      0.29
+    ],
+    "bbox_center": [
+      1.82,
+      0.09,
+      7.08
+    ],
+    "bbox_volume": 0.54
+  },
+  "object_76": {
+    "id": 318,
+    "object_tag": "pillow",
+    "object_caption": "White pillow on chair.",
+    "bbox_extent": [
+      0.67,
+      0.39,
+      0.21
+    ],
+    "bbox_center": [
+      4.31,
+      -0.07,
+      7.42
+    ],
+    "bbox_volume": 0.05
+  },
+  "object_77": {
+    "id": 320,
+    "object_tag": "window",
+    "object_caption": "Window with black frame.",
+    "bbox_extent": [
+      2.97,
+      1.13,
+      0.0
+    ],
+    "bbox_center": [
+      1.6,
+      -2.85,
+      12.57
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_78": {
+    "id": 323,
+    "object_tag": "picture",
+    "object_caption": "A picture hanging on the wall.",
+    "bbox_extent": [
+      0.74,
+      0.74,
+      0.06
+    ],
+    "bbox_center": [
+      1.76,
+      -0.89,
+      5.12
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_79": {
+    "id": 324,
+    "object_tag": "chair",
+    "object_caption": "A chair on the left side of the desk.",
+    "bbox_extent": [
+      1.48,
+      1.3,
+      0.18
+    ],
+    "bbox_center": [
+      1.02,
+      0.88,
+      7.34
+    ],
+    "bbox_volume": 0.35
+  },
+  "object_80": {
+    "id": 326,
+    "object_tag": "pillow",
+    "object_caption": "A white pillow on the lower bed.",
+    "bbox_extent": [
+      0.69,
+      0.5,
+      0.39
+    ],
+    "bbox_center": [
+      4.26,
+      0.05,
+      7.5
+    ],
+    "bbox_volume": 0.13
+  },
+  "object_81": {
+    "id": 328,
+    "object_tag": "pillow",
+    "object_caption": "A pillow on the blue bed.",
+    "bbox_extent": [
+      0.63,
+      0.56,
+      0.17
+    ],
+    "bbox_center": [
+      4.01,
+      0.14,
+      7.5
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_82": {
+    "id": 329,
+    "object_tag": "bed",
+    "object_caption": "A blue bed in the other room.",
+    "bbox_extent": [
+      1.72,
+      0.97,
+      0.5
+    ],
+    "bbox_center": [
+      3.87,
+      0.58,
+      6.46
+    ],
+    "bbox_volume": 0.83
+  },
+  "object_83": {
+    "id": 331,
+    "object_tag": "window",
+    "object_caption": "A window",
+    "bbox_extent": [
+      4.25,
+      2.92,
+      0.0
+    ],
+    "bbox_center": [
+      0.92,
+      -3.13,
+      15.16
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_84": {
+    "id": 332,
+    "object_tag": "keyboard",
+    "object_caption": "A keyboard on the desk.",
+    "bbox_extent": [
+      0.55,
+      0.18,
+      0.05
+    ],
+    "bbox_center": [
+      1.37,
+      0.37,
+      6.87
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_85": {
+    "id": 335,
+    "object_tag": "bed",
+    "object_caption": "The top bed in the bedroom.",
+    "bbox_extent": [
+      0.47,
+      0.47,
+      0.12
+    ],
+    "bbox_center": [
+      4.4,
+      -0.32,
+      7.7
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_86": {
+    "id": 339,
+    "object_tag": "chair",
+    "object_caption": "A gray chair is placed near the desk.",
+    "bbox_extent": [
+      1.55,
+      1.57,
+      0.22
+    ],
+    "bbox_center": [
+      0.96,
+      0.76,
+      7.31
+    ],
+    "bbox_volume": 0.54
+  },
+  "object_87": {
+    "id": 340,
+    "object_tag": "window",
+    "object_caption": "A rectangular window on the wall.",
+    "bbox_extent": [
+      3.12,
+      1.97,
+      0.0
+    ],
+    "bbox_center": [
+      1.02,
+      -2.9,
+      12.74
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_88": {
+    "id": 343,
+    "object_tag": "mouse",
+    "object_caption": "A black kettle with a wooden handle sitting on a stove.",
+    "bbox_extent": [
+      0.56,
+      0.18,
+      0.02
+    ],
+    "bbox_center": [
+      1.37,
+      0.23,
+      6.87
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_89": {
+    "id": 344,
+    "object_tag": "closet wall",
+    "object_caption": "A closed closet door on a closet wall.",
+    "bbox_extent": [
+      2.78,
+      0.46,
+      0.09
+    ],
+    "bbox_center": [
+      3.14,
+      0.4,
+      4.5
+    ],
+    "bbox_volume": 0.12
+  },
+  "object_90": {
+    "id": 345,
+    "object_tag": "bed",
+    "object_caption": "A blue bed in the back room.",
+    "bbox_extent": [
+      2.09,
+      0.65,
+      0.62
+    ],
+    "bbox_center": [
+      4.13,
+      0.8,
+      6.46
+    ],
+    "bbox_volume": 0.84
+  },
+  "object_91": {
+    "id": 346,
+    "object_tag": "picture",
+    "object_caption": "A framed picture hanging on the wall.",
+    "bbox_extent": [
+      1.2,
+      0.92,
+      0.08
+    ],
+    "bbox_center": [
+      1.87,
+      -0.6,
+      5.11
+    ],
+    "bbox_volume": 0.09
+  },
+  "object_92": {
+    "id": 350,
+    "object_tag": "window",
+    "object_caption": "A window with a bright light outside.",
+    "bbox_extent": [
+      3.1,
+      1.98,
+      0.0
+    ],
+    "bbox_center": [
+      1.13,
+      -2.85,
+      12.39
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_93": {
+    "id": 358,
+    "object_tag": "keyboard",
+    "object_caption": "A white keyboard on the desk.",
+    "bbox_extent": [
+      0.52,
+      0.17,
+      0.02
+    ],
+    "bbox_center": [
+      1.37,
+      0.3,
+      6.86
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_94": {
+    "id": 359,
+    "object_tag": "window",
+    "object_caption": "A window with white frames.",
+    "bbox_extent": [
+      3.23,
+      2.24,
+      0.0
+    ],
+    "bbox_center": [
+      1.08,
+      -2.89,
+      12.61
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_95": {
+    "id": 360,
+    "object_tag": "bed",
+    "object_caption": "A bed in the room.",
+    "bbox_extent": [
+      1.69,
+      0.61,
+      0.47
+    ],
+    "bbox_center": [
+      4.22,
+      0.94,
+      6.24
+    ],
+    "bbox_volume": 0.48
+  },
+  "object_96": {
+    "id": 366,
+    "object_tag": "window",
+    "object_caption": "A window with a view of the sky.",
+    "bbox_extent": [
+      3.39,
+      2.47,
+      0.0
+    ],
+    "bbox_center": [
+      1.05,
+      -2.93,
+      12.87
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_97": {
+    "id": 371,
+    "object_tag": "keyboard",
+    "object_caption": "A small keyboard on top of the desk",
+    "bbox_extent": [
+      0.49,
+      0.17,
+      0.02
+    ],
+    "bbox_center": [
+      1.37,
+      0.42,
+      6.86
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_98": {
+    "id": 374,
+    "object_tag": "window",
+    "object_caption": "A window next to the desk.",
+    "bbox_extent": [
+      3.97,
+      3.37,
+      0.0
+    ],
+    "bbox_center": [
+      0.85,
+      -2.99,
+      13.13
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_99": {
+    "id": 379,
+    "object_tag": "closet door",
+    "object_caption": "A glass shower stall door with a metal frame.",
+    "bbox_extent": [
+      2.69,
+      0.99,
+      0.55
+    ],
+    "bbox_center": [
+      -0.71,
+      0.45,
+      4.24
+    ],
+    "bbox_volume": 1.46
+  },
+  "object_100": {
+    "id": 384,
+    "object_tag": "towel",
+    "object_caption": "The edge of a towel.",
+    "bbox_extent": [
+      0.28,
+      0.18,
+      0.02
+    ],
+    "bbox_center": [
+      0.72,
+      0.44,
+      3.98
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_101": {
+    "id": 396,
+    "object_tag": "ladder",
+    "object_caption": "Part of a ladder is on the far right of the image",
+    "bbox_extent": [
+      0.66,
+      0.23,
+      0.06
+    ],
+    "bbox_center": [
+      0.74,
+      0.44,
+      4.29
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_102": {
+    "id": 399,
+    "object_tag": "towel",
+    "object_caption": "Silver towel bar with a cylindrical shape.",
+    "bbox_extent": [
+      1.01,
+      0.6,
+      0.14
+    ],
+    "bbox_center": [
+      0.69,
+      0.46,
+      4.21
+    ],
+    "bbox_volume": 0.08
+  },
+  "object_103": {
+    "id": 400,
+    "object_tag": "picture",
+    "object_caption": "A framed picture hanging on the wall.",
+    "bbox_extent": [
+      0.87,
+      0.74,
+      0.11
+    ],
+    "bbox_center": [
+      1.79,
+      -0.59,
+      5.15
+    ],
+    "bbox_volume": 0.07
+  },
+  "object_104": {
+    "id": 404,
+    "object_tag": "chair",
+    "object_caption": "A light blue office chair with a back.",
+    "bbox_extent": [
+      0.72,
+      0.67,
+      0.1
+    ],
+    "bbox_center": [
+      1.0,
+      0.85,
+      6.94
+    ],
+    "bbox_volume": 0.05
+  },
+  "object_105": {
+    "id": 408,
+    "object_tag": "window",
+    "object_caption": "A projector screen on the wall.",
+    "bbox_extent": [
+      1.88,
+      0.87,
+      0.28
+    ],
+    "bbox_center": [
+      1.28,
+      -0.93,
+      7.78
+    ],
+    "bbox_volume": 0.46
+  },
+  "object_106": {
+    "id": 411,
+    "object_tag": "pillow",
+    "object_caption": "A pillow on the bed.",
+    "bbox_extent": [
+      0.92,
+      0.56,
+      0.54
+    ],
+    "bbox_center": [
+      -0.08,
+      0.97,
+      7.68
+    ],
+    "bbox_volume": 0.28
+  },
+  "object_107": {
+    "id": 412,
+    "object_tag": "chair",
+    "object_caption": "A purple chair.",
+    "bbox_extent": [
+      0.62,
+      0.31,
+      0.02
+    ],
+    "bbox_center": [
+      1.05,
+      1.55,
+      6.98
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_108": {
+    "id": 415,
+    "object_tag": "pillow",
+    "object_caption": "A small yellow or light green pillow on the bed.",
+    "bbox_extent": [
+      0.61,
+      0.5,
+      0.33
+    ],
+    "bbox_center": [
+      -0.25,
+      1.12,
+      7.44
+    ],
+    "bbox_volume": 0.1
+  },
+  "object_109": {
+    "id": 416,
+    "object_tag": "pillow",
+    "object_caption": "A green pillow on the couch.",
+    "bbox_extent": [
+      0.32,
+      0.29,
+      0.15
+    ],
+    "bbox_center": [
+      -0.36,
+      0.79,
+      7.77
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_110": {
+    "id": 417,
+    "object_tag": "window",
+    "object_caption": "A large window with a brown frame.",
+    "bbox_extent": [
+      2.42,
+      2.44,
+      0.38
+    ],
+    "bbox_center": [
+      0.98,
+      -0.97,
+      7.74
+    ],
+    "bbox_volume": 2.24
+  },
+  "object_111": {
+    "id": 418,
+    "object_tag": "bed",
+    "object_caption": "A green and white couch.",
+    "bbox_extent": [
+      2.03,
+      1.0,
+      0.73
+    ],
+    "bbox_center": [
+      0.19,
+      1.28,
+      7.48
+    ],
+    "bbox_volume": 1.48
+  },
+  "object_112": {
+    "id": 421,
+    "object_tag": "closet wall",
+    "object_caption": "A purple closet wall.",
+    "bbox_extent": [
+      0.73,
+      0.17,
+      0.03
+    ],
+    "bbox_center": [
+      0.98,
+      0.28,
+      4.49
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_113": {
+    "id": 427,
+    "object_tag": "pillow",
+    "object_caption": "A large, light green and yellow pillow on the bed, positioned on the left side of the headboard.",
+    "bbox_extent": [
+      0.92,
+      0.49,
+      0.59
+    ],
+    "bbox_center": [
+      -0.53,
+      0.94,
+      7.67
+    ],
+    "bbox_volume": 0.27
+  },
+  "object_114": {
+    "id": 429,
+    "object_tag": "chair",
+    "object_caption": "A chair next to the desk.",
+    "bbox_extent": [
+      0.56,
+      0.3,
+      0.03
+    ],
+    "bbox_center": [
+      1.0,
+      1.57,
+      7.03
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_115": {
+    "id": 431,
+    "object_tag": "keyboard",
+    "object_caption": "A keyboard on the desk.",
+    "bbox_extent": [
+      0.48,
+      0.17,
+      0.03
+    ],
+    "bbox_center": [
+      1.37,
+      0.65,
+      6.88
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_116": {
+    "id": 433,
+    "object_tag": "pillow",
+    "object_caption": "A small yellow pillow on the bed.",
+    "bbox_extent": [
+      0.5,
+      0.37,
+      0.27
+    ],
+    "bbox_center": [
+      -0.47,
+      1.03,
+      7.42
+    ],
+    "bbox_volume": 0.05
+  },
+  "object_117": {
+    "id": 448,
+    "object_tag": "desk",
+    "object_caption": "A wooden desk with a book and a TV on top of it.",
+    "bbox_extent": [
+      2.08,
+      0.91,
+      0.26
+    ],
+    "bbox_center": [
+      1.46,
+      0.86,
+      6.86
+    ],
+    "bbox_volume": 0.49
+  },
+  "object_118": {
+    "id": 457,
+    "object_tag": "bed",
+    "object_caption": "A bed with a headboard, green and blue blanket, and several pillows.",
+    "bbox_extent": [
+      2.38,
+      1.65,
+      1.24
+    ],
+    "bbox_center": [
+      -0.3,
+      1.1,
+      6.98
+    ],
+    "bbox_volume": 4.87
+  },
+  "object_119": {
+    "id": 459,
+    "object_tag": "chair",
+    "object_caption": "A chair near the desk.",
+    "bbox_extent": [
+      0.92,
+      0.61,
+      0.17
+    ],
+    "bbox_center": [
+      0.97,
+      1.14,
+      6.94
+    ],
+    "bbox_volume": 0.1
+  },
+  "object_120": {
+    "id": 461,
+    "object_tag": "desk",
+    "object_caption": "A wooden desk.",
+    "bbox_extent": [
+      1.82,
+      0.86,
+      0.09
+    ],
+    "bbox_center": [
+      1.47,
+      0.84,
+      6.95
+    ],
+    "bbox_volume": 0.14
+  },
+  "object_121": {
+    "id": 467,
+    "object_tag": "window",
+    "object_caption": "A window with light coming through it.",
+    "bbox_extent": [
+      1.94,
+      1.97,
+      0.32
+    ],
+    "bbox_center": [
+      1.04,
+      -0.8,
+      7.78
+    ],
+    "bbox_volume": 1.22
+  },
+  "object_122": {
+    "id": 468,
+    "object_tag": "laptop",
+    "object_caption": "A laptop on the desk.",
+    "bbox_extent": [
+      0.47,
+      0.18,
+      0.03
+    ],
+    "bbox_center": [
+      1.35,
+      0.86,
+      6.86
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_123": {
+    "id": 470,
+    "object_tag": "folded chair",
+    "object_caption": "A folded blue chair is next to the desk.",
+    "bbox_extent": [
+      0.64,
+      0.52,
+      0.17
+    ],
+    "bbox_center": [
+      0.97,
+      1.12,
+      6.97
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_124": {
+    "id": 473,
+    "object_tag": "desk",
+    "object_caption": "A brown desk.",
+    "bbox_extent": [
+      1.6,
+      0.78,
+      0.2
+    ],
+    "bbox_center": [
+      1.37,
+      0.94,
+      7.14
+    ],
+    "bbox_volume": 0.25
+  },
+  "object_125": {
+    "id": 476,
+    "object_tag": "tv",
+    "object_caption": "A laptop is open on a white table next to a cell phone and an electric toothbrush.",
+    "bbox_extent": [
+      0.34,
+      0.1,
+      0.02
+    ],
+    "bbox_center": [
+      1.72,
+      0.7,
+      7.2
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_126": {
+    "id": 477,
+    "object_tag": "book",
+    "object_caption": "A black book on the desk.",
+    "bbox_extent": [
+      0.5,
+      0.17,
+      0.04
+    ],
+    "bbox_center": [
+      1.34,
+      0.95,
+      6.88
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_127": {
+    "id": 486,
+    "object_tag": "desk",
+    "object_caption": "A brown desk.",
+    "bbox_extent": [
+      1.23,
+      0.98,
+      0.52
+    ],
+    "bbox_center": [
+      1.15,
+      1.07,
+      7.31
+    ],
+    "bbox_volume": 0.63
+  },
+  "object_128": {
+    "id": 487,
+    "object_tag": "towel",
+    "object_caption": "A white towel on the bed.",
+    "bbox_extent": [
+      0.66,
+      0.45,
+      0.11
+    ],
+    "bbox_center": [
+      -0.62,
+      1.21,
+      6.67
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_129": {
+    "id": 488,
+    "object_tag": "bed",
+    "object_caption": "A black corded phone sitting on a table.",
+    "bbox_extent": [
+      1.17,
+      0.44,
+      0.17
+    ],
+    "bbox_center": [
+      -0.34,
+      1.29,
+      6.85
+    ],
+    "bbox_volume": 0.09
+  },
+  "object_130": {
+    "id": 490,
+    "object_tag": "pillow",
+    "object_caption": "A small pillow on the bed.",
+    "bbox_extent": [
+      0.47,
+      0.31,
+      0.36
+    ],
+    "bbox_center": [
+      -0.49,
+      1.24,
+      7.43
+    ],
+    "bbox_volume": 0.05
+  },
+  "object_131": {
+    "id": 493,
+    "object_tag": "desk",
+    "object_caption": "The corner of a wooden desk.",
+    "bbox_extent": [
+      0.93,
+      0.72,
+      0.35
+    ],
+    "bbox_center": [
+      1.17,
+      1.18,
+      7.46
+    ],
+    "bbox_volume": 0.23
+  },
+  "object_132": {
+    "id": 495,
+    "object_tag": "blanket",
+    "object_caption": "A yellow and white patterned blanket on the bed.",
+    "bbox_extent": [
+      1.06,
+      0.56,
+      0.28
+    ],
+    "bbox_center": [
+      -0.23,
+      1.3,
+      7.12
+    ],
+    "bbox_volume": 0.17
+  },
+  "object_133": {
+    "id": 509,
+    "object_tag": "bed",
+    "object_caption": "Bed with blue sheets.",
+    "bbox_extent": [
+      0.64,
+      0.53,
+      0.05
+    ],
+    "bbox_center": [
+      -0.68,
+      1.36,
+      7.31
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_134": {
+    "id": 520,
+    "object_tag": "closet door",
+    "object_caption": "A closet door.",
+    "bbox_extent": [
+      1.84,
+      0.54,
+      0.08
+    ],
+    "bbox_center": [
+      -0.63,
+      0.34,
+      5.21
+    ],
+    "bbox_volume": 0.08
+  },
+  "object_135": {
+    "id": 526,
+    "object_tag": "closet door",
+    "object_caption": "A dark closet door with vertical panels.",
+    "bbox_extent": [
+      0.66,
+      0.17,
+      0.1
+    ],
+    "bbox_center": [
+      0.46,
+      0.22,
+      5.06
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_136": {
+    "id": 527,
+    "object_tag": "bed",
+    "object_caption": "A bed with blue and white patterned bedding.",
+    "bbox_extent": [
+      1.0,
+      0.29,
+      0.11
+    ],
+    "bbox_center": [
+      -0.82,
+      1.35,
+      6.2
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_137": {
+    "id": 528,
+    "object_tag": "closet wall",
+    "object_caption": "Part of a tan closet wall with a handle.",
+    "bbox_extent": [
+      1.58,
+      1.49,
+      0.31
+    ],
+    "bbox_center": [
+      -0.33,
+      0.22,
+      5.18
+    ],
+    "bbox_volume": 0.73
+  },
+  "object_138": {
+    "id": 529,
+    "object_tag": "washing machine",
+    "object_caption": "A white washing machine is next to a vanity and beneath a counter.",
+    "bbox_extent": [
+      2.03,
+      0.62,
+      0.16
+    ],
+    "bbox_center": [
+      2.13,
+      0.51,
+      -2.9
+    ],
+    "bbox_volume": 0.2
+  },
+  "object_139": {
+    "id": 530,
+    "object_tag": "cabinet",
+    "object_caption": "A dark brown wooden bathroom vanity with a sink and dark handles, located next to the washing machine.",
+    "bbox_extent": [
+      2.26,
+      1.2,
+      0.63
+    ],
+    "bbox_center": [
+      1.43,
+      0.61,
+      -3.05
+    ],
+    "bbox_volume": 1.71
+  },
+  "object_140": {
+    "id": 532,
+    "object_tag": "mirror",
+    "object_caption": "A mirror in a bathroom.",
+    "bbox_extent": [
+      2.36,
+      1.68,
+      0.0
+    ],
+    "bbox_center": [
+      1.62,
+      -2.64,
+      -5.69
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_141": {
+    "id": 533,
+    "object_tag": "mirror",
+    "object_caption": "A rectangular mirror on the wall.",
+    "bbox_extent": [
+      2.41,
+      1.49,
+      0.0
+    ],
+    "bbox_center": [
+      1.55,
+      -2.68,
+      -6.24
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_142": {
+    "id": 537,
+    "object_tag": "mirror",
+    "object_caption": "A small framed mirror is visible through the doorway.",
+    "bbox_extent": [
+      2.49,
+      1.48,
+      0.0
+    ],
+    "bbox_center": [
+      1.48,
+      -2.72,
+      -6.63
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_143": {
+    "id": 540,
+    "object_tag": "sink",
+    "object_caption": "A white sink on the bathroom vanity.",
+    "bbox_extent": [
+      0.73,
+      0.79,
+      0.07
+    ],
+    "bbox_center": [
+      1.66,
+      -0.32,
+      -3.07
+    ],
+    "bbox_volume": 0.04
+  },
+  "object_144": {
+    "id": 543,
+    "object_tag": "closet door",
+    "object_caption": "A brown wooden closet door is part of a large brown closet wall.",
+    "bbox_extent": [
+      2.97,
+      0.85,
+      0.47
+    ],
+    "bbox_center": [
+      6.07,
+      0.27,
+      3.19
+    ],
+    "bbox_volume": 1.19
+  },
+  "object_145": {
+    "id": 544,
+    "object_tag": "mirror",
+    "object_caption": "A mirror frame.",
+    "bbox_extent": [
+      3.0,
+      0.59,
+      0.35
+    ],
+    "bbox_center": [
+      4.07,
+      0.31,
+      3.11
+    ],
+    "bbox_volume": 0.62
+  },
+  "object_146": {
+    "id": 545,
+    "object_tag": "sink",
+    "object_caption": "A small, light blue sink.",
+    "bbox_extent": [
+      0.81,
+      0.84,
+      0.12
+    ],
+    "bbox_center": [
+      1.58,
+      0.04,
+      -3.1
+    ],
+    "bbox_volume": 0.08
+  },
+  "object_147": {
+    "id": 551,
+    "object_tag": "bathroom vanity",
+    "object_caption": "A small green storage bin in a closet.",
+    "bbox_extent": [
+      0.77,
+      0.48,
+      0.41
+    ],
+    "bbox_center": [
+      7.45,
+      0.76,
+      3.75
+    ],
+    "bbox_volume": 0.15
+  },
+  "object_148": {
+    "id": 552,
+    "object_tag": "mirror",
+    "object_caption": "A black microwave is on a dark countertop in a kitchen.",
+    "bbox_extent": [
+      2.98,
+      0.86,
+      0.36
+    ],
+    "bbox_center": [
+      4.06,
+      0.3,
+      3.16
+    ],
+    "bbox_volume": 0.92
+  },
+  "object_149": {
+    "id": 556,
+    "object_tag": "bed",
+    "object_caption": "The bed with a mattress and pillow.",
+    "bbox_extent": [
+      0.5,
+      0.4,
+      0.18
+    ],
+    "bbox_center": [
+      3.86,
+      1.48,
+      5.76
+    ],
+    "bbox_volume": 0.04
+  },
+  "object_150": {
+    "id": 557,
+    "object_tag": "pillow",
+    "object_caption": "A blue pillow on the bed with some wrinkles.",
+    "bbox_extent": [
+      0.84,
+      0.59,
+      0.52
+    ],
+    "bbox_center": [
+      4.32,
+      0.9,
+      7.53
+    ],
+    "bbox_volume": 0.26
+  },
+  "object_151": {
+    "id": 559,
+    "object_tag": "mattress",
+    "object_caption": "A blue mattress.",
+    "bbox_extent": [
+      2.06,
+      0.84,
+      0.45
+    ],
+    "bbox_center": [
+      4.09,
+      1.18,
+      6.66
+    ],
+    "bbox_volume": 0.78
+  },
+  "object_152": {
+    "id": 560,
+    "object_tag": "pillow",
+    "object_caption": "A tennis racket on the tennis court.",
+    "bbox_extent": [
+      0.53,
+      0.14,
+      0.06
+    ],
+    "bbox_center": [
+      4.13,
+      0.97,
+      7.53
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_153": {
+    "id": 561,
+    "object_tag": "bed",
+    "object_caption": "A bed with a blue mattress.",
+    "bbox_extent": [
+      1.82,
+      0.92,
+      1.04
+    ],
+    "bbox_center": [
+      3.82,
+      0.67,
+      7.66
+    ],
+    "bbox_volume": 1.74
+  },
+  "object_154": {
+    "id": 562,
+    "object_tag": "pillow",
+    "object_caption": "A blue pillow on the bed.",
+    "bbox_extent": [
+      0.93,
+      0.55,
+      0.58
+    ],
+    "bbox_center": [
+      3.84,
+      0.9,
+      7.56
+    ],
+    "bbox_volume": 0.3
+  },
+  "object_155": {
+    "id": 563,
+    "object_tag": "pillow",
+    "object_caption": "A blue pillow on the bed.",
+    "bbox_extent": [
+      0.68,
+      0.51,
+      0.33
+    ],
+    "bbox_center": [
+      4.28,
+      0.65,
+      7.49
+    ],
+    "bbox_volume": 0.11
+  },
+  "object_156": {
+    "id": 565,
+    "object_tag": "tv",
+    "object_caption": "A TV on the desk.",
+    "bbox_extent": [
+      0.77,
+      0.28,
+      0.04
+    ],
+    "bbox_center": [
+      2.49,
+      0.26,
+      7.67
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_157": {
+    "id": 566,
+    "object_tag": "keyboard",
+    "object_caption": "A keyboard on the desk.",
+    "bbox_extent": [
+      0.51,
+      0.23,
+      0.05
+    ],
+    "bbox_center": [
+      2.56,
+      0.69,
+      7.31
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_158": {
+    "id": 567,
+    "object_tag": "projector screen",
+    "object_caption": "A projector screen on the wall.",
+    "bbox_extent": [
+      1.76,
+      1.46,
+      0.33
+    ],
+    "bbox_center": [
+      3.09,
+      -0.9,
+      7.82
+    ],
+    "bbox_volume": 0.85
+  },
+  "object_159": {
+    "id": 569,
+    "object_tag": "folded chair",
+    "object_caption": "A folded chair is next to the desk with a blue towel hanging on it.",
+    "bbox_extent": [
+      1.06,
+      0.49,
+      0.33
+    ],
+    "bbox_center": [
+      3.09,
+      0.88,
+      6.87
+    ],
+    "bbox_volume": 0.17
+  },
+  "object_160": {
+    "id": 570,
+    "object_tag": "chair",
+    "object_caption": "A wooden, folded chair with a blue towel hanging on it.",
+    "bbox_extent": [
+      0.64,
+      0.28,
+      0.13
+    ],
+    "bbox_center": [
+      3.11,
+      1.65,
+      7.2
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_161": {
+    "id": 571,
+    "object_tag": "bed",
+    "object_caption": "A bed with pillows and a blue patterned sheet.",
+    "bbox_extent": [
+      2.56,
+      1.36,
+      1.14
+    ],
+    "bbox_center": [
+      4.11,
+      1.11,
+      6.93
+    ],
+    "bbox_volume": 3.97
+  },
+  "object_162": {
+    "id": 574,
+    "object_tag": "tv",
+    "object_caption": "A black, flat screen television on the desk.",
+    "bbox_extent": [
+      1.11,
+      0.67,
+      0.06
+    ],
+    "bbox_center": [
+      2.38,
+      0.38,
+      7.5
+    ],
+    "bbox_volume": 0.04
+  },
+  "object_163": {
+    "id": 575,
+    "object_tag": "desk",
+    "object_caption": "A brown wooden desk with items on it.",
+    "bbox_extent": [
+      1.84,
+      1.13,
+      0.94
+    ],
+    "bbox_center": [
+      2.57,
+      0.82,
+      6.94
+    ],
+    "bbox_volume": 1.95
+  },
+  "object_164": {
+    "id": 580,
+    "object_tag": "mirror",
+    "object_caption": "A square window with a brown frame.",
+    "bbox_extent": [
+      2.41,
+      2.35,
+      0.36
+    ],
+    "bbox_center": [
+      3.0,
+      -0.94,
+      7.77
+    ],
+    "bbox_volume": 2.04
+  },
+  "object_165": {
+    "id": 591,
+    "object_tag": "keyboard",
+    "object_caption": "A green keyboard on the desk.",
+    "bbox_extent": [
+      0.49,
+      0.23,
+      0.03
+    ],
+    "bbox_center": [
+      2.55,
+      0.65,
+      7.3
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_166": {
+    "id": 594,
+    "object_tag": "bench",
+    "object_caption": "A dark-colored small bench at the foot of the bed.",
+    "bbox_extent": [
+      0.74,
+      0.22,
+      0.16
+    ],
+    "bbox_center": [
+      4.28,
+      1.46,
+      5.83
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_167": {
+    "id": 596,
+    "object_tag": "bed",
+    "object_caption": "A bed with a headboard, pillows, and a blanket.",
+    "bbox_extent": [
+      2.26,
+      1.71,
+      1.42
+    ],
+    "bbox_center": [
+      3.97,
+      1.16,
+      6.96
+    ],
+    "bbox_volume": 5.49
+  },
+  "object_168": {
+    "id": 601,
+    "object_tag": "chair",
+    "object_caption": "A folded chair next to a desk.",
+    "bbox_extent": [
+      0.49,
+      0.37,
+      0.3
+    ],
+    "bbox_center": [
+      3.02,
+      1.15,
+      6.85
+    ],
+    "bbox_volume": 0.05
+  },
+  "object_169": {
+    "id": 610,
+    "object_tag": "desk",
+    "object_caption": "A brown desk with a TV and keyboard on top.",
+    "bbox_extent": [
+      1.64,
+      0.81,
+      0.19
+    ],
+    "bbox_center": [
+      2.51,
+      0.88,
+      7.07
+    ],
+    "bbox_volume": 0.25
+  },
+  "object_170": {
+    "id": 615,
+    "object_tag": "keyboard",
+    "object_caption": "A black keyboard on the desk.",
+    "bbox_extent": [
+      0.49,
+      0.23,
+      0.03
+    ],
+    "bbox_center": [
+      2.56,
+      0.75,
+      7.31
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_171": {
+    "id": 617,
+    "object_tag": "blanket",
+    "object_caption": "A blue blanket covering the bottom half of the bed.",
+    "bbox_extent": [
+      1.28,
+      0.76,
+      0.39
+    ],
+    "bbox_center": [
+      4.05,
+      1.3,
+      6.62
+    ],
+    "bbox_volume": 0.38
+  },
+  "object_172": {
+    "id": 621,
+    "object_tag": "desk",
+    "object_caption": "A brown desk with a keyboard.",
+    "bbox_extent": [
+      1.42,
+      0.83,
+      0.17
+    ],
+    "bbox_center": [
+      2.52,
+      0.91,
+      7.18
+    ],
+    "bbox_volume": 0.2
+  },
+  "object_173": {
+    "id": 622,
+    "object_tag": "armchair",
+    "object_caption": "A black office chair.",
+    "bbox_extent": [
+      0.42,
+      0.23,
+      0.19
+    ],
+    "bbox_center": [
+      2.98,
+      1.24,
+      7.04
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_174": {
+    "id": 625,
+    "object_tag": "keyboard",
+    "object_caption": "A green keyboard on the desk.",
+    "bbox_extent": [
+      0.48,
+      0.23,
+      0.04
+    ],
+    "bbox_center": [
+      2.55,
+      0.82,
+      7.31
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_175": {
+    "id": 629,
+    "object_tag": "desk",
+    "object_caption": "Brown desk with a black keyboard.",
+    "bbox_extent": [
+      1.12,
+      1.0,
+      0.69
+    ],
+    "bbox_center": [
+      2.61,
+      1.01,
+      7.32
+    ],
+    "bbox_volume": 0.77
+  },
+  "object_176": {
+    "id": 633,
+    "object_tag": "keyboard",
+    "object_caption": "A white trash can in a bathroom.",
+    "bbox_extent": [
+      0.48,
+      0.22,
+      0.05
+    ],
+    "bbox_center": [
+      2.56,
+      0.87,
+      7.31
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_177": {
+    "id": 634,
+    "object_tag": "bed",
+    "object_caption": "Bed with blue sheets.",
+    "bbox_extent": [
+      1.29,
+      1.01,
+      0.19
+    ],
+    "bbox_center": [
+      4.07,
+      1.25,
+      7.34
+    ],
+    "bbox_volume": 0.25
+  },
+  "object_178": {
+    "id": 638,
+    "object_tag": "desk",
+    "object_caption": "A brown desk.",
+    "bbox_extent": [
+      0.94,
+      0.76,
+      0.54
+    ],
+    "bbox_center": [
+      2.76,
+      1.02,
+      7.5
+    ],
+    "bbox_volume": 0.39
+  },
+  "object_179": {
+    "id": 647,
+    "object_tag": "keyboard",
+    "object_caption": "A keyboard on the desk.",
+    "bbox_extent": [
+      0.3,
+      0.22,
+      0.06
+    ],
+    "bbox_center": [
+      2.6,
+      0.95,
+      7.37
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_180": {
+    "id": 662,
+    "object_tag": "closet wall",
+    "object_caption": "The closet door is brown and wooden.",
+    "bbox_extent": [
+      1.63,
+      0.8,
+      0.08
+    ],
+    "bbox_center": [
+      3.93,
+      0.1,
+      4.73
+    ],
+    "bbox_volume": 0.1
+  },
+  "object_181": {
+    "id": 663,
+    "object_tag": "closet door",
+    "object_caption": "The closet door is a thin wooden door with a handle.",
+    "bbox_extent": [
+      2.1,
+      0.71,
+      0.06
+    ],
+    "bbox_center": [
+      4.29,
+      0.47,
+      4.72
+    ],
+    "bbox_volume": 0.09
+  },
+  "object_182": {
+    "id": 664,
+    "object_tag": "closet door",
+    "object_caption": "The right closet door in the frame.",
+    "bbox_extent": [
+      2.16,
+      1.25,
+      0.07
+    ],
+    "bbox_center": [
+      4.11,
+      0.5,
+      4.73
+    ],
+    "bbox_volume": 0.19
+  },
+  "object_183": {
+    "id": 665,
+    "object_tag": "bathroom vanity",
+    "object_caption": "A light-colored bathroom vanity is situated next to a white bathtub and against a shower wall.",
+    "bbox_extent": [
+      1.56,
+      0.89,
+      0.39
+    ],
+    "bbox_center": [
+      0.28,
+      0.84,
+      0.93
+    ],
+    "bbox_volume": 0.54
+  },
+  "object_184": {
+    "id": 667,
+    "object_tag": "mirror",
+    "object_caption": "A tall, rectangular mirror on the wall.",
+    "bbox_extent": [
+      1.82,
+      0.47,
+      0.11
+    ],
+    "bbox_center": [
+      0.3,
+      -0.41,
+      0.94
+    ],
+    "bbox_volume": 0.09
+  },
+  "object_185": {
+    "id": 670,
+    "object_tag": "nightstand",
+    "object_caption": "A brown wooden nightstand with drawers next to the bed.",
+    "bbox_extent": [
+      1.37,
+      1.28,
+      0.39
+    ],
+    "bbox_center": [
+      7.47,
+      1.23,
+      4.02
+    ],
+    "bbox_volume": 0.68
+  },
+  "object_186": {
+    "id": 674,
+    "object_tag": "range hood",
+    "object_caption": "A range hood above the cabinet.",
+    "bbox_extent": [
+      0.59,
+      0.35,
+      0.28
+    ],
+    "bbox_center": [
+      7.39,
+      -0.32,
+      4.35
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_187": {
+    "id": 676,
+    "object_tag": "picture",
+    "object_caption": "A vertical picture.",
+    "bbox_extent": [
+      1.22,
+      0.08,
+      0.07
+    ],
+    "bbox_center": [
+      7.45,
+      -0.64,
+      4.88
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_188": {
+    "id": 678,
+    "object_tag": "bed",
+    "object_caption": "A small bed frame.",
+    "bbox_extent": [
+      1.18,
+      0.83,
+      0.26
+    ],
+    "bbox_center": [
+      7.45,
+      0.97,
+      4.69
+    ],
+    "bbox_volume": 0.25
+  },
+  "object_189": {
+    "id": 680,
+    "object_tag": "bed",
+    "object_caption": "headboard of the bed",
+    "bbox_extent": [
+      1.78,
+      0.9,
+      0.67
+    ],
+    "bbox_center": [
+      7.23,
+      1.06,
+      4.72
+    ],
+    "bbox_volume": 1.07
+  },
+  "object_190": {
+    "id": 681,
+    "object_tag": "pillow",
+    "object_caption": "A yellow pillow on the bed.",
+    "bbox_extent": [
+      0.77,
+      0.63,
+      0.4
+    ],
+    "bbox_center": [
+      7.36,
+      0.94,
+      5.13
+    ],
+    "bbox_volume": 0.19
+  },
+  "object_191": {
+    "id": 682,
+    "object_tag": "picture",
+    "object_caption": "A framed picture with a pattern hanging on the wall.",
+    "bbox_extent": [
+      1.99,
+      1.94,
+      0.18
+    ],
+    "bbox_center": [
+      7.51,
+      -0.43,
+      5.46
+    ],
+    "bbox_volume": 0.69
+  },
+  "object_192": {
+    "id": 686,
+    "object_tag": "bed",
+    "object_caption": "A bed with a light green mattress, wooden frame, and two pillows.",
+    "bbox_extent": [
+      2.24,
+      1.92,
+      1.05
+    ],
+    "bbox_center": [
+      6.7,
+      1.12,
+      5.45
+    ],
+    "bbox_volume": 4.52
+  },
+  "object_193": {
+    "id": 688,
+    "object_tag": "pillow",
+    "object_caption": "A yellow pillow on the bed.",
+    "bbox_extent": [
+      0.82,
+      0.82,
+      0.49
+    ],
+    "bbox_center": [
+      7.35,
+      1.01,
+      5.83
+    ],
+    "bbox_volume": 0.33
+  },
+  "object_194": {
+    "id": 699,
+    "object_tag": "cabinet",
+    "object_caption": "A brown wooden nightstand with drawers next to the bed.",
+    "bbox_extent": [
+      1.38,
+      1.26,
+      0.45
+    ],
+    "bbox_center": [
+      7.44,
+      1.14,
+      7.06
+    ],
+    "bbox_volume": 0.78
+  },
+  "object_195": {
+    "id": 701,
+    "object_tag": "lamp",
+    "object_caption": "A small, white, wall-mounted lamp on the wall.",
+    "bbox_extent": [
+      0.94,
+      0.63,
+      0.33
+    ],
+    "bbox_center": [
+      7.44,
+      -0.2,
+      6.91
+    ],
+    "bbox_volume": 0.2
+  },
+  "object_196": {
+    "id": 703,
+    "object_tag": "wall",
+    "object_caption": "A black electric burner on the counter.",
+    "bbox_extent": [
+      5.04,
+      3.85,
+      0.16
+    ],
+    "bbox_center": [
+      7.49,
+      -0.6,
+      5.63
+    ],
+    "bbox_volume": 3.1
+  },
+  "object_197": {
+    "id": 704,
+    "object_tag": "shower curtain",
+    "object_caption": "A shower curtain.",
+    "bbox_extent": [
+      1.86,
+      0.1,
+      0.04
+    ],
+    "bbox_center": [
+      7.55,
+      -0.05,
+      7.62
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_198": {
+    "id": 718,
+    "object_tag": "sofa chair",
+    "object_caption": "A blue sofa chair.",
+    "bbox_extent": [
+      0.84,
+      0.84,
+      0.62
+    ],
+    "bbox_center": [
+      6.36,
+      1.18,
+      7.24
+    ],
+    "bbox_volume": 0.44
+  },
+  "object_199": {
+    "id": 721,
+    "object_tag": "closet door",
+    "object_caption": "A closet door.",
+    "bbox_extent": [
+      2.11,
+      1.68,
+      0.02
+    ],
+    "bbox_center": [
+      6.77,
+      0.13,
+      3.49
+    ],
+    "bbox_volume": 0.07
+  },
+  "object_200": {
+    "id": 723,
+    "object_tag": "cushion",
+    "object_caption": "A light blue cushion is placed on the sofa chair.",
+    "bbox_extent": [
+      0.9,
+      0.77,
+      0.33
+    ],
+    "bbox_center": [
+      6.46,
+      0.96,
+      7.4
+    ],
+    "bbox_volume": 0.23
+  },
+  "object_201": {
+    "id": 726,
+    "object_tag": "closet door",
+    "object_caption": "A white porcelain cup with a blue floral design is on a saucer next to a spoon.",
+    "bbox_extent": [
+      2.36,
+      1.37,
+      0.07
+    ],
+    "bbox_center": [
+      6.9,
+      0.52,
+      3.52
+    ],
+    "bbox_volume": 0.23
+  },
+  "object_202": {
+    "id": 729,
+    "object_tag": "mirror",
+    "object_caption": "A mirror.",
+    "bbox_extent": [
+      1.83,
+      0.33,
+      0.34
+    ],
+    "bbox_center": [
+      6.31,
+      -0.9,
+      7.87
+    ],
+    "bbox_volume": 0.21
+  },
+  "object_203": {
+    "id": 732,
+    "object_tag": "pillow",
+    "object_caption": "A yellow pillow on the bed.",
+    "bbox_extent": [
+      0.72,
+      0.65,
+      0.24
+    ],
+    "bbox_center": [
+      7.35,
+      1.06,
+      5.17
+    ],
+    "bbox_volume": 0.11
+  },
+  "object_204": {
+    "id": 734,
+    "object_tag": "sofa chair",
+    "object_caption": "A blue sofa chair with a dark brown wooden frame.",
+    "bbox_extent": [
+      1.22,
+      1.28,
+      1.04
+    ],
+    "bbox_center": [
+      6.26,
+      1.2,
+      7.28
+    ],
+    "bbox_volume": 1.62
+  },
+  "object_205": {
+    "id": 737,
+    "object_tag": "nightstand",
+    "object_caption": "A nightstand with one drawer and a shelf.",
+    "bbox_extent": [
+      0.68,
+      0.55,
+      0.37
+    ],
+    "bbox_center": [
+      7.44,
+      1.36,
+      4.43
+    ],
+    "bbox_volume": 0.14
+  },
+  "object_206": {
+    "id": 739,
+    "object_tag": "bench",
+    "object_caption": "A dark colored wooden bench in the corner of the room.",
+    "bbox_extent": [
+      0.87,
+      0.68,
+      0.36
+    ],
+    "bbox_center": [
+      5.15,
+      1.38,
+      6.18
+    ],
+    "bbox_volume": 0.21
+  },
+  "object_207": {
+    "id": 740,
+    "object_tag": "window",
+    "object_caption": "A large framed window with a dark brown frame.",
+    "bbox_extent": [
+      2.19,
+      2.3,
+      0.4
+    ],
+    "bbox_center": [
+      5.62,
+      -0.93,
+      7.77
+    ],
+    "bbox_volume": 2.01
+  },
+  "object_208": {
+    "id": 748,
+    "object_tag": "pillow",
+    "object_caption": "A yellow pillow on the bed.",
+    "bbox_extent": [
+      0.7,
+      0.54,
+      0.28
+    ],
+    "bbox_center": [
+      7.32,
+      1.18,
+      5.19
+    ],
+    "bbox_volume": 0.11
+  },
+  "object_209": {
+    "id": 753,
+    "object_tag": "lamp",
+    "object_caption": "A white wall lamp is attached to the wall.",
+    "bbox_extent": [
+      1.09,
+      0.29,
+      0.17
+    ],
+    "bbox_center": [
+      4.78,
+      0.01,
+      7.09
+    ],
+    "bbox_volume": 0.05
+  },
+  "object_210": {
+    "id": 759,
+    "object_tag": "projector screen",
+    "object_caption": "A black projector screen on the wall.",
+    "bbox_extent": [
+      1.33,
+      0.89,
+      0.07
+    ],
+    "bbox_center": [
+      4.76,
+      -0.57,
+      6.68
+    ],
+    "bbox_volume": 0.08
+  },
+  "object_211": {
+    "id": 760,
+    "object_tag": "bed",
+    "object_caption": "A wooden bed frame.",
+    "bbox_extent": [
+      2.09,
+      1.29,
+      0.71
+    ],
+    "bbox_center": [
+      6.84,
+      1.13,
+      5.96
+    ],
+    "bbox_volume": 1.91
+  },
+  "object_212": {
+    "id": 765,
+    "object_tag": "pillow",
+    "object_caption": "A yellow pillow on the bed.",
+    "bbox_extent": [
+      0.52,
+      0.53,
+      0.23
+    ],
+    "bbox_center": [
+      7.33,
+      1.2,
+      5.27
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_213": {
+    "id": 769,
+    "object_tag": "bench",
+    "object_caption": "A small wooden bench.",
+    "bbox_extent": [
+      0.49,
+      0.55,
+      0.4
+    ],
+    "bbox_center": [
+      4.97,
+      1.33,
+      6.38
+    ],
+    "bbox_volume": 0.11
+  },
+  "object_214": {
+    "id": 778,
+    "object_tag": "bed",
+    "object_caption": "A bed with a wooden headboard.",
+    "bbox_extent": [
+      1.85,
+      0.55,
+      0.52
+    ],
+    "bbox_center": [
+      6.71,
+      1.17,
+      6.1
+    ],
+    "bbox_volume": 0.53
+  },
+  "object_215": {
+    "id": 779,
+    "object_tag": "pillow",
+    "object_caption": "A pillow on the bed.",
+    "bbox_extent": [
+      0.65,
+      0.43,
+      0.24
+    ],
+    "bbox_center": [
+      7.27,
+      1.22,
+      5.99
+    ],
+    "bbox_volume": 0.07
+  },
+  "object_216": {
+    "id": 784,
+    "object_tag": "projector screen",
+    "object_caption": "A large, rectangular projector screen mounted on the wall.",
+    "bbox_extent": [
+      1.45,
+      1.06,
+      0.09
+    ],
+    "bbox_center": [
+      4.81,
+      -0.49,
+      6.69
+    ],
+    "bbox_volume": 0.14
+  },
+  "object_217": {
+    "id": 786,
+    "object_tag": "chair",
+    "object_caption": "The leg of a chair.",
+    "bbox_extent": [
+      0.49,
+      0.3,
+      0.09
+    ],
+    "bbox_center": [
+      5.76,
+      1.25,
+      6.22
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_218": {
+    "id": 791,
+    "object_tag": "soap dish",
+    "object_caption": "A bottle of liquor is on the table.",
+    "bbox_extent": [
+      0.48,
+      0.12,
+      0.1
+    ],
+    "bbox_center": [
+      4.86,
+      0.03,
+      6.82
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_219": {
+    "id": 793,
+    "object_tag": "desk",
+    "object_caption": "A small beige desk on the floor.",
+    "bbox_extent": [
+      0.33,
+      0.24,
+      0.15
+    ],
+    "bbox_center": [
+      4.98,
+      1.27,
+      6.53
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_220": {
+    "id": 794,
+    "object_tag": "bed",
+    "object_caption": "The edge of a light blue bed.",
+    "bbox_extent": [
+      1.17,
+      0.29,
+      0.08
+    ],
+    "bbox_center": [
+      6.92,
+      1.34,
+      6.26
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_221": {
+    "id": 798,
+    "object_tag": "soap dish",
+    "object_caption": "A soap dish attached to the wall.",
+    "bbox_extent": [
+      0.87,
+      0.22,
+      0.17
+    ],
+    "bbox_center": [
+      4.84,
+      0.02,
+      7.01
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_222": {
+    "id": 819,
+    "object_tag": "projector screen",
+    "object_caption": "A black projector screen mounted on the wall.",
+    "bbox_extent": [
+      1.28,
+      0.8,
+      0.08
+    ],
+    "bbox_center": [
+      4.86,
+      -0.48,
+      6.68
+    ],
+    "bbox_volume": 0.08
+  },
+  "object_223": {
+    "id": 822,
+    "object_tag": "wall",
+    "object_caption": "A slice of chocolate cake with chocolate frosting on a white plate.",
+    "bbox_extent": [
+      2.2,
+      1.41,
+      0.05
+    ],
+    "bbox_center": [
+      4.8,
+      0.4,
+      6.58
+    ],
+    "bbox_volume": 0.16
+  },
+  "object_224": {
+    "id": 823,
+    "object_tag": "toilet paper holder",
+    "object_caption": "A small, round toilet paper holder mounted on the wall.",
+    "bbox_extent": [
+      0.72,
+      0.27,
+      0.16
+    ],
+    "bbox_center": [
+      4.85,
+      0.08,
+      6.92
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_225": {
+    "id": 824,
+    "object_tag": "projector screen",
+    "object_caption": "A black projector screen on the wall.",
+    "bbox_extent": [
+      1.19,
+      0.84,
+      0.07
+    ],
+    "bbox_center": [
+      4.92,
+      -0.56,
+      6.69
+    ],
+    "bbox_volume": 0.07
+  },
+  "object_226": {
+    "id": 826,
+    "object_tag": "end table",
+    "object_caption": "A purple end table.",
+    "bbox_extent": [
+      0.45,
+      0.18,
+      0.13
+    ],
+    "bbox_center": [
+      5.75,
+      1.38,
+      7.44
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_227": {
+    "id": 830,
+    "object_tag": "window",
+    "object_caption": "A window with a view of the outside.",
+    "bbox_extent": [
+      2.02,
+      1.0,
+      0.32
+    ],
+    "bbox_center": [
+      5.21,
+      -0.6,
+      7.8
+    ],
+    "bbox_volume": 0.65
+  },
+  "object_228": {
+    "id": 831,
+    "object_tag": "bathroom vanity",
+    "object_caption": "A bathroom features a toilet, a white sink with a silver faucet, and a bathroom vanity.",
+    "bbox_extent": [
+      1.77,
+      1.01,
+      0.38
+    ],
+    "bbox_center": [
+      -0.56,
+      0.89,
+      2.75
+    ],
+    "bbox_volume": 0.68
+  },
+  "object_229": {
+    "id": 832,
+    "object_tag": "toilet",
+    "object_caption": "A white toilet is partially visible.",
+    "bbox_extent": [
+      1.19,
+      0.79,
+      0.08
+    ],
+    "bbox_center": [
+      -0.38,
+      0.99,
+      2.83
+    ],
+    "bbox_volume": 0.08
+  },
+  "object_230": {
+    "id": 844,
+    "object_tag": "closet door",
+    "object_caption": "A bathroom with a clear glass shower door and a shower stall.",
+    "bbox_extent": [
+      2.98,
+      0.72,
+      0.61
+    ],
+    "bbox_center": [
+      -0.6,
+      0.21,
+      4.02
+    ],
+    "bbox_volume": 1.31
+  },
+  "object_231": {
+    "id": 851,
+    "object_tag": "floor",
+    "object_caption": "A black suitcase sitting on top of a gray suitcase.",
+    "bbox_extent": [
+      1.85,
+      1.0,
+      0.03
+    ],
+    "bbox_center": [
+      -0.15,
+      1.45,
+      3.39
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_232": {
+    "id": 852,
+    "object_tag": "toilet",
+    "object_caption": "A white toilet with a red seat located in the bathroom.",
+    "bbox_extent": [
+      0.49,
+      0.3,
+      0.11
+    ],
+    "bbox_center": [
+      0.35,
+      1.37,
+      2.97
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_233": {
+    "id": 855,
+    "object_tag": "floor",
+    "object_caption": "A piece of pizza with pepperoni is on a white plate.",
+    "bbox_extent": [
+      1.85,
+      1.01,
+      0.03
+    ],
+    "bbox_center": [
+      -0.15,
+      1.51,
+      3.39
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_234": {
+    "id": 864,
+    "object_tag": "floor",
+    "object_caption": "A couple of slices of pizza sit on top of a paper plate.",
+    "bbox_extent": [
+      1.93,
+      1.04,
+      0.06
+    ],
+    "bbox_center": [
+      -0.11,
+      1.56,
+      3.41
+    ],
+    "bbox_volume": 0.12
+  },
+  "object_235": {
+    "id": 866,
+    "object_tag": "toilet",
+    "object_caption": "A toilet near the bathroom vanity.",
+    "bbox_extent": [
+      0.14,
+      0.07,
+      0.0
+    ],
+    "bbox_center": [
+      0.28,
+      1.7,
+      2.95
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_236": {
+    "id": 871,
+    "object_tag": "sink",
+    "object_caption": "A green wall with a framed picture and two shelves holding various items.",
+    "bbox_extent": [
+      0.66,
+      0.35,
+      0.25
+    ],
+    "bbox_center": [
+      -0.56,
+      0.63,
+      2.76
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_237": {
+    "id": 872,
+    "object_tag": "floor",
+    "object_caption": "A brown teddy bear with a red ribbon is sitting on a chair.",
+    "bbox_extent": [
+      1.68,
+      1.06,
+      0.04
+    ],
+    "bbox_center": [
+      -0.25,
+      1.61,
+      3.41
+    ],
+    "bbox_volume": 0.07
+  },
+  "object_238": {
+    "id": 892,
+    "object_tag": "closet wall",
+    "object_caption": "A wooden closet wall panel.",
+    "bbox_extent": [
+      1.89,
+      0.59,
+      0.22
+    ],
+    "bbox_center": [
+      1.04,
+      0.32,
+      3.88
+    ],
+    "bbox_volume": 0.25
+  },
+  "object_239": {
+    "id": 896,
+    "object_tag": "mirror",
+    "object_caption": "A mirror above the bathroom sink.",
+    "bbox_extent": [
+      1.79,
+      0.27,
+      0.12
+    ],
+    "bbox_center": [
+      0.4,
+      -0.51,
+      0.85
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_240": {
+    "id": 898,
+    "object_tag": "cabinet",
+    "object_caption": "A light brown wooden cabinet with two doors below a sink and next to a white bathtub.",
+    "bbox_extent": [
+      1.48,
+      0.67,
+      0.37
+    ],
+    "bbox_center": [
+      0.34,
+      1.06,
+      0.99
+    ],
+    "bbox_volume": 0.37
+  },
+  "object_241": {
+    "id": 900,
+    "object_tag": "sink",
+    "object_caption": "A display of chocolate cupcakes with white frosting and candy decorations on a table.",
+    "bbox_extent": [
+      0.24,
+      0.11,
+      0.08
+    ],
+    "bbox_center": [
+      0.37,
+      0.41,
+      0.85
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_242": {
+    "id": 903,
+    "object_tag": "mirror",
+    "object_caption": "A tall mirror mounted above a sink.",
+    "bbox_extent": [
+      1.83,
+      0.35,
+      0.09
+    ],
+    "bbox_center": [
+      0.48,
+      -0.72,
+      0.91
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_243": {
+    "id": 909,
+    "object_tag": "sink",
+    "object_caption": "A white bathroom sink.",
+    "bbox_extent": [
+      0.83,
+      0.76,
+      0.11
+    ],
+    "bbox_center": [
+      1.68,
+      0.1,
+      -3.09
+    ],
+    "bbox_volume": 0.07
+  },
+  "object_244": {
+    "id": 912,
+    "object_tag": "window",
+    "object_caption": "A window",
+    "bbox_extent": [
+      3.9,
+      2.57,
+      0.0
+    ],
+    "bbox_center": [
+      1.7,
+      -3.02,
+      -9.88
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_245": {
+    "id": 914,
+    "object_tag": "sink",
+    "object_caption": "A white sink.",
+    "bbox_extent": [
+      0.56,
+      0.31,
+      0.11
+    ],
+    "bbox_center": [
+      0.35,
+      0.44,
+      0.96
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_246": {
+    "id": 916,
+    "object_tag": "soap dish",
+    "object_caption": "A soap dish on the sink.",
+    "bbox_extent": [
+      0.16,
+      0.09,
+      0.04
+    ],
+    "bbox_center": [
+      0.1,
+      0.37,
+      0.85
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_247": {
+    "id": 919,
+    "object_tag": "sink",
+    "object_caption": "A small white sink.",
+    "bbox_extent": [
+      0.83,
+      0.77,
+      0.1
+    ],
+    "bbox_center": [
+      1.68,
+      -0.09,
+      -3.08
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_248": {
+    "id": 920,
+    "object_tag": "soap dispenser",
+    "object_caption": "A soap dispenser on the wall.",
+    "bbox_extent": [
+      0.19,
+      0.11,
+      0.05
+    ],
+    "bbox_center": [
+      0.33,
+      0.29,
+      0.84
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_249": {
+    "id": 922,
+    "object_tag": "sink",
+    "object_caption": "A white bathroom sink.",
+    "bbox_extent": [
+      0.54,
+      0.3,
+      0.13
+    ],
+    "bbox_center": [
+      0.36,
+      0.52,
+      0.97
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_250": {
+    "id": 923,
+    "object_tag": "soap dish",
+    "object_caption": "A pink soap dish.",
+    "bbox_extent": [
+      0.22,
+      0.1,
+      0.05
+    ],
+    "bbox_center": [
+      0.09,
+      0.46,
+      0.83
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_251": {
+    "id": 927,
+    "object_tag": "toilet",
+    "object_caption": "A black laptop is sitting on top of a white desk.",
+    "bbox_extent": [
+      0.45,
+      0.35,
+      0.21
+    ],
+    "bbox_center": [
+      -0.57,
+      1.45,
+      0.81
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_252": {
+    "id": 930,
+    "object_tag": "shower curtain",
+    "object_caption": "A black leather wallet.",
+    "bbox_extent": [
+      1.01,
+      0.29,
+      0.02
+    ],
+    "bbox_center": [
+      -0.87,
+      1.02,
+      0.77
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_253": {
+    "id": 932,
+    "object_tag": "mirror",
+    "object_caption": "A rectangular mirror.",
+    "bbox_extent": [
+      3.07,
+      1.86,
+      0.0
+    ],
+    "bbox_center": [
+      1.61,
+      -2.84,
+      -7.76
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_254": {
+    "id": 934,
+    "object_tag": "sink",
+    "object_caption": "White bathroom sink.",
+    "bbox_extent": [
+      0.48,
+      0.27,
+      0.15
+    ],
+    "bbox_center": [
+      0.34,
+      0.59,
+      0.97
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_255": {
+    "id": 935,
+    "object_tag": "soap dish",
+    "object_caption": "Small dish of soap.",
+    "bbox_extent": [
+      0.26,
+      0.08,
+      0.06
+    ],
+    "bbox_center": [
+      0.11,
+      0.53,
+      0.84
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_256": {
+    "id": 937,
+    "object_tag": "sink",
+    "object_caption": "Sink in a mirror reflection.",
+    "bbox_extent": [
+      0.73,
+      0.66,
+      0.08
+    ],
+    "bbox_center": [
+      1.63,
+      -0.02,
+      -3.1
+    ],
+    "bbox_volume": 0.04
+  },
+  "object_257": {
+    "id": 940,
+    "object_tag": "mirror",
+    "object_caption": "Mirror above a sink.",
+    "bbox_extent": [
+      3.1,
+      2.08,
+      0.0
+    ],
+    "bbox_center": [
+      1.71,
+      -2.84,
+      -8.0
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_258": {
+    "id": 944,
+    "object_tag": "soap dish",
+    "object_caption": "A soap dish on the right wall.",
+    "bbox_extent": [
+      0.22,
+      0.08,
+      0.06
+    ],
+    "bbox_center": [
+      0.08,
+      0.59,
+      0.83
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_259": {
+    "id": 946,
+    "object_tag": "mirror",
+    "object_caption": "A mirror above the sink.",
+    "bbox_extent": [
+      3.25,
+      2.19,
+      0.0
+    ],
+    "bbox_center": [
+      1.79,
+      -2.89,
+      -8.26
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_260": {
+    "id": 951,
+    "object_tag": "sink",
+    "object_caption": "A black electric burner on a white kitchen counter.",
+    "bbox_extent": [
+      0.23,
+      0.15,
+      0.19
+    ],
+    "bbox_center": [
+      0.2,
+      0.65,
+      0.9
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_261": {
+    "id": 954,
+    "object_tag": "mirror",
+    "object_caption": "A rectangular mirror.",
+    "bbox_extent": [
+      3.61,
+      2.55,
+      0.0
+    ],
+    "bbox_center": [
+      1.88,
+      -2.98,
+      -8.54
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_262": {
+    "id": 957,
+    "object_tag": "picture",
+    "object_caption": "A framed, colorful abstract painting with orange, red, and yellow colors hanging on the wall.",
+    "bbox_extent": [
+      1.02,
+      0.88,
+      0.13
+    ],
+    "bbox_center": [
+      0.27,
+      -0.55,
+      -0.74
+    ],
+    "bbox_volume": 0.12
+  },
+  "object_263": {
+    "id": 959,
+    "object_tag": "sink",
+    "object_caption": "A white sink above the washing machine.",
+    "bbox_extent": [
+      0.69,
+      0.58,
+      0.08
+    ],
+    "bbox_center": [
+      1.64,
+      0.16,
+      -3.13
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_264": {
+    "id": 962,
+    "object_tag": "window",
+    "object_caption": "A window above the sink.",
+    "bbox_extent": [
+      2.91,
+      2.73,
+      0.0
+    ],
+    "bbox_center": [
+      2.09,
+      -3.47,
+      -8.84
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_265": {
+    "id": 965,
+    "object_tag": "sink",
+    "object_caption": "A light blue sink on top of the cabinets.",
+    "bbox_extent": [
+      0.67,
+      0.66,
+      0.09
+    ],
+    "bbox_center": [
+      1.62,
+      0.22,
+      -3.12
+    ],
+    "bbox_volume": 0.04
+  },
+  "object_266": {
+    "id": 969,
+    "object_tag": "bench",
+    "object_caption": "A dark gray bathtub in the corner of the room.",
+    "bbox_extent": [
+      0.68,
+      0.52,
+      0.27
+    ],
+    "bbox_center": [
+      0.53,
+      1.48,
+      -0.79
+    ],
+    "bbox_volume": 0.1
+  },
+  "object_267": {
+    "id": 970,
+    "object_tag": "window",
+    "object_caption": "A window with a green trim.",
+    "bbox_extent": [
+      3.1,
+      2.79,
+      0.0
+    ],
+    "bbox_center": [
+      2.26,
+      -2.87,
+      -9.13
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_268": {
+    "id": 973,
+    "object_tag": "sink",
+    "object_caption": "A person is sitting at a table covered with items, including plates, a laptop, and a glass of wine.",
+    "bbox_extent": [
+      0.63,
+      0.69,
+      0.11
+    ],
+    "bbox_center": [
+      1.63,
+      0.28,
+      -3.12
+    ],
+    "bbox_volume": 0.05
+  },
+  "object_269": {
+    "id": 975,
+    "object_tag": "toilet",
+    "object_caption": "A small gray stool is located on the floor.",
+    "bbox_extent": [
+      0.88,
+      0.53,
+      0.44
+    ],
+    "bbox_center": [
+      0.22,
+      1.4,
+      -0.74
+    ],
+    "bbox_volume": 0.21
+  },
+  "object_270": {
+    "id": 977,
+    "object_tag": "window",
+    "object_caption": "A window with a view of the outside sky.",
+    "bbox_extent": [
+      2.23,
+      2.18,
+      0.32
+    ],
+    "bbox_center": [
+      1.84,
+      -1.06,
+      -3.28
+    ],
+    "bbox_volume": 1.56
+  },
+  "object_271": {
+    "id": 981,
+    "object_tag": "sink",
+    "object_caption": "A black suitcase is open on a luggage rack.",
+    "bbox_extent": [
+      0.59,
+      0.65,
+      0.11
+    ],
+    "bbox_center": [
+      1.63,
+      0.35,
+      -3.13
+    ],
+    "bbox_volume": 0.04
+  },
+  "object_272": {
+    "id": 986,
+    "object_tag": "bathtub",
+    "object_caption": "A dark toilet bowl.",
+    "bbox_extent": [
+      0.8,
+      0.31,
+      0.2
+    ],
+    "bbox_center": [
+      0.19,
+      1.33,
+      -0.87
+    ],
+    "bbox_volume": 0.05
+  },
+  "object_273": {
+    "id": 988,
+    "object_tag": "sink",
+    "object_caption": "A white sink.",
+    "bbox_extent": [
+      0.63,
+      0.63,
+      0.11
+    ],
+    "bbox_center": [
+      1.61,
+      0.49,
+      -3.13
+    ],
+    "bbox_volume": 0.04
+  },
+  "object_274": {
+    "id": 989,
+    "object_tag": "oven",
+    "object_caption": "A white washing machine under the countertop.",
+    "bbox_extent": [
+      1.29,
+      0.86,
+      0.54
+    ],
+    "bbox_center": [
+      2.24,
+      1.17,
+      -3.05
+    ],
+    "bbox_volume": 0.6
+  },
+  "object_275": {
+    "id": 991,
+    "object_tag": "soap dish",
+    "object_caption": "A white soap dish and a small clear bottle on the counter.",
+    "bbox_extent": [
+      0.34,
+      0.19,
+      0.13
+    ],
+    "bbox_center": [
+      2.35,
+      0.47,
+      -3.28
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_276": {
+    "id": 994,
+    "object_tag": "mirror",
+    "object_caption": "A tall, rectangular mirror with a thin frame.",
+    "bbox_extent": [
+      6.58,
+      1.42,
+      0.0
+    ],
+    "bbox_center": [
+      3.21,
+      -3.77,
+      -13.81
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_277": {
+    "id": 995,
+    "object_tag": "sink",
+    "object_caption": "A white sink.",
+    "bbox_extent": [
+      0.59,
+      0.59,
+      0.16
+    ],
+    "bbox_center": [
+      1.61,
+      0.63,
+      -3.16
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_278": {
+    "id": 998,
+    "object_tag": "wall",
+    "object_caption": "A black ceiling fan with four blades hangs from the ceiling.",
+    "bbox_extent": [
+      2.65,
+      1.92,
+      0.09
+    ],
+    "bbox_center": [
+      -0.16,
+      0.25,
+      -0.87
+    ],
+    "bbox_volume": 0.46
+  },
+  "object_279": {
+    "id": 1008,
+    "object_tag": "soap dish",
+    "object_caption": "A white soap dish and a blue tissue box on top of the bathroom vanity.",
+    "bbox_extent": [
+      0.34,
+      0.17,
+      0.13
+    ],
+    "bbox_center": [
+      2.37,
+      0.52,
+      -3.28
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_280": {
+    "id": 1010,
+    "object_tag": "window",
+    "object_caption": "A window with a green frame.",
+    "bbox_extent": [
+      1.83,
+      0.72,
+      0.3
+    ],
+    "bbox_center": [
+      3.18,
+      -0.67,
+      -3.33
+    ],
+    "bbox_volume": 0.4
+  },
+  "object_281": {
+    "id": 1012,
+    "object_tag": "mirror",
+    "object_caption": "A window with a green frame.",
+    "bbox_extent": [
+      6.2,
+      1.14,
+      0.0
+    ],
+    "bbox_center": [
+      6.75,
+      -3.68,
+      -11.13
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_282": {
+    "id": 1015,
+    "object_tag": "chair",
+    "object_caption": "A folded wooden chair with a backrest is near the table.",
+    "bbox_extent": [
+      1.34,
+      0.8,
+      0.5
+    ],
+    "bbox_center": [
+      3.3,
+      1.14,
+      -2.51
+    ],
+    "bbox_volume": 0.54
+  },
+  "object_283": {
+    "id": 1016,
+    "object_tag": "closet door",
+    "object_caption": "A light-colored wooden closet door with two black handles.",
+    "bbox_extent": [
+      2.82,
+      0.97,
+      0.44
+    ],
+    "bbox_center": [
+      4.91,
+      0.33,
+      -3.0
+    ],
+    "bbox_volume": 1.2
+  },
+  "object_284": {
+    "id": 1019,
+    "object_tag": "chair",
+    "object_caption": "A wooden chair with a high backrest.",
+    "bbox_extent": [
+      0.97,
+      0.44,
+      0.16
+    ],
+    "bbox_center": [
+      3.83,
+      0.83,
+      -2.83
+    ],
+    "bbox_volume": 0.07
+  },
+  "object_285": {
+    "id": 1022,
+    "object_tag": "dining table",
+    "object_caption": "A rectangular wooden dining table with a chair attached to the closet wall.",
+    "bbox_extent": [
+      1.65,
+      1.0,
+      0.73
+    ],
+    "bbox_center": [
+      3.87,
+      1.18,
+      -2.27
+    ],
+    "bbox_volume": 1.2
+  },
+  "object_286": {
+    "id": 1023,
+    "object_tag": "counter",
+    "object_caption": "A dark countertop.",
+    "bbox_extent": [
+      1.93,
+      0.67,
+      0.09
+    ],
+    "bbox_center": [
+      1.72,
+      0.61,
+      -3.13
+    ],
+    "bbox_volume": 0.12
+  },
+  "object_287": {
+    "id": 1024,
+    "object_tag": "window",
+    "object_caption": "A large rectangular window with a brown frame and a view of the outside.",
+    "bbox_extent": [
+      2.46,
+      2.06,
+      0.41
+    ],
+    "bbox_center": [
+      3.91,
+      -0.82,
+      -3.37
+    ],
+    "bbox_volume": 2.08
+  },
+  "object_288": {
+    "id": 1027,
+    "object_tag": "projector screen",
+    "object_caption": "A rectangular projector screen.",
+    "bbox_extent": [
+      1.79,
+      1.82,
+      0.31
+    ],
+    "bbox_center": [
+      1.84,
+      -0.82,
+      -3.3
+    ],
+    "bbox_volume": 1.01
+  },
+  "object_289": {
+    "id": 1028,
+    "object_tag": "sink",
+    "object_caption": "A white rectangular sink with a silver faucet is in the bathroom.",
+    "bbox_extent": [
+      0.62,
+      0.66,
+      0.46
+    ],
+    "bbox_center": [
+      1.63,
+      0.83,
+      -3.15
+    ],
+    "bbox_volume": 0.19
+  },
+  "object_290": {
+    "id": 1041,
+    "object_tag": "couch",
+    "object_caption": "A dark gray sofa chair with pillows, located in the left corner of the room.",
+    "bbox_extent": [
+      1.84,
+      1.29,
+      0.91
+    ],
+    "bbox_center": [
+      4.76,
+      1.21,
+      -1.97
+    ],
+    "bbox_volume": 2.16
+  },
+  "object_291": {
+    "id": 1046,
+    "object_tag": "soap dish",
+    "object_caption": "A soap dish on a countertop.",
+    "bbox_extent": [
+      0.34,
+      0.16,
+      0.07
+    ],
+    "bbox_center": [
+      2.35,
+      0.61,
+      -3.28
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_292": {
+    "id": 1064,
+    "object_tag": "soap dish",
+    "object_caption": "A pink soap dish on the countertop.",
+    "bbox_extent": [
+      0.32,
+      0.15,
+      0.06
+    ],
+    "bbox_center": [
+      2.34,
+      0.69,
+      -3.27
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_293": {
+    "id": 1066,
+    "object_tag": "coffee table",
+    "object_caption": "A wooden table in the middle of the room.",
+    "bbox_extent": [
+      1.39,
+      0.98,
+      0.56
+    ],
+    "bbox_center": [
+      3.87,
+      1.16,
+      -2.29
+    ],
+    "bbox_volume": 0.76
+  },
+  "object_294": {
+    "id": 1076,
+    "object_tag": "table",
+    "object_caption": "A wooden table.",
+    "bbox_extent": [
+      1.35,
+      1.01,
+      0.68
+    ],
+    "bbox_center": [
+      3.84,
+      1.21,
+      -2.31
+    ],
+    "bbox_volume": 0.93
+  },
+  "object_295": {
+    "id": 1078,
+    "object_tag": "soap dish",
+    "object_caption": "A pink soap dish.",
+    "bbox_extent": [
+      0.32,
+      0.15,
+      0.05
+    ],
+    "bbox_center": [
+      2.33,
+      0.75,
+      -3.26
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_296": {
+    "id": 1085,
+    "object_tag": "soap dish",
+    "object_caption": "A blue and pink soap dish on a counter.",
+    "bbox_extent": [
+      0.33,
+      0.15,
+      0.03
+    ],
+    "bbox_center": [
+      2.32,
+      0.82,
+      -3.26
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_297": {
+    "id": 1086,
+    "object_tag": "dining table",
+    "object_caption": "A rectangular dining table.",
+    "bbox_extent": [
+      1.3,
+      0.75,
+      0.12
+    ],
+    "bbox_center": [
+      3.81,
+      1.08,
+      -2.41
+    ],
+    "bbox_volume": 0.12
+  },
+  "object_298": {
+    "id": 1092,
+    "object_tag": "dining table",
+    "object_caption": "A rectangular dining table.",
+    "bbox_extent": [
+      1.41,
+      0.81,
+      0.05
+    ],
+    "bbox_center": [
+      3.89,
+      1.13,
+      -2.55
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_299": {
+    "id": 1093,
+    "object_tag": "coffee table",
+    "object_caption": "A black coffee table.",
+    "bbox_extent": [
+      0.86,
+      0.53,
+      0.08
+    ],
+    "bbox_center": [
+      2.4,
+      0.88,
+      -3.26
+    ],
+    "bbox_volume": 0.04
+  },
+  "object_300": {
+    "id": 1099,
+    "object_tag": "table",
+    "object_caption": "A light brown wooden table.",
+    "bbox_extent": [
+      1.04,
+      0.59,
+      0.03
+    ],
+    "bbox_center": [
+      4.09,
+      1.14,
+      -2.65
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_301": {
+    "id": 1104,
+    "object_tag": "chair",
+    "object_caption": "A dark green stool.",
+    "bbox_extent": [
+      0.75,
+      0.45,
+      0.23
+    ],
+    "bbox_center": [
+      4.91,
+      1.18,
+      -2.51
+    ],
+    "bbox_volume": 0.08
+  },
+  "object_302": {
+    "id": 1105,
+    "object_tag": "table",
+    "object_caption": "A table is partially visible near the stool.",
+    "bbox_extent": [
+      0.61,
+      0.31,
+      0.07
+    ],
+    "bbox_center": [
+      4.28,
+      1.18,
+      -2.69
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_303": {
+    "id": 1116,
+    "object_tag": "sofa chair",
+    "object_caption": "The top of a dark gray sofa chair.",
+    "bbox_extent": [
+      1.44,
+      0.61,
+      0.56
+    ],
+    "bbox_center": [
+      5.09,
+      1.21,
+      -1.95
+    ],
+    "bbox_volume": 0.49
+  },
+  "object_304": {
+    "id": 1126,
+    "object_tag": "sink",
+    "object_caption": "A white kitchen sink.",
+    "bbox_extent": [
+      0.56,
+      0.34,
+      0.21
+    ],
+    "bbox_center": [
+      1.54,
+      0.9,
+      -3.24
+    ],
+    "bbox_volume": 0.04
+  },
+  "object_305": {
+    "id": 1127,
+    "object_tag": "cabinet",
+    "object_caption": "A wooden cabinet on the wall.",
+    "bbox_extent": [
+      0.89,
+      0.78,
+      0.32
+    ],
+    "bbox_center": [
+      0.51,
+      -0.38,
+      -3.13
+    ],
+    "bbox_volume": 0.22
+  },
+  "object_306": {
+    "id": 1128,
+    "object_tag": "cabinet",
+    "object_caption": "A light pink kitchen cabinet.",
+    "bbox_extent": [
+      1.46,
+      0.76,
+      0.05
+    ],
+    "bbox_center": [
+      0.33,
+      1.1,
+      -2.88
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_307": {
+    "id": 1129,
+    "object_tag": "cabinet",
+    "object_caption": "A light pink door cabinet.",
+    "bbox_extent": [
+      0.81,
+      0.29,
+      0.09
+    ],
+    "bbox_center": [
+      -0.33,
+      -0.45,
+      -2.89
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_308": {
+    "id": 1130,
+    "object_tag": "stove",
+    "object_caption": "A black stovetop with multiple burners on the counter.",
+    "bbox_extent": [
+      0.97,
+      0.64,
+      0.18
+    ],
+    "bbox_center": [
+      0.23,
+      0.72,
+      -3.13
+    ],
+    "bbox_volume": 0.11
+  },
+  "object_309": {
+    "id": 1131,
+    "object_tag": "refrigerator",
+    "object_caption": "A white refrigerator with two doors and a black handle.",
+    "bbox_extent": [
+      2.55,
+      0.82,
+      0.12
+    ],
+    "bbox_center": [
+      -0.3,
+      0.52,
+      -2.21
+    ],
+    "bbox_volume": 0.25
+  },
+  "object_310": {
+    "id": 1132,
+    "object_tag": "closet door",
+    "object_caption": "A door.",
+    "bbox_extent": [
+      2.46,
+      0.68,
+      0.08
+    ],
+    "bbox_center": [
+      -0.61,
+      0.55,
+      -1.58
+    ],
+    "bbox_volume": 0.13
+  },
+  "object_311": {
+    "id": 1133,
+    "object_tag": "cabinet",
+    "object_caption": "A brown cabinet with open shelves is on the wall above the stove and range hood.",
+    "bbox_extent": [
+      1.0,
+      0.7,
+      0.4
+    ],
+    "bbox_center": [
+      0.55,
+      -0.32,
+      -3.23
+    ],
+    "bbox_volume": 0.28
+  },
+  "object_312": {
+    "id": 1134,
+    "object_tag": "sink",
+    "object_caption": "A black sink.",
+    "bbox_extent": [
+      0.21,
+      0.12,
+      0.04
+    ],
+    "bbox_center": [
+      1.37,
+      0.91,
+      -3.25
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_313": {
+    "id": 1136,
+    "object_tag": "cabinet",
+    "object_caption": "The lower cabinet below the stovetop.",
+    "bbox_extent": [
+      1.64,
+      0.97,
+      0.06
+    ],
+    "bbox_center": [
+      0.27,
+      1.07,
+      -2.86
+    ],
+    "bbox_volume": 0.1
+  },
+  "object_314": {
+    "id": 1137,
+    "object_tag": "cabinet",
+    "object_caption": "A brown wooden cabinet above the counter.",
+    "bbox_extent": [
+      0.97,
+      0.4,
+      0.1
+    ],
+    "bbox_center": [
+      -0.44,
+      -0.48,
+      -2.71
+    ],
+    "bbox_volume": 0.04
+  },
+  "object_315": {
+    "id": 1138,
+    "object_tag": "cabinet",
+    "object_caption": "Cabinet below the counter.",
+    "bbox_extent": [
+      1.05,
+      0.45,
+      0.33
+    ],
+    "bbox_center": [
+      -0.39,
+      1.22,
+      -2.72
+    ],
+    "bbox_volume": 0.16
+  },
+  "object_316": {
+    "id": 1140,
+    "object_tag": "microwave",
+    "object_caption": "A white microwave above the oven.",
+    "bbox_extent": [
+      0.72,
+      0.59,
+      0.45
+    ],
+    "bbox_center": [
+      0.72,
+      -0.12,
+      -1.7
+    ],
+    "bbox_volume": 0.19
+  },
+  "object_317": {
+    "id": 1143,
+    "object_tag": "oven",
+    "object_caption": "A blue oven with a glass door and a black handle.",
+    "bbox_extent": [
+      1.24,
+      1.07,
+      0.47
+    ],
+    "bbox_center": [
+      0.58,
+      0.47,
+      -1.65
+    ],
+    "bbox_volume": 0.62
+  },
+  "object_318": {
+    "id": 1144,
+    "object_tag": "cabinet",
+    "object_caption": "A light brown cabinet beneath the counter.",
+    "bbox_extent": [
+      1.4,
+      0.79,
+      0.08
+    ],
+    "bbox_center": [
+      0.02,
+      1.11,
+      -2.82
+    ],
+    "bbox_volume": 0.09
+  },
+  "object_319": {
+    "id": 1146,
+    "object_tag": "closet door",
+    "object_caption": "A brown wooden closet door next to the oven and refrigerator with metal handles.",
+    "bbox_extent": [
+      2.6,
+      1.03,
+      0.16
+    ],
+    "bbox_center": [
+      -0.55,
+      0.55,
+      -1.55
+    ],
+    "bbox_volume": 0.43
+  },
+  "object_320": {
+    "id": 1148,
+    "object_tag": "cabinet",
+    "object_caption": "A brown cabinet above the counter.",
+    "bbox_extent": [
+      0.81,
+      0.41,
+      0.08
+    ],
+    "bbox_center": [
+      -0.31,
+      -0.51,
+      -2.96
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_321": {
+    "id": 1149,
+    "object_tag": "cabinet",
+    "object_caption": "A light brown cabinet under the oven.",
+    "bbox_extent": [
+      0.89,
+      0.49,
+      0.08
+    ],
+    "bbox_center": [
+      0.32,
+      1.06,
+      -1.83
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_322": {
+    "id": 1153,
+    "object_tag": "stove",
+    "object_caption": "A black stove top with five burners.",
+    "bbox_extent": [
+      0.88,
+      0.6,
+      0.16
+    ],
+    "bbox_center": [
+      0.17,
+      0.84,
+      -3.11
+    ],
+    "bbox_volume": 0.08
+  },
+  "object_323": {
+    "id": 1156,
+    "object_tag": "closet door",
+    "object_caption": "A wooden cabinet with a glass door.",
+    "bbox_extent": [
+      0.92,
+      0.63,
+      0.31
+    ],
+    "bbox_center": [
+      0.01,
+      -0.31,
+      -3.18
+    ],
+    "bbox_volume": 0.18
+  },
+  "object_324": {
+    "id": 1163,
+    "object_tag": "stove",
+    "object_caption": "A black stove on a counter.",
+    "bbox_extent": [
+      0.7,
+      0.67,
+      0.43
+    ],
+    "bbox_center": [
+      -0.03,
+      0.97,
+      -2.98
+    ],
+    "bbox_volume": 0.2
+  },
+  "object_325": {
+    "id": 1168,
+    "object_tag": "stove",
+    "object_caption": "The stovetop of the stove.",
+    "bbox_extent": [
+      0.45,
+      0.37,
+      0.19
+    ],
+    "bbox_center": [
+      -0.12,
+      0.91,
+      -2.98
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_326": {
+    "id": 1179,
+    "object_tag": "kitchen counter",
+    "object_caption": "A black counter.",
+    "bbox_extent": [
+      1.08,
+      0.77,
+      0.35
+    ],
+    "bbox_center": [
+      -0.63,
+      0.95,
+      -2.96
+    ],
+    "bbox_volume": 0.29
+  },
+  "object_327": {
+    "id": 1187,
+    "object_tag": "closet wall",
+    "object_caption": "A wooden cabinet with a handle.",
+    "bbox_extent": [
+      0.88,
+      0.48,
+      0.16
+    ],
+    "bbox_center": [
+      -0.4,
+      -0.27,
+      -2.88
+    ],
+    "bbox_volume": 0.07
+  },
+  "object_328": {
+    "id": 1193,
+    "object_tag": "cabinet",
+    "object_caption": "A brown cabinet outlined in pink.",
+    "bbox_extent": [
+      1.17,
+      0.73,
+      0.02
+    ],
+    "bbox_center": [
+      -0.6,
+      -0.05,
+      -1.6
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_329": {
+    "id": 1194,
+    "object_tag": "picture",
+    "object_caption": "A long narrow picture on the wall.",
+    "bbox_extent": [
+      0.78,
+      0.85,
+      0.06
+    ],
+    "bbox_center": [
+      1.98,
+      -1.57,
+      5.06
+    ],
+    "bbox_volume": 0.04
+  },
+  "object_330": {
+    "id": 1195,
+    "object_tag": "mirror",
+    "object_caption": "A small mirror on the wall.",
+    "bbox_extent": [
+      2.01,
+      1.0,
+      0.0
+    ],
+    "bbox_center": [
+      1.54,
+      -2.59,
+      9.57
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_331": {
+    "id": 1197,
+    "object_tag": "storage bin",
+    "object_caption": "A large white storage bin.",
+    "bbox_extent": [
+      1.06,
+      0.73,
+      0.25
+    ],
+    "bbox_center": [
+      0.95,
+      0.37,
+      -1.35
+    ],
+    "bbox_volume": 0.19
+  },
+  "object_332": {
+    "id": 1201,
+    "object_tag": "mirror",
+    "object_caption": "A small mirror inside of the bathroom.",
+    "bbox_extent": [
+      1.7,
+      0.81,
+      0.0
+    ],
+    "bbox_center": [
+      1.34,
+      -2.53,
+      8.31
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_333": {
+    "id": 1202,
+    "object_tag": "fireplace",
+    "object_caption": "A black fireplace.",
+    "bbox_extent": [
+      0.71,
+      0.35,
+      0.18
+    ],
+    "bbox_center": [
+      0.82,
+      1.41,
+      0.54
+    ],
+    "bbox_volume": 0.04
+  },
+  "object_334": {
+    "id": 1203,
+    "object_tag": "tv stand",
+    "object_caption": "A TV stand with a decorative design.",
+    "bbox_extent": [
+      0.82,
+      0.52,
+      0.41
+    ],
+    "bbox_center": [
+      0.73,
+      1.33,
+      0.56
+    ],
+    "bbox_volume": 0.17
+  },
+  "object_335": {
+    "id": 1209,
+    "object_tag": "bed",
+    "object_caption": "A light blue colored bed.",
+    "bbox_extent": [
+      0.88,
+      0.5,
+      0.26
+    ],
+    "bbox_center": [
+      2.78,
+      1.24,
+      0.99
+    ],
+    "bbox_volume": 0.11
+  },
+  "object_336": {
+    "id": 1212,
+    "object_tag": "mirror",
+    "object_caption": "A rectangular mirror on the wall.",
+    "bbox_extent": [
+      1.84,
+      0.99,
+      0.0
+    ],
+    "bbox_center": [
+      1.21,
+      -2.56,
+      8.82
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_337": {
+    "id": 1213,
+    "object_tag": "soap dish",
+    "object_caption": "A translucent soap dish.",
+    "bbox_extent": [
+      0.21,
+      0.15,
+      0.12
+    ],
+    "bbox_center": [
+      0.65,
+      1.14,
+      0.61
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_338": {
+    "id": 1218,
+    "object_tag": "soap dish",
+    "object_caption": "A bottle of cleaning fluid sits atop a white toilet tank.",
+    "bbox_extent": [
+      0.22,
+      0.15,
+      0.13
+    ],
+    "bbox_center": [
+      0.65,
+      1.22,
+      0.61
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_339": {
+    "id": 1220,
+    "object_tag": "dresser",
+    "object_caption": "A beige desk with a silver knob.",
+    "bbox_extent": [
+      0.55,
+      0.34,
+      0.21
+    ],
+    "bbox_center": [
+      0.66,
+      1.28,
+      0.6
+    ],
+    "bbox_volume": 0.04
+  },
+  "object_340": {
+    "id": 1222,
+    "object_tag": "coffee table",
+    "object_caption": "A coffee table.",
+    "bbox_extent": [
+      1.26,
+      0.61,
+      0.52
+    ],
+    "bbox_center": [
+      3.92,
+      1.34,
+      1.39
+    ],
+    "bbox_volume": 0.4
+  },
+  "object_341": {
+    "id": 1227,
+    "object_tag": "lamp",
+    "object_caption": "A white floor lamp with a white or light blue shade.",
+    "bbox_extent": [
+      2.53,
+      0.93,
+      0.75
+    ],
+    "bbox_center": [
+      5.33,
+      0.56,
+      2.6
+    ],
+    "bbox_volume": 1.76
+  },
+  "object_342": {
+    "id": 1232,
+    "object_tag": "lamp",
+    "object_caption": "A framed picture above a fireplace mantel with decorations.",
+    "bbox_extent": [
+      1.13,
+      0.37,
+      0.04
+    ],
+    "bbox_center": [
+      5.71,
+      0.17,
+      2.69
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_343": {
+    "id": 1233,
+    "object_tag": "chair",
+    "object_caption": "A purple chair with a desk in front of it.",
+    "bbox_extent": [
+      0.63,
+      0.5,
+      0.07
+    ],
+    "bbox_center": [
+      0.97,
+      -0.25,
+      6.84
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_344": {
+    "id": 1235,
+    "object_tag": "wall",
+    "object_caption": "A laptop and a notebook are on a desk.",
+    "bbox_extent": [
+      3.5,
+      2.41,
+      0.04
+    ],
+    "bbox_center": [
+      4.76,
+      -0.93,
+      2.55
+    ],
+    "bbox_volume": 0.34
+  },
+  "object_345": {
+    "id": 1236,
+    "object_tag": "coffee table",
+    "object_caption": "A coffee table; light green with a dark shelf or brown.",
+    "bbox_extent": [
+      1.28,
+      0.76,
+      0.45
+    ],
+    "bbox_center": [
+      4.03,
+      1.38,
+      1.34
+    ],
+    "bbox_volume": 0.44
+  },
+  "object_346": {
+    "id": 1237,
+    "object_tag": "sofa chair",
+    "object_caption": "A gray or brown sofa chair or armchair, sometimes with a green or brown frame or outline, and possibly with light gray or green cushions.",
+    "bbox_extent": [
+      1.23,
+      1.33,
+      1.16
+    ],
+    "bbox_center": [
+      5.29,
+      1.2,
+      1.25
+    ],
+    "bbox_volume": 1.9
+  },
+  "object_347": {
+    "id": 1263,
+    "object_tag": "picture",
+    "object_caption": "A framed picture of people hanging on the wall.",
+    "bbox_extent": [
+      1.97,
+      1.47,
+      0.14
+    ],
+    "bbox_center": [
+      7.49,
+      -0.46,
+      0.85
+    ],
+    "bbox_volume": 0.41
+  },
+  "object_348": {
+    "id": 1264,
+    "object_tag": "dining table",
+    "object_caption": "A wooden dining table with chairs around it.",
+    "bbox_extent": [
+      1.49,
+      1.1,
+      0.45
+    ],
+    "bbox_center": [
+      6.84,
+      0.8,
+      0.26
+    ],
+    "bbox_volume": 0.74
+  },
+  "object_349": {
+    "id": 1265,
+    "object_tag": "chair",
+    "object_caption": "A dining chair.",
+    "bbox_extent": [
+      1.26,
+      0.59,
+      0.47
+    ],
+    "bbox_center": [
+      6.93,
+      0.76,
+      0.18
+    ],
+    "bbox_volume": 0.35
+  },
+  "object_350": {
+    "id": 1273,
+    "object_tag": "cabinet",
+    "object_caption": "A tall black cabinet with shelves.",
+    "bbox_extent": [
+      2.08,
+      1.05,
+      0.41
+    ],
+    "bbox_center": [
+      5.06,
+      0.79,
+      -0.65
+    ],
+    "bbox_volume": 0.9
+  },
+  "object_351": {
+    "id": 1279,
+    "object_tag": "dining table",
+    "object_caption": "A wooden dining table with chairs around it.",
+    "bbox_extent": [
+      1.42,
+      1.29,
+      0.44
+    ],
+    "bbox_center": [
+      6.88,
+      0.69,
+      0.26
+    ],
+    "bbox_volume": 0.81
+  },
+  "object_352": {
+    "id": 1282,
+    "object_tag": "chair",
+    "object_caption": "A wooden dining chair with a wooden frame and seat, some with blue or pink cushions, and some with a dark brown slatted back.",
+    "bbox_extent": [
+      1.72,
+      1.01,
+      0.55
+    ],
+    "bbox_center": [
+      7.24,
+      0.81,
+      0.11
+    ],
+    "bbox_volume": 0.96
+  },
+  "object_353": {
+    "id": 1283,
+    "object_tag": "tv stand",
+    "object_caption": "A pink TV stand.",
+    "bbox_extent": [
+      0.64,
+      0.43,
+      0.32
+    ],
+    "bbox_center": [
+      4.48,
+      1.53,
+      -0.56
+    ],
+    "bbox_volume": 0.09
+  },
+  "object_354": {
+    "id": 1285,
+    "object_tag": "tv",
+    "object_caption": "A flat screen TV.",
+    "bbox_extent": [
+      0.57,
+      0.14,
+      0.08
+    ],
+    "bbox_center": [
+      3.03,
+      0.45,
+      -0.58
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_355": {
+    "id": 1291,
+    "object_tag": "tv",
+    "object_caption": "A gray flat screen TV on a cabinet.",
+    "bbox_extent": [
+      1.39,
+      1.09,
+      0.16
+    ],
+    "bbox_center": [
+      4.08,
+      0.76,
+      -0.78
+    ],
+    "bbox_volume": 0.24
+  },
+  "object_356": {
+    "id": 1294,
+    "object_tag": "mirror",
+    "object_caption": "A tall standing mirror on the wall.",
+    "bbox_extent": [
+      1.3,
+      1.49,
+      0.23
+    ],
+    "bbox_center": [
+      5.79,
+      -0.88,
+      -1.0
+    ],
+    "bbox_volume": 0.45
+  },
+  "object_357": {
+    "id": 1306,
+    "object_tag": "lamp",
+    "object_caption": "floor lamp",
+    "bbox_extent": [
+      0.18,
+      0.07,
+      0.05
+    ],
+    "bbox_center": [
+      5.73,
+      1.36,
+      2.44
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_358": {
+    "id": 1331,
+    "object_tag": "chair",
+    "object_caption": "A wooden chair with a dark frame and seat.",
+    "bbox_extent": [
+      1.27,
+      0.44,
+      0.27
+    ],
+    "bbox_center": [
+      7.53,
+      0.51,
+      1.23
+    ],
+    "bbox_volume": 0.15
+  },
+  "object_359": {
+    "id": 1333,
+    "object_tag": "chair",
+    "object_caption": "A wooden chair with a dark finish, featuring a backrest and seat.",
+    "bbox_extent": [
+      1.19,
+      0.45,
+      0.28
+    ],
+    "bbox_center": [
+      7.53,
+      0.5,
+      0.6
+    ],
+    "bbox_volume": 0.15
+  },
+  "object_360": {
+    "id": 1340,
+    "object_tag": "sofa chair",
+    "object_caption": "A blue fabric sofa chair.",
+    "bbox_extent": [
+      1.98,
+      1.49,
+      0.93
+    ],
+    "bbox_center": [
+      4.01,
+      1.14,
+      2.23
+    ],
+    "bbox_volume": 2.74
+  },
+  "object_361": {
+    "id": 1348,
+    "object_tag": "coffee table",
+    "object_caption": "Small coffee table.",
+    "bbox_extent": [
+      0.59,
+      0.25,
+      0.14
+    ],
+    "bbox_center": [
+      4.51,
+      1.5,
+      1.31
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_362": {
+    "id": 1355,
+    "object_tag": "sofa chair",
+    "object_caption": "A blue sofa chair.",
+    "bbox_extent": [
+      0.69,
+      0.33,
+      0.2
+    ],
+    "bbox_center": [
+      4.6,
+      1.44,
+      2.14
+    ],
+    "bbox_volume": 0.05
+  },
+  "object_363": {
+    "id": 1367,
+    "object_tag": "potted plant",
+    "object_caption": "A green potted plant.",
+    "bbox_extent": [
+      1.2,
+      0.36,
+      0.22
+    ],
+    "bbox_center": [
+      7.6,
+      1.22,
+      -0.71
+    ],
+    "bbox_volume": 0.1
+  },
+  "object_364": {
+    "id": 1392,
+    "object_tag": "chair",
+    "object_caption": "A wooden chair at the dining table.",
+    "bbox_extent": [
+      0.44,
+      0.32,
+      0.19
+    ],
+    "bbox_center": [
+      7.14,
+      0.89,
+      1.07
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_365": {
+    "id": 1393,
+    "object_tag": "lamp",
+    "object_caption": "A white floor lamp with a black stand and a white lampshade next to a brown coat rack.",
+    "bbox_extent": [
+      1.98,
+      0.97,
+      0.32
+    ],
+    "bbox_center": [
+      5.61,
+      0.79,
+      2.58
+    ],
+    "bbox_volume": 0.61
+  },
+  "object_366": {
+    "id": 1409,
+    "object_tag": "closet wall",
+    "object_caption": "A wooden closet frame.",
+    "bbox_extent": [
+      2.87,
+      1.13,
+      0.31
+    ],
+    "bbox_center": [
+      6.09,
+      0.3,
+      -0.97
+    ],
+    "bbox_volume": 1.01
+  },
+  "object_367": {
+    "id": 1422,
+    "object_tag": "dining table",
+    "object_caption": "A wooden dining table.",
+    "bbox_extent": [
+      1.97,
+      1.2,
+      0.84
+    ],
+    "bbox_center": [
+      7.07,
+      0.7,
+      0.7
+    ],
+    "bbox_volume": 1.99
+  },
+  "object_368": {
+    "id": 1427,
+    "object_tag": "mirror",
+    "object_caption": "A mirror.",
+    "bbox_extent": [
+      1.32,
+      0.22,
+      0.07
+    ],
+    "bbox_center": [
+      7.41,
+      -1.0,
+      -2.01
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_369": {
+    "id": 1428,
+    "object_tag": "chair",
+    "object_caption": "A wooden dining chair with a dark brown slatted back and seat.",
+    "bbox_extent": [
+      0.85,
+      0.62,
+      0.28
+    ],
+    "bbox_center": [
+      7.27,
+      1.33,
+      1.14
+    ],
+    "bbox_volume": 0.15
+  },
+  "object_370": {
+    "id": 1430,
+    "object_tag": "tissue box",
+    "object_caption": "A tissue box on top of the cabinet.",
+    "bbox_extent": [
+      0.29,
+      0.21,
+      0.16
+    ],
+    "bbox_center": [
+      7.18,
+      0.78,
+      2.68
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_371": {
+    "id": 1440,
+    "object_tag": "dining table",
+    "object_caption": "A rectangular dining table with a light wood surface.",
+    "bbox_extent": [
+      1.91,
+      1.25,
+      0.92
+    ],
+    "bbox_center": [
+      7.19,
+      0.9,
+      0.76
+    ],
+    "bbox_volume": 2.2
+  },
+  "object_372": {
+    "id": 1456,
+    "object_tag": "tissue box",
+    "object_caption": "A tissue box on top of a cabinet.",
+    "bbox_extent": [
+      0.26,
+      0.15,
+      0.14
+    ],
+    "bbox_center": [
+      7.17,
+      0.87,
+      2.67
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_373": {
+    "id": 1460,
+    "object_tag": "dining table",
+    "object_caption": "A wooden dining table.",
+    "bbox_extent": [
+      1.94,
+      1.22,
+      0.86
+    ],
+    "bbox_center": [
+      7.14,
+      0.87,
+      0.75
+    ],
+    "bbox_volume": 2.04
+  },
+  "object_374": {
+    "id": 1473,
+    "object_tag": "dining table",
+    "object_caption": "A light brown wooden dining table.",
+    "bbox_extent": [
+      1.81,
+      1.22,
+      0.64
+    ],
+    "bbox_center": [
+      7.13,
+      0.97,
+      0.84
+    ],
+    "bbox_volume": 1.41
+  },
+  "object_375": {
+    "id": 1487,
+    "object_tag": "dining table",
+    "object_caption": "Wooden dining table",
+    "bbox_extent": [
+      1.75,
+      1.2,
+      0.39
+    ],
+    "bbox_center": [
+      7.1,
+      0.97,
+      0.85
+    ],
+    "bbox_volume": 0.82
+  },
+  "object_376": {
+    "id": 1488,
+    "object_tag": "soap dish",
+    "object_caption": "A small, purple soap dish on top of a cabinet.",
+    "bbox_extent": [
+      0.3,
+      0.23,
+      0.22
+    ],
+    "bbox_center": [
+      7.13,
+      1.06,
+      2.7
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_377": {
+    "id": 1502,
+    "object_tag": "dining table",
+    "object_caption": "A large brown dining table.",
+    "bbox_extent": [
+      1.71,
+      1.14,
+      0.15
+    ],
+    "bbox_center": [
+      7.05,
+      0.95,
+      0.86
+    ],
+    "bbox_volume": 0.29
+  },
+  "object_378": {
+    "id": 1509,
+    "object_tag": "wall",
+    "object_caption": "A black briefcase with a lock on a white surface.",
+    "bbox_extent": [
+      4.47,
+      3.03,
+      0.42
+    ],
+    "bbox_center": [
+      7.4,
+      -0.11,
+      0.84
+    ],
+    "bbox_volume": 5.69
+  },
+  "object_379": {
+    "id": 1521,
+    "object_tag": "dining table",
+    "object_caption": "A large brown dining table.",
+    "bbox_extent": [
+      1.61,
+      0.99,
+      0.05
+    ],
+    "bbox_center": [
+      7.04,
+      0.98,
+      0.88
+    ],
+    "bbox_volume": 0.08
+  },
+  "object_380": {
+    "id": 1532,
+    "object_tag": "dining table",
+    "object_caption": "A light brown dining table.",
+    "bbox_extent": [
+      1.71,
+      0.86,
+      0.04
+    ],
+    "bbox_center": [
+      7.25,
+      0.99,
+      0.96
+    ],
+    "bbox_volume": 0.06
+  },
+  "object_381": {
+    "id": 1538,
+    "object_tag": "soap dish",
+    "object_caption": "A small soap dish.",
+    "bbox_extent": [
+      0.25,
+      0.16,
+      0.15
+    ],
+    "bbox_center": [
+      7.1,
+      1.19,
+      2.69
+    ],
+    "bbox_volume": 0.01
+  },
+  "object_382": {
+    "id": 1542,
+    "object_tag": "dining table",
+    "object_caption": "A light brown wooden dining table.",
+    "bbox_extent": [
+      1.58,
+      0.93,
+      0.14
+    ],
+    "bbox_center": [
+      7.16,
+      1.06,
+      1.07
+    ],
+    "bbox_volume": 0.21
+  },
+  "object_383": {
+    "id": 1557,
+    "object_tag": "cabinet",
+    "object_caption": "A black cabinet next to the shower wall.",
+    "bbox_extent": [
+      0.92,
+      0.36,
+      0.07
+    ],
+    "bbox_center": [
+      7.23,
+      1.22,
+      2.59
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_384": {
+    "id": 1583,
+    "object_tag": "towel",
+    "object_caption": "A blue towel.",
+    "bbox_extent": [
+      0.7,
+      0.49,
+      0.3
+    ],
+    "bbox_center": [
+      4.75,
+      1.19,
+      2.64
+    ],
+    "bbox_volume": 0.1
+  },
+  "object_385": {
+    "id": 1589,
+    "object_tag": "towel",
+    "object_caption": "A white towel hanging from the lamp.",
+    "bbox_extent": [
+      0.38,
+      0.31,
+      0.17
+    ],
+    "bbox_center": [
+      5.2,
+      0.28,
+      2.15
+    ],
+    "bbox_volume": 0.02
+  },
+  "object_386": {
+    "id": 1592,
+    "object_tag": "couch",
+    "object_caption": "A light blue couch.",
+    "bbox_extent": [
+      2.68,
+      1.08,
+      0.75
+    ],
+    "bbox_center": [
+      3.54,
+      1.28,
+      2.43
+    ],
+    "bbox_volume": 2.17
+  },
+  "object_387": {
+    "id": 1596,
+    "object_tag": "soap dish",
+    "object_caption": "A vase filled with water and assorted flowers.",
+    "bbox_extent": [
+      0.23,
+      0.12,
+      0.09
+    ],
+    "bbox_center": [
+      7.01,
+      1.17,
+      2.74
+    ],
+    "bbox_volume": 0.0
+  },
+  "object_388": {
+    "id": 1600,
+    "object_tag": "coffee table",
+    "object_caption": "A low brown wooden coffee table.",
+    "bbox_extent": [
+      0.9,
+      0.47,
+      0.07
+    ],
+    "bbox_center": [
+      3.5,
+      1.47,
+      1.48
+    ],
+    "bbox_volume": 0.03
+  },
+  "object_389": {
+    "id": 1603,
+    "object_tag": "picture",
+    "object_caption": "A small framed picture hanging on the wall.",
+    "bbox_extent": [
+      1.08,
+      0.95,
+      0.11
+    ],
+    "bbox_center": [
+      0.35,
+      -0.95,
+      -0.94
+    ],
+    "bbox_volume": 0.11
+  },
+  "object_390": {
+    "id": 1606,
+    "object_tag": "closet wall",
+    "object_caption": "Wall forming a closet",
+    "bbox_extent": [
+      1.29,
+      0.28,
+      0.02
+    ],
+    "bbox_center": [
+      1.99,
+      1.12,
+      -0.54
+    ],
+    "bbox_volume": 0.01
+  }
+}

@@ -1,0 +1,6 @@
+haystack-ai
+qdrant-haystack
+fastembed-gpu
+python-dotenv
+semantic-text-splitter
+nltk
