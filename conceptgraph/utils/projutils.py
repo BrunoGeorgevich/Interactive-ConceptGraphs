@@ -1,18 +1,3 @@
-"""
-
-This is stolen from gradslam.
-All the credit goes to Krishna and the team here:
-https://gradslam.github.io/
-https://github.com/gradslam/gradslam
-
-I'm just removing the gradslam dependency to make conceptgraphs easier to install.
-
-"""
-
-"""
-Projective geometry utility functions.
-"""
-
 from typing import Optional
 
 import torch

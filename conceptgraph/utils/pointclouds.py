@@ -8,6 +8,7 @@ https://github.com/gradslam/gradslam
 I'm just removing the gradslam dependency to make conceptgraphs easier to install.
 
 """
+
 from typing import List, Optional, Union
 
 import open3d as o3d

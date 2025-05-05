@@ -12,6 +12,7 @@ from ai2thor.controller import Controller
 import torch
 from tqdm import trange
 
+
 def get_top_down_frame(controller):
     # Setup the top-down camera
     event = controller.step(action="GetMapViewCameraProperties", raise_for_failure=True)
@@ -55,17 +56,13 @@ def get_top_down_frame(controller):
 
     return Image.fromarray(top_down_frame), Image.fromarray(top_down_grid)
 
+
 def adjust_ai2thor_pose(pose):
-    '''
+    """
     Adjust the camera pose from the one used in Unity to that in Open3D.
-    '''
+    """
     # Transformation matrix to flip Y-axis
-    flip_y = np.array([
-        [1, 0, 0, 0],
-        [0, -1, 0, 0],
-        [0, 0, 1, 0],
-        [0, 0, 0, 1]
-    ])
+    flip_y = np.array([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
     # Separate rotation and translation
     rotation = pose[:3, :3]
@@ -79,120 +76,129 @@ def adjust_ai2thor_pose(pose):
     adjusted_pose = np.eye(4)
     adjusted_pose[:3, :3] = adjusted_rotation
     adjusted_pose[:3, 3] = adjusted_translation
-    
-    R = Rotation.from_euler('x', 180, degrees=True).as_matrix()
+
+    R = Rotation.from_euler("x", 180, degrees=True).as_matrix()
     R_homogeneous = np.eye(4)
     R_homogeneous[:3, :3] = R
-    
+
     T_open3d_rotated = R_homogeneous @ adjusted_pose
-    
+
     adjusted_pose = T_open3d_rotated
 
     return adjusted_pose
 
-def adjust_ai2thor_pose_batch(poses):
-    '''
-    Adjust the camera poses from the one used in Unity to that in Open3D.
-    '''
-    N = poses.shape[0]
-    
-    # Transformation matrix to flip Y-axis
-    flip_y = np.array([
-        [1, 0, 0, 0],
-        [0, -1, 0, 0],
-        [0, 0, 1, 0],
-        [0, 0, 0, 1]
-    ])
 
-    flip_y = np.repeat(flip_y[None, :, :], N, axis=0) # shape (N, 4, 4)
+def adjust_ai2thor_pose_batch(poses):
+    """
+    Adjust the camera poses from the one used in Unity to that in Open3D.
+    """
+    N = poses.shape[0]
+
+    # Transformation matrix to flip Y-axis
+    flip_y = np.array([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+
+    flip_y = np.repeat(flip_y[None, :, :], N, axis=0)  # shape (N, 4, 4)
 
     # Separate rotation and translation
-    rotation = poses[:, :3, :3] # shape (N, 3, 3)
-    translation = poses[:, :3, 3] # shape (N, 3)
+    rotation = poses[:, :3, :3]  # shape (N, 3, 3)
+    translation = poses[:, :3, 3]  # shape (N, 3)
 
     # Adjust rotation and translation separately
-    adjusted_rotation = np.einsum('nij,njk,nkl->nil', flip_y[:, :3, :3], rotation, flip_y[:, :3, :3]) # shape (N, 3, 3)
-    adjusted_translation = np.einsum('nij,nj->ni', flip_y[:, :3, :3], translation) # shape (N, 3)
+    adjusted_rotation = np.einsum(
+        "nij,njk,nkl->nil", flip_y[:, :3, :3], rotation, flip_y[:, :3, :3]
+    )  # shape (N, 3, 3)
+    adjusted_translation = np.einsum(
+        "nij,nj->ni", flip_y[:, :3, :3], translation
+    )  # shape (N, 3)
 
     # Reconstruct the adjusted camera pose
-    adjusted_pose = np.eye(4).reshape(1, 4, 4).repeat(N, axis=0) # shape (N, 4, 4)
+    adjusted_pose = np.eye(4).reshape(1, 4, 4).repeat(N, axis=0)  # shape (N, 4, 4)
     adjusted_pose[:, :3, :3] = adjusted_rotation
     adjusted_pose[:, :3, 3] = adjusted_translation
 
     # Rotation by 180 degrees around x-axis
-    R = Rotation.from_euler('x', 180, degrees=True).as_matrix()
+    R = Rotation.from_euler("x", 180, degrees=True).as_matrix()
     R_homogeneous = np.eye(4)
     R_homogeneous[:3, :3] = R
 
-    R_homogeneous = np.repeat(R_homogeneous[None, :, :], N, axis=0) # shape (N, 4, 4)
-    
-    adjusted_pose = np.einsum('nij,njk->nik', R_homogeneous, adjusted_pose) # shape (N, 4, 4)
+    R_homogeneous = np.repeat(R_homogeneous[None, :, :], N, axis=0)  # shape (N, 4, 4)
+
+    adjusted_pose = np.einsum(
+        "nij,njk->nik", R_homogeneous, adjusted_pose
+    )  # shape (N, 4, 4)
 
     return adjusted_pose
 
+
 def adjust_ai2thor_batch_torch(poses):
-    '''
+    """
     Adjust the camera poses from the one used in Unity to that in Open3D.
-    
+
     Args:
         poses: torch.Tensor, shape (N, 4, 4)
-        
+
     Returns:
         adjusted_pose: torch.Tensor, shape (N, 4, 4)
-    '''
+    """
     N = poses.shape[0]
-    
-    # Transformation matrix to flip Y-axis
-    flip_y = torch.tensor([
-        [1, 0, 0, 0],
-        [0, -1, 0, 0],
-        [0, 0, 1, 0],
-        [0, 0, 0, 1]
-    ]).to(poses.device).type(poses.dtype)
 
-    flip_y = flip_y[None, :, :].expand(N, -1, -1) # shape (N, 4, 4)
+    # Transformation matrix to flip Y-axis
+    flip_y = (
+        torch.tensor([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+        .to(poses.device)
+        .type(poses.dtype)
+    )
+
+    flip_y = flip_y[None, :, :].expand(N, -1, -1)  # shape (N, 4, 4)
 
     # Separate rotation and translation
-    rotation = poses[:, :3, :3] # shape (N, 3, 3)
-    translation = poses[:, :3, 3] # shape (N, 3)
+    rotation = poses[:, :3, :3]  # shape (N, 3, 3)
+    translation = poses[:, :3, 3]  # shape (N, 3)
 
     # Adjust rotation and translation separately
-    adjusted_rotation = flip_y[:, :3, :3].bmm(rotation).bmm(flip_y[:, :3, :3]) # shape (N, 3, 3)
-    adjusted_translation = flip_y[:, :3, :3].bmm(translation.unsqueeze(-1)).squeeze(-1) # shape (N, 3)
+    adjusted_rotation = (
+        flip_y[:, :3, :3].bmm(rotation).bmm(flip_y[:, :3, :3])
+    )  # shape (N, 3, 3)
+    adjusted_translation = (
+        flip_y[:, :3, :3].bmm(translation.unsqueeze(-1)).squeeze(-1)
+    )  # shape (N, 3)
 
     # Reconstruct the adjusted camera pose
-    adjusted_pose = torch.eye(4).to(poses.device).type(poses.dtype).unsqueeze(0).expand(N, -1, -1) # shape (N, 4, 4)
+    adjusted_pose = (
+        torch.eye(4).to(poses.device).type(poses.dtype).unsqueeze(0).expand(N, -1, -1)
+    )  # shape (N, 4, 4)
     adjusted_pose = adjusted_pose.clone()
     adjusted_pose[:, :3, :3] = adjusted_rotation
     adjusted_pose[:, :3, 3] = adjusted_translation
 
     # Rotation by 180 degrees around x-axis
-    R = Rotation.from_euler('x', 180, degrees=True).as_matrix()
+    R = Rotation.from_euler("x", 180, degrees=True).as_matrix()
     R_homogeneous = np.eye(4)
     R_homogeneous[:3, :3] = R
 
     R_homogeneous = torch.from_numpy(R_homogeneous).type(poses.dtype).to(poses.device)
-    R_homogeneous = R_homogeneous[None, :, :].expand(N, -1, -1) # shape (N, 4, 4)
-    
-    adjusted_pose = R_homogeneous.bmm(adjusted_pose) # shape (N, 4, 4)
+    R_homogeneous = R_homogeneous[None, :, :].expand(N, -1, -1)  # shape (N, 4, 4)
+
+    adjusted_pose = R_homogeneous.bmm(adjusted_pose)  # shape (N, 4, 4)
 
     return adjusted_pose
 
+
 def depth2xyz(depth: np.ndarray, K: np.ndarray) -> np.ndarray:
-    '''
+    """
     Convert depth image to 3D XYZ image in the camera coordinate frame
 
     Args:
         depth: depth image, shape (H, W), in meters
         K: camera intrinsics matrix, shape (3, 3)
-        
+
     Returns:
         xyz_camera: 3D XYZ image in the camera coordinate frame, shape (H, W, 3)
-    '''
+    """
     frame_size = depth.shape[:2]
-    
-    x = np.arange(0, frame_size[1]) 
-    y = np.arange(frame_size[0], 0, -1) 
+
+    x = np.arange(0, frame_size[1])
+    y = np.arange(frame_size[0], 0, -1)
     xx, yy = np.meshgrid(x, y)
 
     xx = xx.flatten()
@@ -206,26 +212,31 @@ def depth2xyz(depth: np.ndarray, K: np.ndarray) -> np.ndarray:
     y_camera = (yy - K[1, 2]) * zz / K[1, 1]
     z_camera = zz
     xyz_camera = np.stack([x_camera, y_camera, z_camera], axis=1)
-    
+
     xyz_camera = xyz_camera.reshape((*frame_size, 3))
     return xyz_camera
 
+
 def transform_xyz(xyz: np.ndarray, pose: np.ndarray) -> np.ndarray:
-    '''
+    """
     Transform the 3D XYZ image using the input pose matrix
-    
+
     Args:
         xyz: 3D XYZ image, shape (H, W, 3)
         pose: 4x4 pose matrix, shape (4, 4)
-         
+
     Returns:
         xyz_transformed: transformed 3D XYZ image, shape (H, W, 3)
-    '''
+    """
     xyz_flatten = xyz.reshape(-1, 3)
-    xyz_transformed = pose @ np.concatenate([xyz_flatten, np.ones((xyz_flatten.shape[0], 1))], axis=1).T
+    xyz_transformed = (
+        pose
+        @ np.concatenate([xyz_flatten, np.ones((xyz_flatten.shape[0], 1))], axis=1).T
+    )
     xyz_transformed = xyz_transformed.T[:, :3]
     xyz_transformed = xyz_transformed.reshape(xyz.shape)
     return xyz_transformed
+
 
 def get_scene(scene_name):
     # By default, use scene from AI2THOR
@@ -239,6 +250,7 @@ def get_scene(scene_name):
         dataset = prior.load_dataset("procthor-10k")
         scene = dataset[scene_name.split("_")[0]][int(scene_name.split("_")[1])]
     return scene
+
 
 def compute_intrinsics(vfov, height, width):
     """
@@ -256,7 +268,7 @@ def compute_pose(position: dict, rotation: dict) -> np.ndarray:
 
     Note that in Unity, XYZ follows the left-hand rule, with Y pointing up.
     See: https://docs.unity3d.com/560/Documentation/Manual/Transforms.html
-    In the camera coordinate, Z is the viewing direction, X is right, and Y is up. 
+    In the camera coordinate, Z is the viewing direction, X is right, and Y is up.
     See: https://library.vuforia.com/device-tracking/spatial-frame-reference
     Euler angles are in degrees and in Rotation is done in the ZXY order.
     See: https://docs.unity3d.com/ScriptReference/Transform-eulerAngles.html
@@ -276,6 +288,7 @@ def compute_pose(position: dict, rotation: dict) -> np.ndarray:
     T[:3, 3] = t
 
     return T
+
 
 def compute_posrot(T: np.ndarray) -> Tuple[dict, dict]:
     """
@@ -300,10 +313,11 @@ def compute_posrot(T: np.ndarray) -> Tuple[dict, dict]:
 
     return position, rotation
 
+
 def get_agent_pose_from_event(event) -> np.ndarray:
-    '''
+    """
     Compute the 4x4 agent pose matrix from the event
-    '''
+    """
     position = event.metadata["agent"]["position"]
     rotation = event.metadata["agent"]["rotation"]
 
@@ -311,14 +325,15 @@ def get_agent_pose_from_event(event) -> np.ndarray:
     agent_pose = compute_pose(position, rotation)
     return agent_pose
 
+
 def get_camera_pose_from_event(event) -> np.ndarray:
-    '''
+    """
     Compute the 4x4 camera pose matrix from the event
     This is different from the agent pose!
-    '''
-    camera_position = event.metadata['cameraPosition']
+    """
+    camera_position = event.metadata["cameraPosition"]
     camera_rotation = copy.deepcopy(event.metadata["agent"]["rotation"])
-    camera_rotation['x'] = event.metadata['agent']['cameraHorizon']
+    camera_rotation["x"] = event.metadata["agent"]["cameraHorizon"]
     camera_pose = compute_pose(camera_position, camera_rotation)
     return camera_pose
 

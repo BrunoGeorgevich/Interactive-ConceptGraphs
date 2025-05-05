@@ -1,13 +1,12 @@
-'''
+"""
 The script is used to model Grounded SAM detections in 3D, it assumes the tag2text classes are avaialable. It also assumes the dataset has Clip features saved for each object/mask.
-'''
+"""
 
 # Standard library imports
-from typing import Mapping
-import uuid
-from conceptgraph.utils.logging_metrics import DenoisingTracker, MappingTracker
+from conceptgraph.utils.logging_metrics import MappingTracker
 import cv2
 import os
+
 # import PyQt5
 
 # # Set the QT_QPA_PLATFORM_PLUGIN_PATH environment variable
@@ -16,8 +15,8 @@ import os
 
 
 import copy
+
 # from line_profiler import profile
-import os
 from pathlib import Path
 import gzip
 import pickle
@@ -26,6 +25,7 @@ import pickle
 from PIL import Image
 
 import numpy as np
+
 # from open3d import io
 from open3d.io import read_pinhole_camera_parameters
 import torch
@@ -38,11 +38,23 @@ from omegaconf import DictConfig
 
 # Local application/library specific imports
 from conceptgraph.dataset.datasets_common import get_dataset
-from conceptgraph.utils.vis import OnlineObjectRenderer, save_video_from_frames, vis_result_fast_on_depth
-from conceptgraph.utils.ious import (
-    mask_subtract_contained
+from conceptgraph.utils.vis import (
+    OnlineObjectRenderer,
+    save_video_from_frames,
+    vis_result_fast_on_depth,
 )
-from conceptgraph.utils.general_utils import ObjectClasses, get_det_out_path, get_exp_out_path, load_saved_detections, load_saved_hydra_json_config, measure_time, save_detection_results, save_hydra_config, save_pointcloud, should_exit_early
+from conceptgraph.utils.ious import mask_subtract_contained
+from conceptgraph.utils.general_utils import (
+    ObjectClasses,
+    get_det_out_path,
+    get_exp_out_path,
+    load_saved_detections,
+    measure_time,
+    save_detection_results,
+    save_hydra_config,
+    save_pointcloud,
+    should_exit_early,
+)
 
 from conceptgraph.slam.slam_classes import MapObjectList
 from conceptgraph.slam.utils import (
@@ -52,11 +64,10 @@ from conceptgraph.slam.utils import (
     make_detection_list_from_pcd_and_gobs,
     denoise_objects,
     filter_objects,
-    merge_objects, 
+    merge_objects,
     detections_to_obj_pcd_and_bbox,
     prepare_objects_save_vis,
     process_cfg,
-    process_pcd,
     processing_needed,
     resize_gobs,
 )
@@ -65,7 +76,7 @@ from conceptgraph.slam.mapping import (
     compute_visual_similarities,
     aggregate_similarities,
     match_detections_to_objects,
-    merge_obj_matches
+    merge_obj_matches,
 )
 
 # Detection utils
@@ -84,18 +95,22 @@ import open_clip
 # Disable torch gradient computation
 torch.set_grad_enabled(False)
 
+
 # A logger for this file
-@hydra.main(version_base=None, config_path="../hydra_configs/", config_name="realtime_mapping")
+@hydra.main(
+    version_base=None, config_path="../hydra_configs/", config_name="realtime_mapping"
+)
 # @profile
-def main(cfg : DictConfig):
+def main(cfg: DictConfig):
     tracker = MappingTracker()
-    
+
     owandb = OptionalWandB()
     owandb.set_use_wandb(cfg.use_wandb)
-    owandb.init(project="concept-graphs", 
-            #    entity="concept-graphs",
-                config=cfg_to_dict(cfg),
-               )
+    owandb.init(
+        project="concept-graphs",
+        #    entity="concept-graphs",
+        config=cfg_to_dict(cfg),
+    )
     cfg = process_cfg(cfg)
 
     # Initialize the dataset
@@ -119,23 +134,25 @@ def main(cfg : DictConfig):
     if cfg.vis_render:
         view_param = read_pinhole_camera_parameters(cfg.render_camera_path)
         obj_renderer = OnlineObjectRenderer(
-            view_param = view_param,
-            base_objects = None, 
-            gray_map = False,
+            view_param=view_param,
+            base_objects=None,
+            gray_map=False,
         )
         frames = []
     # output folder for this mapping experiment
     exp_out_path = get_exp_out_path(cfg.dataset_root, cfg.scene_id, cfg.exp_suffix)
 
     # output folder of the detections experiment to use
-    det_exp_path = get_exp_out_path(cfg.dataset_root, cfg.scene_id, cfg.detections_exp_suffix, make_dir=False)
+    det_exp_path = get_exp_out_path(
+        cfg.dataset_root, cfg.scene_id, cfg.detections_exp_suffix, make_dir=False
+    )
 
     # we need to make sure to use the same classes as the ones used in the detections
     detections_exp_cfg = cfg_to_dict(cfg)
     obj_classes = ObjectClasses(
-        classes_file_path=detections_exp_cfg['classes_file'], 
-        bg_classes=detections_exp_cfg['bg_classes'], 
-        skip_bg=detections_exp_cfg['skip_bg']
+        classes_file_path=detections_exp_cfg["classes_file"],
+        bg_classes=detections_exp_cfg["bg_classes"],
+        skip_bg=detections_exp_cfg["skip_bg"],
     )
 
     # if we need to do detections
@@ -148,8 +165,8 @@ def main(cfg : DictConfig):
         det_exp_vis_path = get_vis_out_path(det_exp_path)
 
         ## Initialize the detection models
-        detection_model = measure_time(YOLO)('yolov8l-world.pt')
-        sam_predictor = SAM('sam_l.pt') # SAM('mobile_sam.pt') # UltraLytics SAM
+        detection_model = measure_time(YOLO)("yolov8l-world.pt")
+        sam_predictor = SAM("sam_l.pt")  # SAM('mobile_sam.pt') # UltraLytics SAM
         # sam_predictor = measure_time(get_sam_predictor)(cfg) # Normal SAM
         clip_model, _, clip_preprocess = open_clip.create_model_and_transforms(
             "ViT-H-14", "laion2b_s32b_b79k"
@@ -164,14 +181,16 @@ def main(cfg : DictConfig):
     save_hydra_config(detections_exp_cfg, exp_out_path, is_detection_config=True)
 
     if cfg.save_objects_all_frames:
-        obj_all_frames_out_path = exp_out_path / "saved_obj_all_frames" / f"det_{cfg.detections_exp_suffix}"
+        obj_all_frames_out_path = (
+            exp_out_path / "saved_obj_all_frames" / f"det_{cfg.detections_exp_suffix}"
+        )
         os.makedirs(obj_all_frames_out_path, exist_ok=True)
 
     exit_early_flag = False
     counter = 0
     for frame_idx in trange(len(dataset)):
         tracker.curr_frame_idx = frame_idx
-        counter+=1
+        counter += 1
 
         # Check if we should exit early only if the flag hasn't been set yet
         if not exit_early_flag and should_exit_early(cfg.exit_early_file):
@@ -192,18 +211,18 @@ def main(cfg : DictConfig):
         # Covert to numpy and do some sanity checks
         depth_tensor = depth_tensor[..., 0]
         depth_array = depth_tensor.cpu().numpy()
-        color_np = color_tensor.cpu().numpy() # (H, W, 3)
-        image_rgb = (color_np).astype(np.uint8) # (H, W, 3)
+        color_np = color_tensor.cpu().numpy()  # (H, W, 3)
+        image_rgb = (color_np).astype(np.uint8)  # (H, W, 3)
         assert image_rgb.max() > 1, "Image is not in range [0, 255]"
 
         # Load image detections for the current frame
         raw_gobs = None
-        gobs = None # stands for grounded observations
+        gobs = None  # stands for grounded observations
         detections_path = det_exp_pkl_path / (color_path.stem + ".pkl.gz")
         if run_detections:
             results = None
             # opencv can't read Path objects...
-            image = cv2.imread(str(color_path)) # This will in BGR color space
+            image = cv2.imread(str(color_path))  # This will in BGR color space
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
             # Do initial object detection
@@ -215,7 +234,9 @@ def main(cfg : DictConfig):
 
             # Get Masks Using SAM or MobileSAM
             # UltraLytics SAM
-            sam_out = sam_predictor.predict(color_path, bboxes=xyxy_tensor, verbose=False)
+            sam_out = sam_predictor.predict(
+                color_path, bboxes=xyxy_tensor, verbose=False
+            )
             masks_tensor = sam_out[0].masks.data
 
             masks_np = masks_tensor.cpu().numpy()
@@ -230,7 +251,14 @@ def main(cfg : DictConfig):
 
             # Compute and save the clip features of detections
             image_crops, image_feats, text_feats = compute_clip_features_batched(
-                image_rgb, curr_det, clip_model, clip_preprocess, clip_tokenizer, obj_classes.get_classes_arr(), cfg.device)
+                image_rgb,
+                curr_det,
+                clip_model,
+                clip_preprocess,
+                clip_tokenizer,
+                obj_classes.get_classes_arr(),
+                cfg.device,
+            )
 
             # increment total object detections
             tracker.increment_total_detections(len(curr_det.xyxy))
@@ -238,7 +266,7 @@ def main(cfg : DictConfig):
             # Save results
             # Convert the detections to a dict. The elements are in np.array
             results = {
-                # add new uuid for each detection 
+                # add new uuid for each detection
                 "xyxy": curr_det.xyxy,
                 "confidence": curr_det.confidence,
                 "class_id": curr_det.class_id,
@@ -256,15 +284,27 @@ def main(cfg : DictConfig):
 
                 vis_save_path = (det_exp_vis_path / color_path.name).with_suffix(".jpg")
                 # Visualize and save the annotated image
-                annotated_image, labels = vis_result_fast(image, curr_det, obj_classes.get_classes_arr())
+                annotated_image, labels = vis_result_fast(
+                    image, curr_det, obj_classes.get_classes_arr()
+                )
                 cv2.imwrite(str(vis_save_path), annotated_image)
 
-                depth_image_rgb = cv2.normalize(depth_array, None, 0, 255, cv2.NORM_MINMAX)
+                depth_image_rgb = cv2.normalize(
+                    depth_array, None, 0, 255, cv2.NORM_MINMAX
+                )
                 depth_image_rgb = depth_image_rgb.astype(np.uint8)
                 depth_image_rgb = cv2.cvtColor(depth_image_rgb, cv2.COLOR_GRAY2BGR)
-                annotated_depth_image, labels = vis_result_fast_on_depth(depth_image_rgb, curr_det, obj_classes.get_classes_arr())
-                cv2.imwrite(str(vis_save_path).replace(".jpg", "_depth.jpg"), annotated_depth_image)
-                cv2.imwrite(str(vis_save_path).replace(".jpg", "_depth_only.jpg"), depth_image_rgb)
+                annotated_depth_image, labels = vis_result_fast_on_depth(
+                    depth_image_rgb, curr_det, obj_classes.get_classes_arr()
+                )
+                cv2.imwrite(
+                    str(vis_save_path).replace(".jpg", "_depth.jpg"),
+                    annotated_depth_image,
+                )
+                cv2.imwrite(
+                    str(vis_save_path).replace(".jpg", "_depth_only.jpg"),
+                    depth_image_rgb,
+                )
                 # curr_detection_name = (vis_save_path.stem + ".pkl.gz")
                 # with gzip.open(det_exp_pkl_path / curr_detection_name , "wb") as f:
                 #     pickle.dump(results, f)
@@ -290,7 +330,9 @@ def main(cfg : DictConfig):
         # resize the observation if needed
         resized_gobs = resize_gobs(raw_gobs, image_rgb)
         # filter the observations
-        filtered_gobs = filter_gobs(resized_gobs, image_rgb, 
+        filtered_gobs = filter_gobs(
+            resized_gobs,
+            image_rgb,
             skip_bg=cfg.skip_bg,
             BG_CLASSES=obj_classes.get_bg_classes_arr(),
             mask_area_threshold=cfg.mask_area_threshold,
@@ -300,15 +342,15 @@ def main(cfg : DictConfig):
 
         gobs = filtered_gobs
 
-        if len(gobs['mask']) == 0: # no detections in this frame
+        if len(gobs["mask"]) == 0:  # no detections in this frame
             continue
 
         # this helps make sure things like pillows on couches are separate objects
-        gobs['mask'] = mask_subtract_contained(gobs['xyxy'], gobs['mask'])
+        gobs["mask"] = mask_subtract_contained(gobs["xyxy"], gobs["mask"])
 
         obj_pcds_and_bboxes = measure_time(detections_to_obj_pcd_and_bbox)(
             depth_array=depth_array,
-            masks=gobs['mask'],
+            masks=gobs["mask"],
             cam_K=intrinsics.cpu().numpy()[:3, :3],  # Camera intrinsics
             image_rgb=image_rgb,
             trans_pose=adjusted_pose,
@@ -328,7 +370,7 @@ def main(cfg : DictConfig):
                     dbscan_min_points=cfg["dbscan_min_points"],
                 )
                 obj["bbox"] = get_bounding_box(
-                    spatial_sim_type=cfg['spatial_sim_type'], 
+                    spatial_sim_type=cfg["spatial_sim_type"],
                     pcd=obj["pcd"],
                 )
 
@@ -336,7 +378,7 @@ def main(cfg : DictConfig):
             obj_pcds_and_bboxes, gobs, color_path, obj_classes, frame_idx
         )
 
-        if len(detection_list) == 0: # no detections, skip
+        if len(detection_list) == 0:  # no detections, skip
             continue
 
         # if no objects yet in the map,
@@ -345,46 +387,50 @@ def main(cfg : DictConfig):
         if len(objects) == 0:
             objects.extend(detection_list)
             tracker.increment_total_objects(len(detection_list))
-            owandb.log({
+            owandb.log(
+                {
                     "total_objects_so_far": tracker.get_total_objects(),
                     "objects_this_frame": len(detection_list),
-                })
-            continue 
+                }
+            )
+            continue
 
         ### compute similarities and then merge
         spatial_sim = compute_spatial_similarities(
-            spatial_sim_type=cfg['spatial_sim_type'], 
-            detection_list=detection_list, 
+            spatial_sim_type=cfg["spatial_sim_type"],
+            detection_list=detection_list,
             objects=objects,
-            downsample_voxel_size=cfg['downsample_voxel_size']
+            downsample_voxel_size=cfg["downsample_voxel_size"],
         )
 
         visual_sim = compute_visual_similarities(detection_list, objects)
 
         agg_sim = aggregate_similarities(
-            match_method=cfg['match_method'], 
-            phys_bias=cfg['phys_bias'], 
-            spatial_sim=spatial_sim, 
-            visual_sim=visual_sim
+            match_method=cfg["match_method"],
+            phys_bias=cfg["phys_bias"],
+            spatial_sim=spatial_sim,
+            visual_sim=visual_sim,
         )
 
         # Perform matching of detections to existing objects
         match_indices = match_detections_to_objects(
-            agg_sim=agg_sim, 
-            detection_threshold=cfg['sim_threshold']  # Use the sim_threshold from the configuration
+            agg_sim=agg_sim,
+            detection_threshold=cfg[
+                "sim_threshold"
+            ],  # Use the sim_threshold from the configuration
         )
 
         # Now merge the detected objects into the existing objects based on the match indices
         objects = merge_obj_matches(
-            detection_list=detection_list, 
-            objects=objects, 
+            detection_list=detection_list,
+            objects=objects,
             match_indices=match_indices,
-            downsample_voxel_size=cfg['downsample_voxel_size'], 
-            dbscan_remove_noise=cfg['dbscan_remove_noise'], 
-            dbscan_eps=cfg['dbscan_eps'], 
-            dbscan_min_points=cfg['dbscan_min_points'], 
-            spatial_sim_type=cfg['spatial_sim_type'], 
-            device=cfg['device']
+            downsample_voxel_size=cfg["downsample_voxel_size"],
+            dbscan_remove_noise=cfg["dbscan_remove_noise"],
+            dbscan_eps=cfg["dbscan_eps"],
+            dbscan_min_points=cfg["dbscan_min_points"],
+            spatial_sim_type=cfg["spatial_sim_type"],
+            device=cfg["device"],
             # Note: Removed 'match_method' and 'phys_bias' as they do not appear in the provided merge function
         )
 
@@ -400,13 +446,13 @@ def main(cfg : DictConfig):
             is_final_frame,
         ):
             objects = measure_time(denoise_objects)(
-                downsample_voxel_size=cfg['downsample_voxel_size'], 
-                dbscan_remove_noise=cfg['dbscan_remove_noise'], 
-                dbscan_eps=cfg['dbscan_eps'], 
-                dbscan_min_points=cfg['dbscan_min_points'], 
-                spatial_sim_type=cfg['spatial_sim_type'], 
-                device=cfg['device'], 
-                objects=objects
+                downsample_voxel_size=cfg["downsample_voxel_size"],
+                dbscan_remove_noise=cfg["dbscan_remove_noise"],
+                dbscan_eps=cfg["dbscan_eps"],
+                dbscan_min_points=cfg["dbscan_min_points"],
+                spatial_sim_type=cfg["spatial_sim_type"],
+                device=cfg["device"],
+                objects=objects,
             )
 
         # Filtering
@@ -417,9 +463,9 @@ def main(cfg : DictConfig):
             is_final_frame,
         ):
             objects = filter_objects(
-                obj_min_points=cfg['obj_min_points'], 
-                obj_min_detections=cfg['obj_min_detections'], 
-                objects=objects
+                obj_min_points=cfg["obj_min_points"],
+                obj_min_detections=cfg["obj_min_detections"],
+                objects=objects,
             )
 
         # Merging
@@ -448,25 +494,31 @@ def main(cfg : DictConfig):
             save_path = obj_all_frames_out_path / f"{frame_idx:06d}.pkl.gz"
 
             # Filter objects based on minimum number of detections and prepare them for saving
-            filtered_objects = [obj for obj in objects if obj['num_detections'] >= cfg.obj_min_detections]
+            filtered_objects = [
+                obj
+                for obj in objects
+                if obj["num_detections"] >= cfg.obj_min_detections
+            ]
             prepared_objects = prepare_objects_save_vis(MapObjectList(filtered_objects))
 
             # Create the result dictionary with camera pose and prepared objects
-            result = { "camera_pose": adjusted_pose, "objects": prepared_objects}
+            result = {"camera_pose": adjusted_pose, "objects": prepared_objects}
             # also save the current frame_idx, num objects, and color path in results
             result["frame_idx"] = frame_idx
             result["num_objects"] = len(filtered_objects)
             result["color_path"] = str(color_path)
             # Save the result dictionary to a compressed file
-            with gzip.open(save_path, 'wb') as f:
+            with gzip.open(save_path, "wb") as f:
                 pickle.dump(result, f)
 
         # Render the image with the filtered and colored objects
         if cfg.vis_render:
             # Initialize an empty list for objects meeting the criteria
             filtered_objects = [
-                copy.deepcopy(obj) for obj in objects 
-                if obj['num_detections'] >= cfg.obj_min_detections and not obj['is_background']
+                copy.deepcopy(obj)
+                for obj in objects
+                if obj["num_detections"] >= cfg.obj_min_detections
+                and not obj["is_background"]
             ]
             objects_vis = MapObjectList(filtered_objects)
 
@@ -502,13 +554,27 @@ def main(cfg : DictConfig):
                 line_type = cv2.LINE_AA
 
                 # Get text size for positioning
-                text_size, _ = cv2.getTextSize(frame_info_text, font, font_scale, thickness)
+                text_size, _ = cv2.getTextSize(
+                    frame_info_text, font, font_scale, thickness
+                )
 
                 # Set position for the text (bottom-left corner)
-                position = (10, rendered_image.shape[0] - 10)  # 10 pixels from the bottom-left corner
+                position = (
+                    10,
+                    rendered_image.shape[0] - 10,
+                )  # 10 pixels from the bottom-left corner
 
                 # Add the text to the image
-                cv2.putText(rendered_image, frame_info_text, position, font, font_scale, color, thickness, line_type)
+                cv2.putText(
+                    rendered_image,
+                    frame_info_text,
+                    position,
+                    font,
+                    font_scale,
+                    color,
+                    thickness,
+                    line_type,
+                )
 
                 frames.append(rendered_image)
 
@@ -528,19 +594,22 @@ def main(cfg : DictConfig):
                 objects=objects,
                 obj_classes=obj_classes,
                 latest_pcd_filepath=cfg.latest_pcd_filepath,
-                create_symlink=True
+                create_symlink=True,
             )
 
-        owandb.log({
-            "frame_idx": frame_idx,
-            "counter": counter,
-            "exit_early_flag": exit_early_flag,
-            "is_final_frame": is_final_frame,
-        })
+        owandb.log(
+            {
+                "frame_idx": frame_idx,
+                "counter": counter,
+                "exit_early_flag": exit_early_flag,
+                "is_final_frame": is_final_frame,
+            }
+        )
 
         tracker.increment_total_objects(len(objects))
         tracker.increment_total_detections(len(detection_list))
-        owandb.log({
+        owandb.log(
+            {
                 "total_objects": tracker.get_total_objects(),
                 "objects_this_frame": len(objects),
                 "total_detections": tracker.get_total_detections(),
@@ -549,7 +618,8 @@ def main(cfg : DictConfig):
                 "counter": counter,
                 "exit_early_flag": exit_early_flag,
                 "is_final_frame": is_final_frame,
-                })
+            }
+        )
         # print("hey")
     # LOOP OVER -----------------------------------------------------
 
@@ -562,24 +632,28 @@ def main(cfg : DictConfig):
             objects=objects,
             obj_classes=obj_classes,
             latest_pcd_filepath=cfg.latest_pcd_filepath,
-            create_symlink=True
+            create_symlink=True,
         )
 
     # Save metadata if all frames are saved
     if cfg.save_objects_all_frames:
-        save_meta_path = obj_all_frames_out_path / f"meta.pkl.gz"
+        save_meta_path = obj_all_frames_out_path / "meta.pkl.gz"
         with gzip.open(save_meta_path, "wb") as f:
-            pickle.dump({
-                'cfg': cfg,
-                'class_names': obj_classes.get_classes_arr(),
-                'class_colors': obj_classes.get_class_color_dict_by_index(),
-            }, f)
+            pickle.dump(
+                {
+                    "cfg": cfg,
+                    "class_names": obj_classes.get_classes_arr(),
+                    "class_colors": obj_classes.get_class_color_dict_by_index(),
+                },
+                f,
+            )
 
     if run_detections:
         if cfg.save_video:
             save_video_detections(det_exp_path)
 
     owandb.finish()
+
 
 if __name__ == "__main__":
     main()

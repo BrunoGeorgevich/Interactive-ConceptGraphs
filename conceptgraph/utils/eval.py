@@ -36,6 +36,7 @@ def compute_pred_gt_associations(pred, gt):
 
     return idx_pred_to_gt, idx_gt_to_pred
 
+
 def compute_confmatrix(
     labels_pred, labels_gt, idx_pred_to_gt, idx_gt_to_pred, class_names
 ):
