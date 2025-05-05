@@ -324,13 +324,17 @@ def extract_node_captions(args):
         idx_most_conf = idx_most_conf[:args.max_detections_per_object]
 
         for idx_det in tqdm(idx_most_conf):
-            # image = Image.open(correct_path).convert("RGB")
-            image = Image.open(obj["color_path"][idx_det]).convert("RGB")
-            xyxy = obj["xyxy"][idx_det]
-            class_id = obj["class_id"][idx_det]
-            class_name = class_names[class_id]
-            # Retrieve and crop mask
-            mask = obj["mask"][idx_det]
+            try:
+                # image = Image.open(correct_path).convert("RGB")
+                image = Image.open(obj["color_path"][idx_det]).convert("RGB")
+                xyxy = obj["xyxy"][idx_det]
+                class_id = obj["class_id"][idx_det]
+                class_name = class_names[class_id]
+                # Retrieve and crop mask
+                mask = obj["mask"][idx_det]
+            except IndexError:
+                print(f"IndexError: {idx_det} out of range for object {idx_obj}. Skipping...")
+                continue
 
             padding = 10
             x1, y1, x2, y2 = xyxy
@@ -875,7 +879,11 @@ def annotate_scenegraph(args):
 
     for idx in annot_inds:
         print(f"Object {idx} out of {len(annot_inds)}...")
-        obj = scene_map[idx]
+        try:
+            obj = scene_map[idx]
+        except IndexError:
+            print(f"IndexError: {idx} out of range for object {idx}. Skipping...")
+            continue
 
         prev_annot = None
         if len(annots) >= idx + 1:
@@ -892,9 +900,13 @@ def annotate_scenegraph(args):
         imgs = []
 
         for idx_det in idx_most_conf:
-            image = Image.open(obj["color_path"][idx_det]).convert("RGB")
-            xyxy = obj["xyxy"][idx_det]
-            mask = obj["mask"][idx_det]
+            try:
+                image = Image.open(obj["color_path"][idx_det]).convert("RGB")
+                xyxy = obj["xyxy"][idx_det]
+                mask = obj["mask"][idx_det]
+            except IndexError:
+                print(f"IndexError: {idx_det} out of range for object {idx}. Skipping...")
+                continue
 
             padding = 10
             x1, y1, x2, y2 = xyxy
