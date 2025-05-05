@@ -1,22 +1,22 @@
 defaults:
   - base
   - base_mapping
+  - robot_at_virtual_home
   # - replica
-  - record3d
+  # - record3d
   - sam
   - classes
   - logging_level
   - _self_
 
-
-detections_exp_suffix: s_detections_stride10 # helpful label to identify your detections
-force_detection: !!bool False
+detections_exp_suffix: s_detections_stride13 # helpful label to identify your detections
+force_detection: !!bool True
 save_detections: !!bool True
 
 make_edges: !!bool True
 
 stride: 10
-exp_suffix: r_mapping_stride10 # helpful label to identify your mapping experiment
+exp_suffix: r_mapping_stride13 # helpful label to identify your mapping experiment
 
 save_video: !!bool False
 save_objects_all_frames: !!bool False
@@ -27,9 +27,9 @@ obj_pcd_max_points: 5000
 debug_render: !!bool False
 vis_render: !!bool False
 
-denoise_interval: 5           # Run DBSCAN every k frame. This operation is heavy
-filter_interval: 5            # Filter objects that have too few associations or are too small
-merge_interval: 5             # Merge objects based on geometric and semantic similarity
+denoise_interval: 5 # Run DBSCAN every k frame. This operation is heavy
+filter_interval: 5 # Filter objects that have too few associations or are too small
+merge_interval: 5 # Merge objects based on geometric and semantic similarity
 run_denoise_final_frame: !!bool True
 run_filter_final_frame: !!bool True
 run_merge_final_frame: !!bool True
@@ -45,11 +45,10 @@ obj_min_detections: 1
 # For merge_overlap_objects() function
 use_rerun: !!bool True
 save_rerun: !!bool True
-
 # hydra:
 #   verbose: true
-  # mode: MULTIRUN
-  # sweeper:
-  #   params:
-  #     downsample_voxel_size: 0.025, 0.01, 0.001, 0.001
-  #     obj_pcd_max_points: 5000, 10000, 100000, 100000
+# mode: MULTIRUN
+# sweeper:
+#   params:
+#     downsample_voxel_size: 0.025, 0.01, 0.001, 0.001
+#     obj_pcd_max_points: 5000, 10000, 100000, 100000
