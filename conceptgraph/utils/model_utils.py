@@ -161,7 +161,8 @@ def compute_clip_features_batched(image, detections, clip_model, clip_preprocess
         text_tokens.append(classes[class_id])
         image_crops.append(cropped_image)
     
-    # Convert lists to batches
+    if len(preprocessed_images) == 0:
+        return [], [], []
     preprocessed_images_batch = torch.cat(preprocessed_images, dim=0).to(device)
     text_tokens_batch = clip_tokenizer(text_tokens).to(device)
     

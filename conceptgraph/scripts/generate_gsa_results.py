@@ -417,7 +417,11 @@ def main(args: argparse.Namespace):
     
     for idx in trange(len(dataset)):
         ### Relevant paths and load image ###
-        color_path = dataset.color_paths[idx]
+        try:
+            color_path = dataset.color_paths[idx]
+        except IndexError:
+            print(f"Index {idx} is out of range. Please check the dataset. ")
+            continue
 
         color_path = Path(color_path)
         

@@ -203,12 +203,16 @@ def main(args):
             return
         
         for idx in indices_bg:
-            if main.show_bg_pcd:
-                vis.remove_geometry(pcds[idx], reset_bounding_box=False)
-                vis.remove_geometry(bboxes[idx], reset_bounding_box=False)
-            else:
-                vis.add_geometry(pcds[idx], reset_bounding_box=False)
-                vis.add_geometry(bboxes[idx], reset_bounding_box=False)
+            try:
+                if main.show_bg_pcd:
+                    vis.remove_geometry(pcds[idx], reset_bounding_box=False)
+                    vis.remove_geometry(bboxes[idx], reset_bounding_box=False)
+                else:
+                    vis.add_geometry(pcds[idx], reset_bounding_box=False)
+                    vis.add_geometry(bboxes[idx], reset_bounding_box=False)
+            except IndexError:
+                print(f"Index {idx} is out of range for pcds or bboxes.")
+                continue
         
         main.show_bg_pcd = not main.show_bg_pcd
         
