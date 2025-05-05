@@ -8,9 +8,15 @@ from haystack.utils import Secret
 from dotenv import load_dotenv
 from haystack import Document
 from textwrap import dedent
+import numpy as np
 import traceback
+import pickle
 import json
+import gzip
 import os
+
+# LOCAL IMPORTS
+from conceptgraph.slam.slam_classes import MapObjectList
 
 
 def create_qdrant_document_store(
@@ -101,34 +107,119 @@ def process_document_objects(
     return doc
 
 
+def sanitize_metadata(data: dict) -> dict:
+    """
+    Recursively removes non-primitive and callable values from a dictionary.
+
+    :param data: The dictionary to sanitize.
+    :type data: dict
+    :return: The sanitized dictionary.
+    :rtype: dict
+    """
+    sanitized = {}
+    for k, v in data.items():
+        if callable(v):
+            continue
+        elif isinstance(v, dict):
+            sanitized[k] = sanitize_metadata(v)
+        elif isinstance(v, (str, int, float, bool)) or v is None:
+            sanitized[k] = v
+        elif isinstance(v, (list, tuple)):
+            sanitized[k] = [
+                item
+                for item in v
+                if isinstance(item, (str, int, float, bool)) or item is None
+            ]
+        # Ignore all other types (including methods, objects, etc.)
+    return sanitized
+
+
 def create_qdrant_data_from_objects(objects: dict) -> int:
     """
-    For each object in the input dictionary, generates an embedding for the string
-    'object_tag: object_caption' using OpenAITextEmbedder, and writes the resulting
-    documents to QdrantDocumentStore. All other fields are added as metadata to the document,
-    and the complete object is included in the metadata under the key 'full_object'.
+    Creates Qdrant documents from either a dictionary of objects or a MapObjectList.
+    For a dictionary, generates an embedding for the string 'object_tag: object_caption' using OpenAITextEmbedder,
+    and writes the resulting documents to QdrantDocumentStore. For a MapObjectList, processes each object to extract
+    a representative string (using 'class_name' and 'consolidated_caption' if available), generates embeddings,
+    and writes to the store. All other fields are added as metadata to the document, and the complete object is included
+    in the metadata under the key 'full_object'.
 
-    :param objects: A dictionary where each key is an object identifier and the value is a dictionary containing
-                   'object_tag', 'object_caption', and other metadata fields.
+    :param objects: Either a dictionary where each key is an object identifier and the value is a dictionary containing
+                   'object_tag', 'object_caption', and other metadata fields, or a MapObjectList instance.
     :type objects: dict
-    :raises ValueError: If embedding, writing, or counting fails.
+    :raises ValueError: If embedding, writing, or counting fails, or if the input type is unsupported.
     :return: The number of documents in the store after insertion.
     :rtype: int
 
-    This function generates an embedding for the string 'object_tag: object_caption' of each object.
-    All other fields are preserved as metadata, and the complete object is included in the metadata.
+    This function generates an embedding for the string 'object_tag: object_caption' (for dict) or
+    'class_name: consolidated_caption' (for MapObjectList) of each object. All other fields are preserved as metadata,
+    and the complete object is included in the metadata.
     """
     try:
         document_store = create_qdrant_document_store()
         embedder = OpenAITextEmbedder(model="text-embedding-3-small")
-
         documents_with_embeddings = []
 
-        results = Parallel(n_jobs=-1, backend="threading")(
-            delayed(process_document_objects)(obj_key, obj, embedder)
-            for obj_key, obj in objects.items()
-        )
-        documents_with_embeddings.extend([doc for doc in results if doc is not None])
+        if type(objects) is MapObjectList:
+            for obj in objects:
+                object_id: str | None = obj.get("id", None)
+                object_tag: str = obj.get("class_name", "")
+                object_caption: str = obj.get("consolidated_caption", "")
+                bbox = obj.get("bbox", None)
+
+                if object_id is not None:
+                    object_id = str(object_id)
+
+                if bbox is None:
+                    bbox_extent = None
+                    bbox_center = None
+                    bbox_volume = None
+                else:
+                    bbox_extent = list(bbox.extent)
+                    bbox_center = list(bbox.center)
+                    bbox_volume = bbox.volume()
+
+                if not isinstance(object_tag, str) or not object_tag.strip():
+                    continue
+                if not isinstance(object_caption, str) or not object_caption.strip():
+                    continue
+
+                text_to_embed: str = f"{object_tag}: {object_caption}"
+
+                # Only keep the most relevant fields, similar to objects.json
+                metadata = {
+                    "id": object_id,
+                    "object_tag": object_tag,
+                    "object_caption": object_caption,
+                    "bbox_extent": bbox_extent,
+                    "bbox_center": bbox_center,
+                    "bbox_volume": bbox_volume,
+                }
+
+                # Remove any non-primitive or callable values from metadata to ensure serialization
+
+                metadata = sanitize_metadata(metadata)
+
+                embedding_result = embedder.run(text_to_embed)
+                if "embedding" not in embedding_result:
+                    raise ValueError(
+                        "Embedding not found in OpenAITextEmbedder result."
+                    )
+                doc = Document(
+                    content=text_to_embed,
+                    meta=metadata,
+                )
+                doc.embedding = embedding_result["embedding"]
+                documents_with_embeddings.append(doc)
+        elif isinstance(objects, dict):
+            results = Parallel(n_jobs=-1, backend="threading")(
+                delayed(process_document_objects)(obj_key, obj, embedder)
+                for obj_key, obj in objects.items()
+            )
+            documents_with_embeddings.extend(
+                [doc for doc in results if doc is not None]
+            )
+        else:
+            raise ValueError("Input must be a dict or a MapObjectList object.")
 
         if not documents_with_embeddings:
             raise ValueError(
@@ -377,84 +468,140 @@ def read_objects_json(file_path: str = "objects.json") -> str:
         raise
 
 
+def load_pkl_gz_result(result_path: str) -> MapObjectList:
+    """
+    Loads the result file and returns objects, background objects, and class colors.
+
+    :param result_path: Path to the gzipped pickle result file.
+    :type result_path: str
+    :raises ValueError: If the loaded results are not a dictionary.
+    :return: A MapObjectList instance containing the objects.
+    :rtype: MapObjectList
+    """
+    potential_path = os.path.realpath(result_path)
+    if potential_path != result_path:
+        print(f"Resolved symlink for result_path: {result_path} -> \n{potential_path}")
+        result_path = potential_path
+
+    with gzip.open(result_path, "rb") as f:
+        results = pickle.load(f)
+
+    if not isinstance(results, dict):
+        raise ValueError(
+            "Results should be a dictionary! other types are not supported!"
+        )
+
+    objects = MapObjectList()
+    objects.load_serializable(results["objects"])
+    return objects
+
+
 if __name__ == "__main__":
     load_dotenv()
 
-    # objects = read_objects_json()
-    # create_qdrant_data_from_objects(objects)
-    llm_model = OpenAIGenerator(
-        api_key=Secret.from_token(os.getenv("GLAMA_API_KEY")),
-        api_base_url=os.getenv("GLAMA_API_BASE_URL"),
-        model="gemini-2.5-flash-preview",
-    )
+    INFERENCE = True
+    OBJECTS_PATH = "D:\\Documentos\\Datasets\\Replica\\room0\\exps\\r_mapping_stride11\\pcd_r_mapping_stride11.pkl.gz"
+    # "D:\\Documentos\\Datasets\\Robot@VirtualHome\\Home01\\CustomWandering3\\exps\\r_mapping_stride13\\pcd_r_mapping_stride13.pkl.gz"
+    # OBJECTS_PATH = "objects.json"
+    MAX_OBJECTS = 2  # -1 to get all objects
 
-    query = "i'm tired"
+    OBJECTS_SOURCE = "pkl.gz" if OBJECTS_PATH.endswith(".pkl.gz") else "json"
 
-    prompt = dedent(
-        f"""
-        You are a highly specialized research assistant with deep expertise in data analysis and understanding complex contexts.
-        Your main mission is to analyze a database of objects, interpret the user's intent from the provided query, and accurately identify which objects are most relevant to the presented need.
+    if not OBJECTS_SOURCE.endswith(".pkl.gz"):
+        raise ValueError(
+            f"Invalid objects source! Must be a .pkl.gz or .json file: {OBJECTS_PATH}"
+        )
 
-        The output MUST be in the same language as the user's query. Identify the language of the query and ensure that all blocks and responses are written in that language. This is mandatory for every response.
+    if INFERENCE:
+        print("Loading objects...")
+        if OBJECTS_SOURCE == "pkl.gz":
+            objects = load_pkl_gz_result(OBJECTS_PATH)
+        elif OBJECTS_SOURCE == "json":
+            objects = read_objects_json(OBJECTS_PATH)
 
-        Your response must strictly follow the structure below, always including the <language>, <user_intention>, <think>, and <relevant_object> blocks in the output, regardless of the scenario:
+        if MAX_OBJECTS != -1:
+            if isinstance(objects, MapObjectList):
+                objects = MapObjectList(objects[:MAX_OBJECTS])
+            elif isinstance(objects, dict):
+                # Retain only the first MAX_OBJECTS key-value pairs in the dictionary
+                objects = dict(list(objects.items())[:MAX_OBJECTS])
 
-        <language>
-        Identify and state the language used in the user's query (for example: English, Portuguese, Spanish, etc.).
-        </language>
+        print("Creating Qdrant data...")
+        create_qdrant_data_from_objects(objects)
+    else:
+        print("Loading LLM model...")
+        llm_model = OpenAIGenerator(
+            api_key=Secret.from_token(os.getenv("GLAMA_API_KEY")),
+            api_base_url=os.getenv("GLAMA_API_BASE_URL"),
+            model="gemini-2.5-flash-preview",
+        )
+        query = "i'm tired, preference for armchairs. Just suggest me anyone, without follow up questions."
 
-        <user_intention>
-        Analyze the user's query and clearly and objectively describe the user's main intent based on what was requested. Use this analysis to support the next steps.
-        </user_intention>
+        prompt = dedent(
+            f"""
+            You are a highly specialized research assistant with deep expertise in data analysis and understanding complex contexts.
+            Your main mission is to analyze a database of objects, interpret the user's intent from the provided query, and accurately identify which objects are most relevant to the presented need.
 
-        <think>
-        Analyze all provided objects, correlating each one with the user's intent identified in the <user_intention> block and with the user's query. Consider attributes such as 'object_tag', 'object_caption', 'bbox_extent', 'bbox_center', and 'bbox_volume' to identify relationships, similarities, or relevant distinctions between the objects and the intent expressed in the query. Highlight possible ambiguities, overlaps, or information gaps that may impact the selection of the most suitable object. It is important to analyze that there are objects related to the action, but that are not capable of performing the action themselves, for example, the door handle is related to the action of opening the door, but it cannot perform the action by itself. Exclude these objects from the list if there are more relevant objects.
-        </think>
+            The output MUST be in the same language as the user's query. Identify the language of the query and ensure that all blocks and responses are written in that language. This is mandatory for every response.
 
-        <relevant_object>
-        Filter and list only the objects that are relevant to the user's query, briefly justifying the relevance of each one based on the analyzed attributes.
-        </relevant_object>
-        
-        <selected_object>
-        If there is an object sufficient to meet the user's need, return the dictionary of the selected object. If multiple objects are relevant, analyze their position in the environment and if they are close, return the dictionary of the most relevant object. The dictionary must contain only the attributes 'id', 'object_tag', 'object_caption', 'bbox_extent', 'bbox_center', and 'bbox_volume'. With the following structure:
-        {{
-            'id': ...,
-            'object_tag': ...,
-            'object_caption': ...,
-            'bbox_extent': [..., ..., ...],
-            'bbox_center': [..., ..., ...],
-            'bbox_volume': ...
-        }}
-        </selected_object>
-        
-        <follow_up>
-        The follow up question must make sense with the user's query and with the user's intent identified in the <user_intention> block. It should be elaborated in order to help the user select the most suitable object.
-        </follow_up>
+            Your response must strictly follow the structure below, always including the <language>, <user_intention>, <think>, and <relevant_object> blocks in the output, regardless of the scenario:
 
-        After the above blocks, follow these rules for the final answer (always in the language of the query):
-        1. If there is no relevant object, return: <no_object>No object found. Please provide more details about what you are looking for.</no_object>
-        2. If there are multiple potentially relevant objects, return a follow-up question in the format <follow_up>...</follow_up>, presenting clear options that allow the user to differentiate between the possible objects (for example, highlighting differences in 'object_tag', 'object_caption', or other relevant attributes).
-        3. If any of the collected objects is sufficient, return <selected_obj>object dictionary</selected_obj>.
+            <language>
+            Identify and state the language used in the user's query (for example: English, Portuguese, Spanish, etc.).
+            </language>
 
-        Do not include explanations, justifications, or any other text besides the <language>, <think>, <relevant_object> blocks and the final answer (<no_object>, <follow_up>, or <selected_obj>).
+            <user_intention>
+            Analyze the user's query and clearly and objectively describe the user's main intent based on what was requested. Use this analysis to support the next steps.
+            </user_intention>
 
-        Structure of an object in the database:
-        {{
-            'id': ...,
-            'object_tag': ...,
-            'object_caption': ...,
-            'bbox_extent': [..., ..., ...],
-            'bbox_center': [..., ..., ...],
-            'bbox_volume': ...
-        }}
+            <think>
+            Analyze all provided objects, correlating each one with the user's intent identified in the <user_intention> block and with the user's query. Consider attributes such as 'object_tag', 'object_caption', 'bbox_extent', 'bbox_center', and 'bbox_volume' to identify relationships, similarities, or relevant distinctions between the objects and the intent expressed in the query. Highlight possible ambiguities, overlaps, or information gaps that may impact the selection of the most suitable object. It is important to analyze that there are objects related to the action, but that are not capable of performing the action themselves, for example, the door handle is related to the action of opening the door, but it cannot perform the action by itself. Exclude these objects from the list if there are more relevant objects.
+            </think>
 
-        Query: {query}
-        """
-    )
+            <relevant_object>
+            Filter and list only the objects that are relevant to the user's query, briefly justifying the relevance of each one based on the analyzed attributes.
+            </relevant_object>
 
-    # create_qdrant_data(texts)
-    relevant_chunks = query_relevant_chunks(query, 10, 0.1)
-    print(relevant_chunks)
-    print("--------------------------------")
-    response = infer_with_llm_model(llm_model, relevant_chunks, prompt)
-    print(response)
+            <selected_object>
+            If there is an object sufficient to meet the user's need, return the dictionary of the selected object. If multiple objects are relevant, analyze their position in the environment and if they are close, return the dictionary of the most relevant object. The dictionary must contain only the attributes 'id', 'object_tag', 'object_caption', 'bbox_extent', 'bbox_center', and 'bbox_volume'. With the following structure:
+            {{
+                'id': ...,
+                'object_tag': ...,
+                'object_caption': ...,
+                'bbox_extent': [..., ..., ...],
+                'bbox_center': [..., ..., ...],
+                'bbox_volume': ...
+            }}
+            </selected_object>
+
+            <follow_up>
+            The follow up question must make sense with the user's query and with the user's intent identified in the <user_intention> block. It should be elaborated in order to help the user select the most suitable object.
+            </follow_up>
+
+            After the above blocks, follow these rules for the final answer (always in the language of the query):
+            1. If there is no relevant object, return: <no_object>No object found. Please provide more details about what you are looking for.</no_object>
+            2. If there are multiple potentially relevant objects, return a follow-up question in the format <follow_up>...</follow_up>, presenting clear options that allow the user to differentiate between the possible objects (for example, highlighting differences in 'object_tag', 'object_caption', or other relevant attributes).
+            3. If any of the collected objects is sufficient, return <selected_obj>object dictionary</selected_obj>.
+
+            Do not include explanations, justifications, or any other text besides the <language>, <think>, <relevant_object> blocks and the final answer (<no_object>, <follow_up>, or <selected_obj>).
+
+            Structure of an object in the database:
+            {{
+                'id': ...,
+                'object_tag': ...,
+                'object_caption': ...,
+                'bbox_extent': [..., ..., ...],
+                'bbox_center': [..., ..., ...],
+                'bbox_volume': ...
+            }}
+
+            Query: {query}
+            """
+        )
+
+        print("Querying relevant chunks...")
+        relevant_chunks = query_relevant_chunks(query, 10, 0.1)
+        print(relevant_chunks)
+        print("--------------------------------")
+        response = infer_with_llm_model(llm_model, relevant_chunks, prompt)
+        print(response)
