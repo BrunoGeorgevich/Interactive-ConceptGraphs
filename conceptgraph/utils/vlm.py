@@ -107,8 +107,8 @@ gpt_model = "gemini-2.0-flash"
 
 def get_openai_client():
     client = OpenAI(
-        api_key=os.getenv("OPENAI_API_KEY"),
-        base_url=os.getenv("OPENAI_API_BASE_URL"),
+        api_key=os.getenv("GLAMA_API_KEY"),
+        base_url=os.getenv("GLAMA_API_BASE_URL"),
     )
     return client
 

@@ -44,7 +44,7 @@ hf_logging.set_verbosity_error()
 # Import OpenAI API
 import openai
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = os.getenv("GLAMA_API_KEY")
 
 
 @dataclass
