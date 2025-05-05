@@ -37,7 +37,10 @@
             "program": "${workspaceFolder}/conceptgraph/slam/rerun_realtime_mapping.py",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
-            "justMyCode": false
+            "python": "C:/Users/bruno/miniconda3/envs/conceptgraph/python",
+            "env": {
+            "PYTHONPATH": "${workspaceFolder}${pathSeparator}${env:PYTHONPATH}"
+            }
         },
         {
             "name": "iPhone Record3D Stream Rerun Realtime Mapping",
