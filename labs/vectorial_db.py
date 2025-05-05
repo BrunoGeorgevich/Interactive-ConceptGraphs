@@ -388,7 +388,7 @@ if __name__ == "__main__":
         model="gemini-2.5-flash-preview",
     )
 
-    query = "I'm hungry"
+    query = "i'm tired"
 
     prompt = dedent(
         f"""
