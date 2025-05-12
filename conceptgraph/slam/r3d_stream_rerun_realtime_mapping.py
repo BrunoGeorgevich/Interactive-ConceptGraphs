@@ -84,7 +84,7 @@ from conceptgraph.utils.vis import (
     vis_result_fast,
     vis_result_fast_on_depth,
 )
-from conceptgraph.utils.vlm import get_openai_client
+from conceptgraph.utils.vlm import get_vlm_openai_like_client
 
 # Disable torch gradient computation
 torch.set_grad_enabled(False)
@@ -174,7 +174,7 @@ def main(cfg: DictConfig):
         # Set the classes for the detection model
         detection_model.set_classes(obj_classes.get_classes_arr())
 
-        openai_client = get_openai_client()
+        openai_client = get_vlm_openai_like_client()
 
     else:
         print("\n".join(["NOT Running detections..."] * 10))

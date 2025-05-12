@@ -1,135 +1,73 @@
-import json
+from conceptgraph.utils.prompts import (
+    SYSTEM_PROMPT_ONLY_TOP,
+    SYSTEM_PROMPT_CAPTIONS,
+    SYSTEM_PROMPT_CONSOLIDATE_CAPTIONS,
+)
 from openai import OpenAI
-import os
-import base64
-
 from PIL import Image
-from dotenv import load_dotenv
-
+import traceback
+import base64
+import json
 import ast
+import os
 import re
 
-system_prompt_1 = """
-You are an agent specialized in describing the spatial relationships between objects in an annotated image.
 
-You will be provided with an annotated image and a list of labels for the annotations. Your task is to determine the spatial relationships between the annotated objects in the image, and return a list of these relationships in the correct list of tuples format as follows:
-[("object1", "spatial relationship", "object2"), ("object3", "spatial relationship", "object4"), ...]
+def get_vlm_openai_like_client(model: str, api_key: str, base_url: str) -> OpenAI:
+    """
+    Create and return an OpenAI client for VLM (Vision-Language Model) usage.
 
-Your options for the spatial relationship are "on top of" and "next to".
+    :param model: The model name to use for the client.
+    :type model: str
+    :param api_key: The API key for OpenAI authentication.
+    :type api_key: str
+    :param base_url: The base URL for the OpenAI API.
+    :type base_url: str
+    :return: An OpenAI client instance with the model attribute set.
+    :rtype: OpenAI
 
-For example, you may get an annotated image and a list such as 
-["cup 3", "book 4", "clock 5", "table 2", "candle 7", "music stand 6", "lamp 8"]
-
-Your response should be a description of the spatial relationships between the objects in the image. 
-An example to illustrate the response format:
-[("book 4", "on top of", "table 2"), ("cup 3", "next to", "book 4"), ("lamp 8", "on top of", "music stand 6")]
-"""
-
-"""
-You are an agent specialized in identifying and describing objects that are placed "on top of" each other in an annotated image. You always output a list of tuples that describe the "on top of" spatial relationships between the objects, and nothing else. When in doubt, output an empty list.
-
-When provided with an annotated image and a corresponding list of labels for the annotations, your primary task is to determine and return the "on top of" spatial relationships between the annotated objects. Your responses should be formatted as a list of tuples, specifically highlighting objects that rest on top of others, as follows:
-[("object1", "on top of", "object2"), ...]
-"""
-
-# Only deal with the "on top of" relation
-system_prompt_only_top = """
-You are an agent specializing in identifying the physical and spatial relationships in annotated images for 3D mapping.
-
-In the images, each object is annotated with a bright numeric id (i.e. a number) and a corresponding colored contour outline. Your task is to analyze the images and output a list of tuples describing the physical relationships between objects. Format your response as follows: [("1", "relation type", "2"), ...]. When uncertain, return an empty list.
-
-Note that you are describing the **physical relationships** between the **objects inside** the image.
-
-You will also be given a text list of the numeric ids of the objects in the image. The list will be in the format: ["1: name1", "2: name2", "3: name3" ...], only output the physical relationships between the objects in the list.
-
-The relation types you must report are:
-- phyically placed on top of: ("object x", "on top of", "object y") 
-- phyically placed underneath: ("object x", "under", "object y") 
-
-An illustrative example of the expected response format might look like this:
-[("object 1", "on top of", "object 2"), ("object 3", "under", "object 2"), ("object 4", "on top of", "object 3")]. Do not put the names of the objects in your response, only the numeric ids.
-
-Do not include any other information in your response. Only output a parsable list of tuples describing the given physical relationships between objects in the image.
-"""
-
-# For captions
-system_prompt_captions = """
-You are an agent specializing in accurate captioning objects in an image.
-
-In the images, each object is annotated with a bright numeric id (i.e. a number) and a corresponding colored contour outline. Your task is to analyze the images and output in a structured format, the captions for the objects.
-
-You will also be given a text list of the numeric ids and names of the objects in the image. The list will be in the format: ["1: name1", "2: name2", "3: name3" ...]
-
-The names were obtained from a simple object detection system and may be inaacurate.
-
-Your response should be in the format of a list of dictionaries, where each dictionary contains the id, name, and caption of an object. Your response will be evaluated as a python list of dictionaries, so make sure to format it correctly. An example of the expected response format is as follows:
-[
-    {"id": "1", "name": "object1", "caption": "concise description of the object1 in the image"},
-    {"id": "2", "name": "object2", "caption": "concise description of the object2 in the image"},
-    {"id": "3", "name": "object3", "caption": "concise description of the object3 in the image"}
-    ...
-]
-
-And each caption must be a concise description of the object in the image.
-"""
-
-system_prompt_consolidate_captions = """
-You are an agent specializing in consolidating multiple captions for the same object into a single, clear, and accurate caption.
-
-You will be provided with several captions describing the same object. Your task is to analyze these captions, identify the common elements, remove any noise or outliers, and consolidate them into a single, coherent caption that accurately describes the object.
-
-Ensure the consolidated caption is clear, concise, and captures the essential details from the provided captions.
-
-Here is an example of the input format:
-[
-    {"id": "3", "name": "cigar box", "caption": "rectangular cigar box on the side cabinet"},
-    {"id": "9", "name": "cigar box", "caption": "A small cigar box placed on the side cabinet."},
-    {"id": "7", "name": "cigar box", "caption": "A small cigar box is on the side cabinet."},
-    {"id": "8", "name": "cigar box", "caption": "Box on top of the dresser"},
-    {"id": "5", "name": "cigar box", "caption": "A cigar box placed on the dresser next to the coffeepot."},
-]
-
-Your response should be a JSON object with the format:
-{
-    "consolidated_caption": "A small rectangular cigar box on the side cabinet."
-}
-
-Do not include any additional information in your response.
-"""
-
-system_prompt = system_prompt_only_top
-
-load_dotenv()
-
-# gpt_model = "gpt-4-vision-preview"
-gpt_model = "gemini-2.0-flash"
-
-
-def get_openai_client():
+    This function initializes an OpenAI client and attaches the model name as an attribute.
+    """
     client = OpenAI(
-        api_key=os.getenv("GLAMA_API_KEY"),
-        base_url=os.getenv("GLAMA_API_BASE_URL"),
+        api_key=api_key,
+        base_url=base_url,
     )
+    setattr(client, "model", model)
     return client
 
 
-# Function to encode the image as base64
-def encode_image_for_openai(image_path: str, resize=False, target_size: int = 512):
+def encode_image_for_openai(image_path: str, resize: bool = False, target_size: int = 512) -> str:
+    """
+    Encode an image file as a base64 string for OpenAI API usage, with optional resizing.
+
+    :param image_path: Path to the image file to encode.
+    :type image_path: str
+    :param resize: Whether to resize the image before encoding.
+    :type resize: bool
+    :param target_size: Target size for the largest dimension if resizing is enabled.
+    :type target_size: int
+    :return: Base64-encoded string of the image.
+    :rtype: str
+    :raises FileNotFoundError: If the image file does not exist.
+
+    This function checks for the existence of the image, optionally resizes it while maintaining aspect ratio,
+    and encodes it as a base64 string for use with the OpenAI API.
+    """
     print(f"Checking if image exists at path: {image_path}")
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file not found: {image_path}")
 
     if not resize:
-        # Open the image
+        # No resizing: encode the original image directly.
         print(f"Opening image from path: {image_path}")
         with open(image_path, "rb") as img_file:
             encoded_image = base64.b64encode(img_file.read()).decode("utf-8")
             print("Image encoded in base64 format.")
         return encoded_image
 
+    # Resize the image to the target size, maintaining aspect ratio.
     print(f"Opening image from path: {image_path}")
     with Image.open(image_path) as img:
-        # Determine scaling factor to maintain aspect ratio
         original_width, original_height = img.size
         print(f"Original image dimensions: {original_width} x {original_height}")
 
@@ -144,105 +82,133 @@ def encode_image_for_openai(image_path: str, resize=False, target_size: int = 51
 
         print(f"Resized image dimensions: {new_width} x {new_height}")
 
-        # Resizing the image
         img_resized = img.resize((new_width, new_height), Image.LANCZOS)
         print("Image resized successfully.")
 
-        # Convert the image to bytes and encode it in base64
+        # Save the resized image temporarily for encoding.
         with open("temp_resized_image.jpg", "wb") as temp_file:
             img_resized.save(temp_file, format="JPEG")
             print("Resized image saved temporarily for encoding.")
 
-        # Open the temporarily saved image for base64 encoding
+        # Encode the resized image as base64.
         with open("temp_resized_image.jpg", "rb") as temp_file:
             encoded_image = base64.b64encode(temp_file.read()).decode("utf-8")
             print("Image encoded in base64 format.")
 
-        # Clean up the temporary file
+        # Remove the temporary file.
         os.remove("temp_resized_image.jpg")
         print("Temporary file removed.")
 
     return encoded_image
 
 
-def consolidate_captions(client: OpenAI, captions: list):
-    # Formatting the captions into a single string prompt
+def consolidate_captions(client: OpenAI, captions: list) -> str:
+    """
+    Consolidate multiple captions for the same object into a single, clear caption using the OpenAI API.
+
+    :param client: OpenAI client with the model attribute set.
+    :type client: OpenAI
+    :param captions: List of caption dictionaries, each with a 'caption' key.
+    :type captions: list
+    :return: A single consolidated caption string.
+    :rtype: str
+
+    This function formats the input captions into a prompt, sends it to the OpenAI API,
+    and parses the response to extract the consolidated caption.
+    """
+    # Format the captions into a single string for the prompt.
     captions_text = "\n".join(
         [f"{cap['caption']}" for cap in captions if cap["caption"] is not None]
     )
-    user_query = f"Here are several captions for the same object:\n{captions_text}\n\nPlease consolidate these into a single, clear caption that accurately describes the object."
+    user_query = (
+        f"Here are several captions for the same object:\n{captions_text}\n\n"
+        "Please consolidate these into a single, clear caption that accurately describes the object."
+    )
 
     messages = [
-        {"role": "system", "content": system_prompt_consolidate_captions},
+        {"role": "system", "content": SYSTEM_PROMPT_CONSOLIDATE_CAPTIONS},
         {"role": "user", "content": user_query},
     ]
 
     consolidated_caption = ""
     try:
         response = client.chat.completions.create(
-            model=f"{gpt_model}",
+            model=f"{client.model}",
             messages=messages,
             response_format={"type": "json_object"},
         )
-
         consolidated_caption_json = response.choices[0].message.content.strip()
         consolidated_caption = json.loads(consolidated_caption_json).get(
             "consolidated_caption", ""
         )
         print(f"Consolidated Caption: {consolidated_caption}")
 
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
+    except (json.JSONDecodeError, AttributeError, KeyError) as e:
+        print(f"Failed to parse consolidated caption from OpenAI response: {str(e)}")
+        traceback.print_exc()
+        consolidated_caption = ""
+    except (OSError, TypeError) as e:
+        print(f"Error during OpenAI API call for caption consolidation: {str(e)}")
+        traceback.print_exc()
         consolidated_caption = ""
 
     return consolidated_caption
 
 
-def extract_list_of_tuples(text: str):
-    # Pattern to match a list of tuples, considering a list that starts with '[' and ends with ']'
-    # and contains any characters in between, including nested lists/tuples.
+def extract_list_of_tuples(text: str) -> list:
+    """
+    Extract a list of tuples from a string, typically from VLM output.
+
+    :param text: Text containing a list of tuples (e.g., "[('a', 'b'), ...]").
+    :type text: str
+    :return: Extracted list of tuples, or an empty list if extraction fails.
+    :rtype: list
+
+    This function searches for a list pattern in the text and attempts to parse it as a Python list of tuples.
+    """
+    # Replace newlines for uniformity and search for a list pattern.
     text = text.replace("\n", " ")
     pattern = r"\[.*?\]"
 
-    # Search for the pattern in the text
     match = re.search(pattern, text)
     if match:
-        # Extract the matched string
         list_str = match.group(0)
         try:
-            # Convert the string to a list of tuples
-            result = ast.literal_eval(list_str)
-            if isinstance(result, list):  # Ensure it is a list
-                return result
-        except (ValueError, SyntaxError):
-            # Handle cases where the string cannot be converted
-            print("Found string cannot be converted to a list of tuples.")
-            return []
-    else:
-        # No matching pattern found
-        print("No list of tuples found in the text.")
-        return []
-
-
-def vlm_extract_object_captions(text: str):
-    # Replace newlines with spaces for uniformity
-    text = text.replace("\n", " ")
-
-    # Pattern to match the list of objects
-    pattern = r"\[(.*?)\]"
-
-    # Search for the pattern in the text
-    match = re.search(pattern, text)
-    if match:
-        # Extract the matched string
-        list_str = match.group(0)
-        try:
-            # Try to convert the entire string to a list of dictionaries
             result = ast.literal_eval(list_str)
             if isinstance(result, list):
                 return result
         except (ValueError, SyntaxError):
-            # If the whole string conversion fails, process each element individually
+            print("Found string cannot be converted to a list of tuples.")
+            traceback.print_exc()
+            return []
+    else:
+        print("No list of tuples found in the text.")
+        return []
+
+
+def vlm_extract_object_captions(text: str) -> list:
+    """
+    Extract a list of object captions from a string containing a JSON-like list of objects.
+
+    :param text: Text containing a list of objects with captions (e.g., "[{'caption': ...}, ...]").
+    :type text: str
+    :return: Extracted list of caption objects, or an empty list if extraction fails.
+    :rtype: list
+
+    This function attempts to parse a list of dictionaries from the text, handling both well-formed and partially-formed lists.
+    """
+    text = text.replace("\n", " ")
+    pattern = r"\[(.*?)\]"
+
+    match = re.search(pattern, text)
+    if match:
+        list_str = match.group(0)
+        try:
+            result = ast.literal_eval(list_str)
+            if isinstance(result, list):
+                return result
+        except (ValueError, SyntaxError):
+            # If the whole string conversion fails, process each element individually.
             elements = re.findall(r"{.*?}", list_str)
             result = []
             for element in elements:
@@ -252,28 +218,43 @@ def vlm_extract_object_captions(text: str):
                         result.append(obj)
                 except (ValueError, SyntaxError):
                     print(f"Error processing element: {element}")
+                    traceback.print_exc()
             return result
     else:
-        # No matching pattern found
         print("No list of objects found in the text.")
         return []
 
 
-def get_obj_rel_from_image_gpt4v(client: OpenAI, image_path: str, label_list: list):
-    # Getting the base64 string
+def get_obj_rel_from_image_gpt4v(client: OpenAI, image_path: str, label_list: list) -> list:
+    """
+    Extract object relationships from an image using GPT-4V via the OpenAI API.
+
+    :param client: OpenAI client with the model attribute set.
+    :type client: OpenAI
+    :param image_path: Path to the image file to analyze.
+    :type image_path: str
+    :param label_list: List of object labels present in the image.
+    :type label_list: list
+    :return: List of tuples describing object relationships, or an empty list if extraction fails.
+    :rtype: list
+
+    This function encodes the image, constructs a prompt, sends it to the OpenAI API,
+    and parses the response to extract object relationships.
+    """
+    # Encode the image as base64 for API usage.
     base64_image = encode_image_for_openai(image_path)
 
-    global system_prompt
-    global gpt_model
-
-    user_query = f"Here is the list of labels for the annotations of the objects in the image: {label_list}. Please describe the spatial relationships between the objects in the image."
+    user_query = (
+        f"Here is the list of labels for the annotations of the objects in the image: {label_list}. "
+        "Please describe the spatial relationships between the objects in the image."
+    )
 
     vlm_answer = []
     try:
         response = client.chat.completions.create(
-            model=f"{gpt_model}",
+            model=f"{client.model}",
             messages=[
-                {"role": "system", "content": system_prompt_only_top},
+                {"role": "system", "content": SYSTEM_PROMPT_ONLY_TOP},
                 {
                     "role": "user",
                     "content": [
@@ -294,8 +275,9 @@ def get_obj_rel_from_image_gpt4v(client: OpenAI, image_path: str, label_list: li
 
         vlm_answer = extract_list_of_tuples(vlm_answer_str)
 
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
+    except (AttributeError, KeyError, TypeError) as e:
+        print(f"Error extracting object relationships from OpenAI response: {str(e)}")
+        traceback.print_exc()
         print("Setting vlm_answer to an empty list.")
         vlm_answer = []
     print(f"Line 68, user_query: {user_query}")
@@ -306,16 +288,32 @@ def get_obj_rel_from_image_gpt4v(client: OpenAI, image_path: str, label_list: li
 
 def get_obj_captions_from_image_gpt4v(
     client: OpenAI, image_path: str, label_list: list
-):
-    # Getting the base64 string
+) -> list:
+    """
+    Extract object captions from an image using GPT-4V via the OpenAI API.
+
+    :param client: OpenAI client with the model attribute set.
+    :type client: OpenAI
+    :param image_path: Path to the image file to analyze.
+    :type image_path: str
+    :param label_list: List of object labels present in the image.
+    :type label_list: list
+    :return: List of dictionaries containing object captions, or an empty list if extraction fails.
+    :rtype: list
+
+    This function encodes the image, constructs a prompt, sends it to the OpenAI API,
+    and parses the response to extract object captions for each object in the image.
+    """
+    # Encode the image as base64 for API usage.
     base64_image = encode_image_for_openai(image_path)
 
-    global system_prompt
-
-    user_query = f"Here is the list of labels for the annotations of the objects in the image: {label_list}. Please accurately caption the objects in the image."
+    user_query = (
+        f"Here is the list of labels for the annotations of the objects in the image: {label_list}. "
+        "Please accurately caption the objects in the image."
+    )
 
     messages = [
-        {"role": "system", "content": system_prompt_captions},
+        {"role": "system", "content": SYSTEM_PROMPT_CAPTIONS},
         {
             "role": "user",
             "content": [
@@ -333,7 +331,7 @@ def get_obj_captions_from_image_gpt4v(
     vlm_answer_captions = []
     try:
         response = client.chat.completions.create(
-            model=f"{gpt_model}", messages=messages
+            model=f"{client.model}", messages=messages
         )
 
         vlm_answer_str = response.choices[0].message.content
@@ -341,8 +339,9 @@ def get_obj_captions_from_image_gpt4v(
 
         vlm_answer_captions = vlm_extract_object_captions(vlm_answer_str)
 
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
+    except (AttributeError, KeyError, TypeError) as e:
+        print(f"Error extracting object captions from OpenAI response: {str(e)}")
+        traceback.print_exc()
         print("Setting vlm_answer to an empty list.")
         vlm_answer_captions = []
     print(f"Line 68, user_query: {user_query}")

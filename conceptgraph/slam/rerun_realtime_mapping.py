@@ -3,6 +3,7 @@
 # =========================
 
 # Standard library imports
+from dotenv import load_dotenv
 from pathlib import Path
 import pickle
 import gzip
@@ -38,7 +39,7 @@ from conceptgraph.utils.optional_wandb_wrapper import OptionalWandB
 from conceptgraph.utils.logging_metrics import MappingTracker
 from conceptgraph.utils.vlm import (
     consolidate_captions,
-    get_openai_client,
+    get_vlm_openai_like_client,
 )
 from conceptgraph.utils.ious import mask_subtract_contained
 from conceptgraph.utils.general_utils import (
@@ -109,6 +110,7 @@ torch.set_grad_enabled(False)
     config_name="rerun_realtime_mapping",
 )
 def main(cfg: DictConfig):
+    load_dotenv()
     # Initialize a tracker for mapping statistics
     tracker = MappingTracker()
 
@@ -202,7 +204,11 @@ def main(cfg: DictConfig):
         print("\n".join(["NOT Running detections..."] * 10))
 
     # Initialize OpenAI client for VLM (Vision-Language Model) captions/edges
-    openai_client = get_openai_client()
+    openai_client = get_vlm_openai_like_client(
+        model="gemini-2.0-flash",
+        api_key=os.getenv("GLAMA_API_KEY"),
+        base_url=os.getenv("GLAMA_API_BASE_URL"),
+    )
 
     # Save configuration files for reproducibility
     save_hydra_config(cfg, exp_out_path)
