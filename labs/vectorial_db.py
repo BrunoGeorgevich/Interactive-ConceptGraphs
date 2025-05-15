@@ -1,4 +1,5 @@
 from haystack_integrations.document_stores.qdrant import QdrantDocumentStore
+from haystack_integrations.components.rankers.jina import JinaRanker
 from haystack.components.generators.chat import OpenAIChatGenerator
 from haystack.components.embedders import OpenAITextEmbedder
 from haystack.document_stores.types import DuplicatePolicy
@@ -305,18 +306,27 @@ def create_qdrant_data_from_texts(texts: list[str]) -> int:
 
 
 def query_relevant_chunks(
-    query: str, top_k: int = 5, confidence_threshold: float = 0.1
+    query: str,
+    top_k: int = 5,
+    confidence_threshold: float = 0.1,
+    rerank: bool = True,
+    rerank_top_k: int = 10,
 ) -> list[tuple[str, dict, float]]:
     """
     Retrieves the most relevant document chunks for a given query using OpenAITextEmbedder and QdrantDocumentStore's _query_by_embedding,
     filtering results by a minimum confidence threshold. Each returned chunk is a tuple containing the text, its metadata, and its confidence score.
+    Optionally reranks the results with JinaRanker for improved relevance.
 
     :param query: The search query string to embed and search for relevant chunks.
     :type query: str
-    :param top_k: The maximum number of relevant chunks to retrieve.
+    :param top_k: The maximum number of relevant chunks to retrieve from vector search.
     :type top_k: int
     :param confidence_threshold: The minimum confidence score required for a chunk to be considered relevant (range: 0.0 to 1.0).
     :type confidence_threshold: float
+    :param rerank: Whether to apply reranking with JinaRanker.
+    :type rerank: bool
+    :param rerank_top_k: The number of top documents to keep after reranking.
+    :type rerank_top_k: int
     :raises ValueError: If the retrieval process fails, embedding fails, or the pipeline cannot be constructed.
     :return: A list of tuples, each containing a relevant document chunk as a string, its metadata as a dict, and its confidence score as a float, filtered by the confidence threshold.
     :rtype: list[tuple[str, dict, float]]
@@ -346,19 +356,33 @@ def query_relevant_chunks(
             top_k=top_k,
         )
 
-        # Support both dict and list return types
-        documents = (
+        relevant_docs = []
+        reranked_chunks = []
+        if rerank and retrieved_documents and os.getenv("JINA_API_KEY") is not None:
+            try:
+                print("Reranking chunks with Jina AI via Haystack...")
+                reranker = JinaRanker(
+                    api_key=Secret.from_env_var("JINA_API_KEY"),
+                    model="jina-reranker-v2-base-multilingual",
+                    top_k=rerank_top_k,
+                )
+
+                retrieved_documents = reranker.run(
+                    query=query, documents=retrieved_documents
+                )
+            except (ImportError, ValueError, KeyError, IndexError) as e:
+                traceback.print_exc()
+                print(f"Error during reranking: {str(e)}")
+                print("Using original chunks without reranking")
+                raise
+
+        relevant_docs = (
             retrieved_documents.get("documents", [])
             if isinstance(retrieved_documents, dict)
             else retrieved_documents
         )
 
-        if not documents:
-            return []
-
-        # Filter by confidence threshold if available, and return (content, metadata, score) tuples
-        relevant_chunks = []
-        for doc in documents:
+        for doc in relevant_docs:
             score = getattr(doc, "score", None)
             if score is None and isinstance(doc, dict):
                 score = doc.get("score", None)
@@ -370,12 +394,12 @@ def query_relevant_chunks(
                 meta = doc.get("meta", {})
             if meta is None:
                 meta = {}
-            # If no score is available, include with score 1.0 by default
             if score is None:
                 score = 1.0
             if content is not None and score >= confidence_threshold:
-                relevant_chunks.append((content, meta, float(score)))
-        return relevant_chunks
+                reranked_chunks.append((content, meta, float(score)))
+
+        return reranked_chunks
 
     except (ImportError, AttributeError, TypeError, ValueError) as e:
         traceback.print_exc()
@@ -492,7 +516,6 @@ if __name__ == "__main__":
     MAX_OBJECTS = -1  # -1 to get all objects
 
     OBJECTS_SOURCE = "pkl.gz" if OBJECTS_PATH.endswith(".pkl.gz") else "json"
-
     if not INFERENCE:
         print("Loading objects...")
         if OBJECTS_SOURCE == "pkl.gz":
@@ -504,7 +527,6 @@ if __name__ == "__main__":
             if isinstance(objects, MapObjectList):
                 objects = MapObjectList(objects[:MAX_OBJECTS])
             elif isinstance(objects, dict):
-                # Retain only the first MAX_OBJECTS key-value pairs in the dictionary
                 objects = dict(list(objects.items())[:MAX_OBJECTS])
 
         print("Creating Qdrant data...")
@@ -512,18 +534,16 @@ if __name__ == "__main__":
     else:
         print("Loading LLM model...")
         llm_model = OpenAIChatGenerator(
-            api_key=Secret.from_token(os.getenv("GLAMA_API_KEY")),
+            api_key=Secret.from_env_var("GLAMA_API_KEY"),
             api_base_url=os.getenv("GLAMA_API_BASE_URL"),
-            # model="gemini-2.0-flash-001",
             model="gemini-2.5-flash-preview",
-            # model="gpt-4.1-mini",
         )
         query = input("Please provide your query: ")
-        # query = "i'm tired."
-        # query = "I want to see television."
 
         print("Querying relevant chunks...")
-        relevant_chunks = query_relevant_chunks(query, 40, 0.1)
+        # Use the updated function with reranking built in
+        relevant_chunks = query_relevant_chunks(query, 100, 0.001, True, 10)
+
         print(relevant_chunks)
         print("--------------------------------")
 
@@ -644,20 +664,15 @@ if __name__ == "__main__":
         """
         )
 
-        # Create messages list here rather than in the function
         messages = [ChatMessage.from_system(prompt)]
         messages.append(ChatMessage.from_user(query))
 
         selected_object = None
-        # Loop until we get a response containing <selected_object>
         while True:
-            # Get response using the updated function
             response = infer_with_llm_model(llm_model, messages)
             print(response)
 
-            # Add the assistant's response to the messages list
             messages.append(ChatMessage.from_assistant(response))
-            # Check if we have a selected object in the response
             if "<end_conversation>" in response:
                 break
             elif "<selected_object>" in response:
@@ -669,7 +684,6 @@ if __name__ == "__main__":
                 selected_object = json.loads(selected_object)
                 break
 
-            # Allow the user to provide a follow-up
             user_follow_up = input("Please provide your follow-up: ")
             messages.append(ChatMessage.from_user(user_follow_up))
 
@@ -678,6 +692,6 @@ if __name__ == "__main__":
             print(selected_object)
             obj_id = selected_object["id"]
             retrieved_object = list(
-                filter(lambda x: x[1]["id"] == obj_id, relevant_chunks)
+                filter(lambda x: "id" in x[1] and x[1]["id"] == obj_id, relevant_chunks)
             )
             print(retrieved_object)

@@ -4,3 +4,4 @@ fastembed-gpu
 python-dotenv
 semantic-text-splitter
 nltk
+jina-haystack
