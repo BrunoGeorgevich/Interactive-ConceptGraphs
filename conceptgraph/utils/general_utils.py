@@ -1,28 +1,29 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from omegaconf import OmegaConf
+import scipy.ndimage as ndi
 from copy import deepcopy
+from pathlib import Path
+import supervision as sv
+import numpy as np
+import traceback
+import logging
+import pickle
+import time
 import gzip
 import json
-import logging
+import cv2
 import os
-from pathlib import Path
-import pickle
+import re
 
 # from conceptgraph.utils.vis import annotate_for_vlm, filter_detections, plot_edges_from_vlm
 from conceptgraph.slam.slam_classes import MapObjectList
 from conceptgraph.slam.utils import prepare_objects_save_vis
 from conceptgraph.utils.ious import mask_subtract_contained
-import supervision as sv
-import scipy.ndimage as ndi
+
 from conceptgraph.utils.vlm import (
-    get_obj_captions_from_image_gpt4v,
-    get_obj_rel_from_image_gpt4v,
+    get_obj_captions_from_image,
+    get_obj_rel_from_image,
 )
-import cv2
-import re
-
-
-from omegaconf import OmegaConf
-import numpy as np
-import time
 
 
 class Timer:
@@ -536,7 +537,7 @@ def make_vlm_edges_and_captions(
         detections=curr_det,
         classes=obj_classes,
         top_x_detections=150000,
-        confidence_threshold=0.00001,
+        confidence_threshold=0.1,
         given_labels=detection_class_labels,
     )
 
@@ -567,12 +568,57 @@ def make_vlm_edges_and_captions(
         cv2.imwrite(str(vis_save_path_for_vlm), annotated_image_for_vlm)
         print(f"Line 313, vis_save_path_for_vlm: {vis_save_path_for_vlm}")
 
-        edges = get_obj_rel_from_image_gpt4v(
-            openai_client, vis_save_path_for_vlm, label_list
-        )
-        captions = get_obj_captions_from_image_gpt4v(
-            openai_client, vis_save_path_for_vlm, label_list
-        )
+        edges = []
+        captions = []
+
+        def _retry_call(func, max_retries=2, delay=1, *args, **kwargs):
+            """
+            Helper function to retry a callable up to max_retries times with a delay.
+            :param func: Callable to execute.
+            :type func: callable
+            :param max_retries: Maximum number of attempts.
+            :type max_retries: int
+            :param delay: Delay in seconds between retries.
+            :type delay: int | float
+            :return: Result of the callable or None if all attempts fail.
+            :rtype: any
+            :raises: None
+            """
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except (RuntimeError, ValueError, TypeError, AttributeError) as e:
+                    print(f"Attempt {attempt+1} failed for {func.__name__}: {str(e)}")
+                    traceback.print_exc()
+                    if attempt < max_retries - 1:
+                        time.sleep(delay)
+            print(f"All {max_retries} attempts failed for {func.__name__}. Skipping.")
+            return []
+
+        try:
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                future_edges = executor.submit(_retry_call, get_obj_rel_from_image, 2, 1, openai_client, vis_save_path_for_vlm, label_list)
+                future_captions = executor.submit(_retry_call, get_obj_captions_from_image, 2, 1, openai_client, vis_save_path_for_vlm, label_list)
+                for future in as_completed([future_edges, future_captions]):
+                    if future == future_edges:
+                        try:
+                            edges = future.result()
+                        except (RuntimeError, ValueError, TypeError, AttributeError):
+                            print("Error occurred while getting object relationships from image (after retries).")
+                            traceback.print_exc()
+                            edges = []
+                    else:
+                        try:
+                            captions = future.result()
+                        except (RuntimeError, ValueError, TypeError, AttributeError):
+                            print("Error occurred while getting object captions from image (after retries).")
+                            traceback.print_exc()
+                            captions = []
+        except (RuntimeError, ValueError, TypeError, AttributeError):
+            print("Error occurred during parallel execution of object relationship and caption extraction.")
+            traceback.print_exc()
+            edges = []
+            captions = []
         edge_image = plot_edges_from_vlm(
             annotated_image_for_vlm,
             edges,

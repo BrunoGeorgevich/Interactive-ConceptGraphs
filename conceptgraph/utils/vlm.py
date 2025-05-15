@@ -225,7 +225,7 @@ def vlm_extract_object_captions(text: str) -> list:
         return []
 
 
-def get_obj_rel_from_image_gpt4v(client: OpenAI, image_path: str, label_list: list) -> list:
+def get_obj_rel_from_image(client: OpenAI, image_path: str, label_list: list) -> list:
     """
     Extract object relationships from an image using GPT-4V via the OpenAI API.
 
@@ -286,7 +286,7 @@ def get_obj_rel_from_image_gpt4v(client: OpenAI, image_path: str, label_list: li
     return vlm_answer
 
 
-def get_obj_captions_from_image_gpt4v(
+def get_obj_captions_from_image(
     client: OpenAI, image_path: str, label_list: list
 ) -> list:
     """
