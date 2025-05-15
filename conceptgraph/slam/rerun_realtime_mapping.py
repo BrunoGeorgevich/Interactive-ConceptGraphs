@@ -205,7 +205,7 @@ def main(cfg: DictConfig):
 
     # Initialize OpenAI client for VLM (Vision-Language Model) captions/edges
     openai_client = get_vlm_openai_like_client(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash",
         api_key=os.getenv("GLAMA_API_KEY"),
         base_url=os.getenv("GLAMA_API_BASE_URL"),
     )
