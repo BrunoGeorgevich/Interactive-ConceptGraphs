@@ -9,14 +9,15 @@ defaults:
   - logging_level
   - _self_
 
-detections_exp_suffix: s_detections_stride13 # helpful label to identify your detections
+run_id: 4
+stride: 15
+detections_exp_suffix: s_detections_${run_id}_stride${stride} # helpful label to identify your detections
 force_detection: !!bool True
 save_detections: !!bool True
 
 make_edges: !!bool True
 
-stride: 10
-exp_suffix: r_mapping_stride13 # helpful label to identify your mapping experiment
+exp_suffix: r_mapping_${run_id}_stride${stride} # helpful label to identify your mapping experiment
 
 save_video: !!bool False
 save_objects_all_frames: !!bool False
