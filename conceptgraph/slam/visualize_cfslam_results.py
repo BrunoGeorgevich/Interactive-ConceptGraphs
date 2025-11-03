@@ -16,7 +16,9 @@ from conceptgraph.slam.slam_classes import MapObjectList
 from conceptgraph.utils.vis import LineMesh
 
 
-def create_ball_mesh(center: tuple, radius: float, color: tuple = (0, 1, 0)) -> o3d.geometry.TriangleMesh:
+def create_ball_mesh(
+    center: tuple, radius: float, color: tuple = (0, 1, 0)
+) -> o3d.geometry.TriangleMesh:
     """
     Creates a colored sphere mesh at a given position.
 
@@ -81,7 +83,9 @@ def load_result(result_path: str) -> tuple:
         results = pickle.load(f)
 
     if not isinstance(results, dict):
-        raise ValueError("Results should be a dictionary! other types are not supported!")
+        raise ValueError(
+            "Results should be a dictionary! other types are not supported!"
+        )
 
     objects = MapObjectList()
     objects.load_serializable(results["objects"])
@@ -368,6 +372,9 @@ def main(args) -> None:
             f"Most probable object is at index {max_prob_idx} with class name '{max_prob_object['class_name']}'"
         )
         print(f"location xyz: {max_prob_object['bbox'].center}")
+
+        print(len(objects), max_prob_object.keys())
+        print(max_prob_object)
 
         for i in range(len(objects)):
             pcd = pcds[i]
