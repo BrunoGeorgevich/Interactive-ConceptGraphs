@@ -999,7 +999,7 @@ def filter_gobs(
     for attribute in gobs.keys():
         if isinstance(gobs[attribute], str) or attribute == "classes":  # Captions
             continue
-        if attribute in ["labels", "edges", "text_feats", "captions"]:
+        if attribute in ["labels", "edges", "text_feats", "captions", "room_data"]:
             # Note: this statement was used to also exempt 'detection_class_labels' but that causes a bug. It causes the edges to be misalgined with the objects.
             continue
         elif isinstance(gobs[attribute], list):

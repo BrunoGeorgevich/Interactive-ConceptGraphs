@@ -2,6 +2,7 @@ from conceptgraph.utils.prompts import (
     SYSTEM_PROMPT_ONLY_TOP,
     SYSTEM_PROMPT_CAPTIONS,
     SYSTEM_PROMPT_CONSOLIDATE_CAPTIONS,
+    SYSTEM_PROMPT_ROOM_CLASS,
 )
 from openai import OpenAI
 from PIL import Image
@@ -36,7 +37,9 @@ def get_vlm_openai_like_client(model: str, api_key: str, base_url: str) -> OpenA
     return client
 
 
-def encode_image_for_openai(image_path: str, resize: bool = False, target_size: int = 512) -> str:
+def encode_image_for_openai(
+    image_path: str, resize: bool = False, target_size: int = 512
+) -> str:
     """
     Encode an image file as a base64 string for OpenAI API usage, with optional resizing.
 
@@ -136,6 +139,7 @@ def consolidate_captions(client: OpenAI, captions: list) -> str:
             model=f"{client.model}",
             messages=messages,
             response_format={"type": "json_object"},
+            timeout=20,
         )
         consolidated_caption_json = response.choices[0].message.content.strip()
         consolidated_caption = json.loads(consolidated_caption_json).get(
@@ -268,6 +272,7 @@ def get_obj_rel_from_image(client: OpenAI, image_path: str, label_list: list) ->
                 },
                 {"role": "user", "content": user_query},
             ],
+            timeout=20,
         )
 
         vlm_answer_str = response.choices[0].message.content
@@ -331,7 +336,7 @@ def get_obj_captions_from_image(
     vlm_answer_captions = []
     try:
         response = client.chat.completions.create(
-            model=f"{client.model}", messages=messages
+            model=f"{client.model}", messages=messages, timeout=20
         )
 
         vlm_answer_str = response.choices[0].message.content
@@ -348,3 +353,86 @@ def get_obj_captions_from_image(
     print(f"Line 97, vlm_answer: {vlm_answer_captions}")
 
     return vlm_answer_captions
+
+
+def get_room_data_from_image(
+    client: OpenAI, image_path: str, room_data_list: list
+) -> str:
+    """
+    Extract room class from an image using GPT-4V via the OpenAI API.
+
+    :param client: OpenAI client with the model attribute set.
+    :type client: OpenAI
+    :param image_path: Path to the image file to analyze.
+    :type image_path: str
+    :param room_data_list: List of room data dictionaries.
+    :type room_data_list: list
+    :return: Room data dictionary.
+    :rtype: dict
+    """
+    base64_image = encode_image_for_openai(image_path)
+    room_classes = [
+        "kitchen",
+        "bathroom",
+        "bedroom",
+        "living room",
+        "office",
+        "hallway",
+        "laundry room",
+        "transitioning",
+    ]
+
+    last_room_data = None
+
+    if isinstance(room_data_list, list) and len(room_data_list) > 0:
+        last_room_data = [
+            {
+                "room_class": room_data_list[-1]["room_class"],
+                "room_description": room_data_list[-1]["room_description"],
+            }
+        ]
+
+    user_query = f"Extract the room class and description from the image based on the provided room classes and last room data. Be extremely detailed in your analysis of colors, textures, materials, and spatial arrangements while remaining factually accurate. Focus on the visual and physical characteristics of the room rather than inferring its function. \n\n The list of possible room classes: {room_classes} \n\n Previous Room Data: {last_room_data}"
+
+    response = client.chat.completions.create(
+        model=f"{client.model}",
+        messages=[
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT_ROOM_CLASS,
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}",
+                        },
+                    },
+                ],
+            },
+            {"role": "user", "content": user_query},
+        ],
+        response_format={"type": "json_object"},
+        timeout=20,
+    )
+
+    room_data = response.choices[0].message.content
+    try:
+        if "```json" in room_data and "```" in room_data:
+            json_content = room_data.split("```json")[1].split("```")[0].strip()
+            room_data = json.loads(json_content)
+        elif "```" in room_data:
+            json_content = room_data.split("```")[1].split("```")[0].strip()
+            room_data = json.loads(json_content)
+        else:
+            room_data = json.loads(room_data)
+
+        print(f"Room class: {room_data['room_class']}")
+        print(f"Room description: {room_data['room_description']}")
+    except (json.JSONDecodeError, KeyError, IndexError) as e:
+        traceback.print_exc()
+        print(f"Failed to parse room class JSON: {room_data}")
+        room_data = {"room_class": "error", "room_description": e}
+    return room_data

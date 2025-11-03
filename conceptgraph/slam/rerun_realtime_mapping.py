@@ -12,7 +12,7 @@ import re
 
 # Third-party library imports
 from open3d.io import read_pinhole_camera_parameters
-from ultralytics import YOLO, SAM
+from ultralytics import YOLO, SAM, FastSAM
 from omegaconf import DictConfig
 from collections import Counter
 import supervision as sv
@@ -52,6 +52,7 @@ from conceptgraph.utils.general_utils import (
     make_vlm_edges_and_captions,
     measure_time,
     save_detection_results,
+    save_room_data,
     save_edge_json,
     save_hydra_config,
     save_obj_json,
@@ -94,6 +95,7 @@ from conceptgraph.utils.general_utils import (
     get_vis_out_path,
     cfg_to_dict,
     check_run_detections,
+    matrix_to_translation_rotation,
 )
 
 # Disable gradient computation for efficiency (inference only)
@@ -102,6 +104,18 @@ torch.set_grad_enabled(False)
 # =========================
 # Main Function
 # =========================
+
+
+# TODO: Coletar mais semântica do ambiente a partir de regras pré-definidas
+# Definir um motor de regras para coletar mais semântica do ambiente
+# Classificar e segmentar os ambientes com o mapa geométrico:
+# Inserir o mapa na LLM como uma estrutura de diretórios
+# Inserir a posição atual do usuário no ambiente de forma não numérica
+# Buscar datasets para validar as melhorias realizadas no ConceptGraph
+# Coletar junto a Assoc. Port. de Paralisia Cerebral questões comuns
+# Extrair mais semântica do ambiente a partir de regras pré-definidas
+# TODO: Extrair o objeto mais relevante a partir da abordagem padrão do ConceptGraph
+# TODO: Enviar e-mail para o percurso acadêmico a perguntar sobre os prazos
 
 
 @hydra.main(
@@ -173,6 +187,8 @@ def main(cfg: DictConfig):
         skip_bg=detections_exp_cfg["skip_bg"],
     )
 
+    room_data_list = []
+
     # Decide whether to run detections or load from disk
     run_detections = check_run_detections(cfg.force_detection, det_exp_path)
     det_exp_pkl_path = get_det_out_path(det_exp_path)
@@ -188,9 +204,12 @@ def main(cfg: DictConfig):
         det_exp_path.mkdir(parents=True, exist_ok=True)
 
         # Initialize YOLO detection model (timed)
-        detection_model = measure_time(YOLO)("yolov8l-world.pt")
+        # detection_model = measure_time(YOLO)("yolov8l-world.pt")
+        detection_model = measure_time(YOLO)("yolov8x-worldv2.pt")
         # Initialize SAM segmentation model (UltraLytics version)
-        sam_predictor = SAM("sam_l.pt")
+        sam_predictor = SAM("sam2.1_l.pt")
+        # sam_predictor = SAM("sam_l.pt")
+        # sam_predictor = FastSAM("FastSAM-x.pt")
         # Initialize OpenCLIP model and tokenizer
         clip_model, _, clip_preprocess = open_clip.create_model_and_transforms(
             "ViT-H-14", "laion2b_s32b_b79k"
@@ -205,9 +224,11 @@ def main(cfg: DictConfig):
 
     # Initialize OpenAI client for VLM (Vision-Language Model) captions/edges
     openai_client = get_vlm_openai_like_client(
-        model="gemini-2.5-flash",
-        api_key=os.getenv("GLAMA_API_KEY"),
-        base_url=os.getenv("GLAMA_API_BASE_URL"),
+        model="google/gemini-2.5-flash-lite",
+        # api_key=os.getenv("GLAMA_API_KEY"),
+        api_key=os.getenv("OPENROUTER_API_KEY"),
+        # base_url=os.getenv("GLAMA_API_BASE_URL"),
+        base_url=os.getenv("OPENROUTER_API_BASE_URL"),
     )
 
     # Save configuration files for reproducibility
@@ -272,6 +293,27 @@ def main(cfg: DictConfig):
         )
 
         # =========================
+        # Pose and Camera Logging
+        # =========================
+
+        # Get the (untransformed) camera pose for this frame
+        unt_pose = dataset.poses[frame_idx]
+        unt_pose = unt_pose.cpu().numpy()
+
+        # No transformation applied to pose in this code
+        adjusted_pose = unt_pose
+
+        # Log camera pose to rerun (if enabled)
+        prev_adjusted_pose = orr_log_camera(
+            intrinsics,
+            adjusted_pose,
+            prev_adjusted_pose,
+            cfg.image_width,
+            cfg.image_height,
+            frame_idx,
+        )
+
+        # =========================
         # Detection and Segmentation
         # =========================
         if run_detections:
@@ -281,7 +323,7 @@ def main(cfg: DictConfig):
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
             # Run YOLO object detection
-            results = detection_model.predict(color_path, conf=0.1, verbose=False)
+            results = detection_model.predict(color_path, conf=0.5, verbose=False)
             confidences = results[0].boxes.conf.cpu().numpy()
             detection_class_ids = results[0].boxes.cls.cpu().numpy().astype(int)
             detection_class_labels = [
@@ -311,15 +353,18 @@ def main(cfg: DictConfig):
             )
 
             # Generate VLM-based edges and captions for detected objects
-            labels, edges, edge_image, captions = make_vlm_edges_and_captions(
-                image,
-                curr_det,
-                obj_classes,
-                detection_class_labels,
-                det_exp_vis_path,
-                color_path,
-                cfg.make_edges,
-                openai_client,
+            labels, edges, edge_image, captions, room_data = (
+                make_vlm_edges_and_captions(
+                    image,
+                    curr_det,
+                    obj_classes,
+                    detection_class_labels,
+                    det_exp_vis_path,
+                    color_path,
+                    cfg.make_edges,
+                    room_data_list,
+                    openai_client,
+                )
             )
 
             # Compute CLIP features for detected objects (image and text)
@@ -332,6 +377,19 @@ def main(cfg: DictConfig):
                 obj_classes.get_classes_arr(),
                 cfg.device,
             )
+
+            converted_pose = matrix_to_translation_rotation(adjusted_pose)
+
+            try:
+                room_data["pose"] = str(converted_pose)
+            except (KeyError, TypeError):
+                room_data = {
+                    "room_class": "None",
+                    "room_description": "None",
+                    "pose": str(converted_pose),
+                }
+
+            room_data_list.append(room_data)
 
             # Update tracker with number of detections in this frame
             tracker.increment_total_detections(len(curr_det.xyxy))
@@ -350,6 +408,7 @@ def main(cfg: DictConfig):
                 "labels": labels,
                 "edges": edges,
                 "captions": captions,
+                "room_data": room_data,
             }
 
             raw_gobs = results
@@ -384,6 +443,8 @@ def main(cfg: DictConfig):
                 )
                 # Save detection results to disk
                 save_detection_results(det_exp_pkl_path / vis_save_path.stem, results)
+                # Save room data to disk
+                save_room_data(det_exp_pkl_path / vis_save_path.stem, room_data)
         else:
             # =========================
             # Load Detections from Disk (if not running detection)
@@ -404,27 +465,6 @@ def main(cfg: DictConfig):
                 raise FileNotFoundError(
                     f"No detections found for frame {frame_idx}at paths \n{det_exp_pkl_path / basename} or \n{det_exp_pkl_path / f'{int(basename):06}'}."
                 )
-
-        # =========================
-        # Pose and Camera Logging
-        # =========================
-
-        # Get the (untransformed) camera pose for this frame
-        unt_pose = dataset.poses[frame_idx]
-        unt_pose = unt_pose.cpu().numpy()
-
-        # No transformation applied to pose in this code
-        adjusted_pose = unt_pose
-
-        # Log camera pose to rerun (if enabled)
-        prev_adjusted_pose = orr_log_camera(
-            intrinsics,
-            adjusted_pose,
-            prev_adjusted_pose,
-            cfg.image_width,
-            cfg.image_height,
-            frame_idx,
-        )
 
         # Log images and visualizations to rerun (if enabled)
         orr_log_rgb_image(color_path)
@@ -750,6 +790,7 @@ def main(cfg: DictConfig):
             cfg=cfg,
             objects=objects,
             obj_classes=obj_classes,
+            room_data_list=room_data_list,
             latest_pcd_filepath=cfg.latest_pcd_filepath,
             create_symlink=True,
             edges=map_edges,

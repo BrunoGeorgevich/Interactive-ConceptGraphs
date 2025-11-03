@@ -8,6 +8,7 @@ import numpy as np
 import traceback
 import logging
 import pickle
+import httpx
 import time
 import gzip
 import json
@@ -23,6 +24,7 @@ from conceptgraph.utils.ious import mask_subtract_contained
 from conceptgraph.utils.vlm import (
     get_obj_captions_from_image,
     get_obj_rel_from_image,
+    get_room_data_from_image,
 )
 
 
@@ -508,6 +510,7 @@ def make_vlm_edges_and_captions(
     det_exp_vis_path,
     color_path,
     make_edges_flag,
+    room_data_list,
     openai_client,
 ):
     """
@@ -521,6 +524,7 @@ def make_vlm_edges_and_captions(
         det_exp_vis_path (str): Directory path for saving visualizations.
         color_path (str): Additional path element for creating unique save paths.
         make_edges_flag (bool): Flag indicating whether to create edges between detected objects.
+        room_data_list (list): List of room data dictionaries.
         openai_client (OpenAIClient): Client object for OpenAI used in relationship extraction.
 
     Returns:
@@ -537,7 +541,7 @@ def make_vlm_edges_and_captions(
         detections=curr_det,
         classes=obj_classes,
         top_x_detections=150000,
-        confidence_threshold=0.1,
+        confidence_threshold=0.5,
         given_labels=detection_class_labels,
     )
 
@@ -571,7 +575,7 @@ def make_vlm_edges_and_captions(
         edges = []
         captions = []
 
-        def _retry_call(func, max_retries=2, delay=1, *args, **kwargs):
+        def _retry_call(func, max_retries=10, delay=1, *args, **kwargs):
             """
             Helper function to retry a callable up to max_retries times with a delay.
             :param func: Callable to execute.
@@ -587,38 +591,99 @@ def make_vlm_edges_and_captions(
             for attempt in range(max_retries):
                 try:
                     return func(*args, **kwargs)
-                except (RuntimeError, ValueError, TypeError, AttributeError) as e:
+                except (
+                    RuntimeError,
+                    ValueError,
+                    TypeError,
+                    AttributeError,
+                    httpx.TimeoutException,
+                    httpx.HTTPStatusError,
+                ) as e:
                     print(f"Attempt {attempt+1} failed for {func.__name__}: {str(e)}")
                     traceback.print_exc()
                     if attempt < max_retries - 1:
                         time.sleep(delay)
             print(f"All {max_retries} attempts failed for {func.__name__}. Skipping.")
+            # Return an empty dict with room_class and room_description if the function is get_room_data_from_image
+            if func.__name__ == "get_room_data_from_image":
+                return {"room_class": "None", "room_description": "None"}
             return []
 
         try:
-            with ThreadPoolExecutor(max_workers=2) as executor:
-                future_edges = executor.submit(_retry_call, get_obj_rel_from_image, 2, 1, openai_client, vis_save_path_for_vlm, label_list)
-                future_captions = executor.submit(_retry_call, get_obj_captions_from_image, 2, 1, openai_client, vis_save_path_for_vlm, label_list)
-                for future in as_completed([future_edges, future_captions]):
+            with ThreadPoolExecutor(max_workers=3) as executor:
+                future_edges = executor.submit(
+                    _retry_call,
+                    get_obj_rel_from_image,
+                    10,
+                    1,
+                    openai_client,
+                    vis_save_path_for_vlm,
+                    label_list,
+                )
+                future_captions = executor.submit(
+                    _retry_call,
+                    get_obj_captions_from_image,
+                    10,
+                    1,
+                    openai_client,
+                    vis_save_path_for_vlm,
+                    label_list,
+                )
+                future_room_data = executor.submit(
+                    _retry_call,
+                    get_room_data_from_image,
+                    10,
+                    1,
+                    openai_client,
+                    color_path,
+                    room_data_list,
+                )
+                for future in as_completed(
+                    [future_edges, future_captions, future_room_data]
+                ):
                     if future == future_edges:
                         try:
                             edges = future.result()
                         except (RuntimeError, ValueError, TypeError, AttributeError):
-                            print("Error occurred while getting object relationships from image (after retries).")
+                            print(
+                                "Error occurred while getting object relationships from image (after retries)."
+                            )
                             traceback.print_exc()
                             edges = []
-                    else:
+                    elif future == future_captions:
                         try:
                             captions = future.result()
                         except (RuntimeError, ValueError, TypeError, AttributeError):
-                            print("Error occurred while getting object captions from image (after retries).")
+                            print(
+                                "Error occurred while getting object captions from image (after retries)."
+                            )
                             traceback.print_exc()
                             captions = []
+                    elif future == future_room_data:
+                        try:
+                            room_data = future.result()
+                        except (RuntimeError, ValueError, TypeError, AttributeError):
+                            print(
+                                "Error occurred while getting room class from image (after retries)."
+                            )
+                            traceback.print_exc()
+                            room_data = {
+                                "room_class": "None",
+                                "room_description": "None",
+                            }
+                    else:
+                        raise ValueError(f"Unknown future: {future}")
         except (RuntimeError, ValueError, TypeError, AttributeError):
-            print("Error occurred during parallel execution of object relationship and caption extraction.")
+            print(
+                "Error occurred during parallel execution of object relationship and caption extraction."
+            )
             traceback.print_exc()
             edges = []
             captions = []
+            room_data = {
+                "room_class": "None",
+                "room_description": "None",
+            }
         edge_image = plot_edges_from_vlm(
             annotated_image_for_vlm,
             edges,
@@ -629,7 +694,7 @@ def make_vlm_edges_and_captions(
             save_path=vis_save_path_for_vlm_edges,
         )
 
-    return labels, edges, edge_image, captions
+    return labels, edges, edge_image, captions, room_data
 
 
 def handle_rerun_saving(use_rerun, save_rerun, exp_suffix, exp_out_path):
@@ -737,6 +802,16 @@ def save_detection_results(base_path, results):
             # For other types, fall back to pickle
             with gzip.open(f"{save_path}.pkl.gz", "wb") as f:
                 pickle.dump(value, f)
+
+
+def save_room_data(save_path, room_data):
+    with open(save_path / "room_data.json", "w") as f:
+        try:
+            json.dump(room_data, f)
+        except Exception as e:
+            print(f"Error saving room data: {e}")
+            logging.error(f"Error saving room data: {e}")
+            f.write(str(room_data))
 
 
 def load_saved_detections(base_path):
@@ -950,6 +1025,7 @@ def save_pointcloud(
     cfg,
     objects,
     obj_classes,
+    room_data_list,
     latest_pcd_filepath=None,
     create_symlink=True,
     edges=None,
@@ -962,6 +1038,7 @@ def save_pointcloud(
     - exp_out_path (Path or str): Output path for the experiment's saved files.
     - objects: The objects to save, assumed to have a `to_serializable()` method.
     - obj_classes: The object classes, assumed to have `get_classes_arr()` and `get_class_color_dict_by_index()` methods.
+    - room_data_list: The room data list, assumed to have a `pose` key.
     - latest_pcd_filepath (Path or str, optional): Path for the symlink to the latest point cloud save. Default is None.
     - create_symlink (bool): Whether to create/update a symlink to the latest save. Default is True.
     """
@@ -973,6 +1050,7 @@ def save_pointcloud(
         "class_names": obj_classes.get_classes_arr(),
         "class_colors": obj_classes.get_class_color_dict_by_index(),
         "edges": edges.to_serializable() if edges is not None else None,
+        "room_data_list": room_data_list,
     }
 
     # Define the save path for the point cloud
@@ -1110,3 +1188,57 @@ def vis_render_image(
     if is_final_frame:
         # Save the video
         save_video_from_frames(frames, exp_out_path, exp_suffix)
+
+
+def matrix_to_translation_rotation(
+    matrix: np.ndarray, degrees: bool = True
+) -> tuple[float, float, float, float, float, float]:
+    """
+    Convert a 4x4 transformation matrix to translation and rotation parameters.
+
+    :param matrix: 4x4 homogeneous transformation matrix
+    :type matrix: np.ndarray
+    :param degrees: Whether to return rotation angles in degrees (True) or radians (False)
+    :type degrees: bool
+    :return: Tuple of (x, y, z, roll, pitch, yaw)
+    :rtype: tuple[float, float, float, float, float, float]
+    :raises ValueError: If input matrix is not a valid 4x4 transformation matrix
+    """
+    try:
+        if not isinstance(matrix, np.ndarray) or matrix.shape != (4, 4):
+            raise ValueError("Input must be a 4x4 numpy array")
+
+        x = matrix[0, 3]
+        y = matrix[1, 3]
+        z = matrix[2, 3]
+
+        R = matrix[0:3, 0:3]
+
+        if not np.isclose(np.linalg.det(R), 1.0, atol=1e-6):
+            raise ValueError(
+                "The rotation part of the matrix is not a valid rotation matrix"
+            )
+
+        if np.isclose(R[2, 0], 1.0, atol=1e-6):
+            pitch = -np.pi / 2
+            roll = 0
+            yaw = -np.arctan2(R[0, 1], R[1, 1])
+        elif np.isclose(R[2, 0], -1.0, atol=1e-6):
+            pitch = np.pi / 2
+            roll = 0
+            yaw = np.arctan2(R[0, 1], R[1, 1])
+        else:
+            pitch = -np.arcsin(R[2, 0])
+            roll = np.arctan2(R[2, 1] / np.cos(pitch), R[2, 2] / np.cos(pitch))
+            yaw = np.arctan2(R[1, 0] / np.cos(pitch), R[0, 0] / np.cos(pitch))
+
+        if degrees:
+            roll = np.rad2deg(roll)
+            pitch = np.rad2deg(pitch)
+            yaw = np.rad2deg(yaw)
+
+        return x, y, z, roll, pitch, yaw
+
+    except (TypeError, ValueError, np.linalg.LinAlgError) as e:
+        traceback.print_exc()
+        raise ValueError(f"Failed to convert matrix to translation and rotation: {e}")
