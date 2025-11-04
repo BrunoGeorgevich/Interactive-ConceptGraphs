@@ -32,6 +32,14 @@ class OptionalReRun:
                 "rerun functionality is disabled in the config. Not using rerun for logging."
             )
 
+    @property
+    def rerun(self):
+        if self._config_use_rerun is None:
+            raise ValueError(
+                "Rerun usage configuration not set. Please call 'set_use_rerun' first."
+            )
+        return self._rerun
+
     def __getattr__(self, name):
         def method(*args, **kwargs):
             if self._config_use_rerun and self._rerun:
@@ -84,7 +92,7 @@ def orr_log_camera(
         "world/camera",
         orr.Transform3D(
             translation=translation,
-            rotation=orr.RotationQuat(quaternion),
+            rotation=orr.rerun.Quaternion(xyzw=quaternion),
             from_parent=False,
         ),
     )
@@ -135,7 +143,8 @@ def orr_log_depth_image(depth_tensor):
 
     # This should really use meter = 1.0, but setting it to that makes it too big
     # I wanna confirm its not me before making an issue on their github
-    orr.log("world/camera/depth", orr.DepthImage(depth_in_meters, meter=0.9999999))
+    # orr.log("world/camera/depth", orr.DepthImage(depth_in_meters, meter=0.9999999))
+    orr.log("world/camera/depth", orr.DepthImage(depth_in_meters, meter=1.0))
 
 
 def orr_log_annotated_image(color_path, det_exp_vis_path):
