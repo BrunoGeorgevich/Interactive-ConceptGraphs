@@ -9,7 +9,7 @@ defaults:
   - logging_level
   - _self_
 
-run_id: 4
+run_id: 5
 stride: 15
 detections_exp_suffix: s_detections_${run_id}_stride${stride} # helpful label to identify your detections
 force_detection: !!bool True
@@ -28,9 +28,9 @@ obj_pcd_max_points: 5000
 debug_render: !!bool False
 vis_render: !!bool False
 
-denoise_interval: 5 # Run DBSCAN every k frame. This operation is heavy
+denoise_interval: 20 # Run DBSCAN every k frame. This operation is heavy
 filter_interval: 5 # Filter objects that have too few associations or are too small
-merge_interval: 5 # Merge objects based on geometric and semantic similarity
+merge_interval: -1 # Merge objects based on geometric and semantic similarity
 run_denoise_final_frame: !!bool True
 run_filter_final_frame: !!bool True
 run_merge_final_frame: !!bool True

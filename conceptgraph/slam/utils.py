@@ -353,6 +353,7 @@ def merge_obj2_into_obj1(
         "new_counter",
         "curr_obj_num",
         "inst_color",
+        "is_dirty",
     ]  # 'inst_color' just keeps obj1's
     custom_handled = ["pcd", "bbox", "clip_ft", "text_ft", "n_points"]
 
@@ -407,6 +408,7 @@ def merge_obj2_into_obj1(
         n_obj1_det + n_obj2_det
     )
     obj1["clip_ft"] = F.normalize(obj1["clip_ft"], dim=0)
+    obj1["is_dirty"] = True
 
     # merge text_ft
     # obj2['text_ft'] = to_tensor(obj2['text_ft'], device)
@@ -768,6 +770,9 @@ def denoise_objects(
     tracker = DenoisingTracker()  # Get the singleton instance of DenoisingTracker
     logging.debug(f"Starting denoising with {len(objects)} objects")
     for i in range(len(objects)):
+        if not objects[i].get("needs_processing", False):
+            continue
+
         og_object_pcd = objects[i]["pcd"]
 
         if len(og_object_pcd.points) <= 1:  # no need to denoise
@@ -793,6 +798,7 @@ def denoise_objects(
         tracker.track_denoising(
             objects[i]["id"], len(og_object_pcd.points), len(objects[i]["pcd"].points)
         )
+        objects[i]["needs_processing"] = False
 
         # track_denoising(objects[i]["id"], len(og_object_pcd.points), len(objects[i]["pcd"].points))
         logging.debug(
@@ -913,7 +919,14 @@ def merge_objects(
 
 def filter_captions(captions, detection_class_labels):
     # Create a dictionary to map id to the index in the captions list
-    captions_index = {item["id"]: index for index, item in enumerate(captions)}
+    captions_index = {}
+    for index, item in enumerate(captions):
+        try:
+            captions_index[item["id"]] = index
+        except TypeError as e:
+            logging.warning(f"Caption item has a type error: {item} -> {e}")
+        except KeyError as e:
+            logging.warning(f"Caption item missing 'id' key: {item} -> {e}")
 
     # Initialize a new list to store the cleaned and matched captions
     new_captions = []
@@ -1249,6 +1262,7 @@ def make_detection_list_from_pcd_and_gobs(
             "num_obj_in_class": num_obj_in_class,
             "curr_obj_num": tracker.total_object_count,
             "new_counter": tracker.brand_new_counter,
+            "is_dirty": True,
         }
         # detected_object['curr_obj_num']
         # print(f"Line 969, detected_object['image_idx']: {detected_object['image_idx']}")
