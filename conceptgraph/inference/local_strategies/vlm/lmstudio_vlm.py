@@ -1,0 +1,214 @@
+from agno.agent import Agent, RunResponse
+from agno.models.lmstudio import LMStudio
+from agno.media import Image as AgnoImage
+import traceback
+import logging
+import json
+import re
+
+from conceptgraph.utils.prompts import (
+    SYSTEM_PROMPT_ONLY_TOP,
+    SYSTEM_PROMPT_CAPTIONS,
+    SYSTEM_PROMPT_ROOM_CLASS,
+    SYSTEM_PROMPT_CONSOLIDATE_CAPTIONS,
+)
+from conceptgraph.utils.vlm import extract_list_of_tuples, vlm_extract_object_captions
+from conceptgraph.inference.interfaces import IVLM
+
+
+class LMStudioVLM(IVLM):
+    """
+    Provides Vision-Language Model (VLM) inference using a locally-hosted LM Studio server.
+    Handles scene understanding, object captioning, spatial reasoning, and query answering.
+    """
+
+    def __init__(self, model_id: str, device: str, api_key: str | None) -> None:
+        """
+        Initialize LMStudioVLM.
+
+        :param model_id: Model identifier for the VLM.
+        :type model_id: str
+        :param device: Device specification (unused for remote LM Studio).
+        :type device: str
+        :param api_key: Optional API key for authentication.
+        :type api_key: str | None
+        """
+        self.model_id = model_id
+        self.device = device
+        self.api_key = api_key
+        self.agent: Agent | None = None
+
+    def load_model(self) -> None:
+        """
+        Initialize the VLM agent with LM Studio backend.
+
+        :raises RuntimeError: If agent initialization fails.
+        :return: None
+        :rtype: None
+        """
+        if not self.is_loaded():
+            logging.info(f"Loading LMStudioVLM agent with model: {self.model_id}")
+            try:
+                self.agent = Agent(
+                    model=LMStudio(id=self.model_id, api_key=self.api_key),
+                    markdown=True,
+                )
+            except (ValueError, RuntimeError, ConnectionError) as e:
+                traceback.print_exc()
+                raise RuntimeError(f"Failed to load VLM agent: {e}")
+
+    def unload_model(self) -> None:
+        """
+        Unload the VLM agent.
+
+        :return: None
+        :rtype: None
+        """
+        if self.is_loaded():
+            logging.info("Unloading LMStudioVLM agent.")
+            del self.agent
+            self.agent = None
+
+    def is_loaded(self) -> bool:
+        """
+        Check if the VLM agent is loaded.
+
+        :return: True if loaded, False otherwise.
+        :rtype: bool
+        """
+        return self.agent is not None
+
+    def get_type(self) -> str:
+        """
+        Get the type of the VLM.
+
+        :return: The string "local".
+        :rtype: str
+        """
+        return "local"
+
+    def get_relations(self, annotated_image_path: str, labels: list[str]) -> list:
+        """
+        Extract spatial relations between labeled objects in an image.
+
+        :param annotated_image_path: Path to the annotated image.
+        :type annotated_image_path: str
+        :param labels: List of object labels (e.g., ["1: chair", "2: table"]).
+        :type labels: list[str]
+        :return: List of spatial relation tuples.
+        :rtype: list
+        :raises RuntimeError: If relation extraction fails.
+        """
+        self.load_model()
+        try:
+            prompt = f"{SYSTEM_PROMPT_ONLY_TOP}\n\n{', '.join(labels)}"
+            response: RunResponse = self.agent.run(
+                prompt, images=[AgnoImage(filepath=annotated_image_path)]
+            )
+            relations = extract_list_of_tuples(response.content)
+            return relations
+        except (AttributeError, ValueError, RuntimeError) as e:
+            traceback.print_exc()
+            raise RuntimeError(f"Relation extraction failed: {e}")
+
+    def get_captions(self, annotated_image_path: str, labels: list[str]) -> list:
+        """
+        Generate captions for each labeled object in an image.
+
+        :param annotated_image_path: Path to the annotated image.
+        :type annotated_image_path: str
+        :param labels: List of object labels.
+        :type labels: list[str]
+        :return: List of captions corresponding to each object.
+        :rtype: list
+        :raises RuntimeError: If caption generation fails.
+        """
+        self.load_model()
+        try:
+            prompt = f"{SYSTEM_PROMPT_CAPTIONS}\n\n{', '.join(labels)}"
+            response: RunResponse = self.agent.run(
+                prompt, images=[AgnoImage(filepath=annotated_image_path)]
+            )
+            captions = vlm_extract_object_captions(response.content)
+            return captions
+        except (AttributeError, ValueError, RuntimeError) as e:
+            traceback.print_exc()
+            raise RuntimeError(f"Caption generation failed: {e}")
+
+    def get_room_data(self, image_path: str, context: list) -> dict:
+        """
+        Classify the room or environment type from an image.
+
+        :param image_path: Path to the image.
+        :type image_path: str
+        :param context: Additional contextual information (currently unused).
+        :type context: list
+        :return: Dictionary with room classification data.
+        :rtype: dict
+        :raises RuntimeError: If room classification fails.
+        """
+        self.load_model()
+        try:
+            response: RunResponse = self.agent.run(
+                SYSTEM_PROMPT_ROOM_CLASS, images=[AgnoImage(filepath=image_path)]
+            )
+            json_match = re.search(
+                r"```json\s*(\{.*?\})\s*```", response.content, re.DOTALL
+            )
+            if json_match:
+                json_str = json_match.group(1)
+                room_data = json.loads(json_str)
+            else:
+                room_data = json.loads(response.content)
+            return room_data
+        except (AttributeError, ValueError, json.JSONDecodeError, RuntimeError) as e:
+            traceback.print_exc()
+            raise RuntimeError(f"Room classification failed: {e}")
+
+    def consolidate_captions(self, captions: list) -> str:
+        """
+        Consolidate multiple captions into a single coherent description.
+
+        :param captions: List of captions to consolidate.
+        :type captions: list
+        :return: Consolidated caption.
+        :rtype: str
+        :raises RuntimeError: If consolidation fails.
+        """
+        self.load_model()
+        try:
+            captions_strs = [
+                c["caption"] if isinstance(c, dict) and "caption" in c else str(c)
+                for c in captions
+            ]
+            prompt = (
+                f"{SYSTEM_PROMPT_CONSOLIDATE_CAPTIONS}\n\n{', '.join(captions_strs)}"
+            )
+            response: RunResponse = self.agent.run(prompt)
+            return response.content
+        except (AttributeError, ValueError, RuntimeError) as e:
+            traceback.print_exc()
+            raise RuntimeError(f"Caption consolidation failed: {e}")
+
+    def query_map(self, query: str, map_context: str, tools: list) -> str:
+        """
+        Answer user queries about the map using LLM inference.
+
+        :param query: User question.
+        :type query: str
+        :param map_context: Context information about the map.
+        :type map_context: str
+        :param tools: Available tools for query resolution.
+        :type tools: list
+        :return: Answer to the query.
+        :rtype: str
+        :raises RuntimeError: If query processing fails.
+        """
+        self.load_model()
+        try:
+            prompt = f"Context: {map_context}\n\nQuery: {query}"
+            response: RunResponse = self.agent.run(prompt)
+            return response.content
+        except (AttributeError, ValueError, RuntimeError) as e:
+            traceback.print_exc()
+            raise RuntimeError(f"Query processing failed: {e}")
