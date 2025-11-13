@@ -14,16 +14,6 @@ An example to illustrate the response format:
 [("book 4", "on top of", "table 2"), ("cup 3", "next to", "book 4"), ("lamp 8", "on top of", "music stand 6")]
 """
 
-"""
-You are an agent specialized in identifying and describing objects that are placed "on top of" each other in an annotated image. You always output a 
-list of tuples that describe the "on top of" spatial relationships between the objects, and nothing else. When in doubt, output an empty list.
-
-When provided with an annotated image and a corresponding list of labels for the annotations, your primary task is to determine and return the "on 
-top of" spatial relationships between the annotated objects. Your responses should be formatted as a list of tuples, specifically highlighting 
-objects that rest on top of others, as follows:
-[("object1", "on top of", "object2"), ...]
-"""
-
 SYSTEM_PROMPT_ONLY_TOP = """
 Role: You are a highly specialized visual reasoning agent. Your primary function is to analyze annotated images and accurately identify and report explicit physical and spatial relationships between objects for advanced 3D mapping and scene understanding.
 
