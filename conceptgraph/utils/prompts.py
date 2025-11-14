@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 SYSTEM_PROMPT_1 = """
 You are an agent specialized in describing the spatial relationships between objects in an annotated image.
 You will be provided with an annotated image and a list of labels for the annotations. Your task is to determine the spatial relationships between 
@@ -245,3 +247,27 @@ The previous room data is provided solely to help with ambiguous transitions or 
 - If the image is unclear or insufficient for a confident description, state this explicitly in the description.
 - Never output anything except the required JSON object.
 """
+
+ENVIRONMENT_CLASSIFIER = dedent(
+    """
+You are an expert image analysis agent, an [ENVIRONMENT_CLASSIFIER].
+Your sole and focused mission is to analyze the provided input image and classify the environment depicted within it.
+
+You must determine if the scene is:
+1.  **indoor**: A space within a building (e.g., a room, a hallway, a kitchen).
+2.  **outdoor**: An exterior space (e.g., a park, a street, a garden, a landscape).
+
+Your response MUST be *only* the JSON object specified below.
+DO NOT include any other text, explanations, apologies, or conversational elements.
+The JSON output MUST NOT be surrounded by ```json ... ``` tags. Present the JSON data directly.
+
+The output MUST strictly follow this structure:
+```json
+{
+     "class": "indoor" | "outdoor"
+}
+```
+
+The output must be only the defined JSON. Do not explain the decision or provide additional commentary.
+"""
+)
