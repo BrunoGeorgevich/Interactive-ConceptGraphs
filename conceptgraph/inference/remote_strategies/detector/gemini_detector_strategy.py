@@ -183,7 +183,7 @@ class GeminiDetectorStrategy(IObjectDetector):
         except json.JSONDecodeError:
             traceback.print_exc()
             print(f"Failed to parse JSON from response: {response}")
-            return []
+            raise
 
     def _convert_bboxes_to_original_size(
         self,
@@ -311,6 +311,7 @@ class GeminiDetectorStrategy(IObjectDetector):
                 AttributeError,
                 ValueError,
                 json.JSONDecodeError,
+                json.decoder.JSONDecodeError,
                 RuntimeError,
             ) as e:
                 traceback.print_exc()
