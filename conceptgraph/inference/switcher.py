@@ -1,3 +1,14 @@
+from dotenv import load_dotenv
+from pathlib import Path
+import traceback
+import numpy as np
+import logging
+import httpx
+import torch
+import agno
+import cv2
+import os
+
 from conceptgraph.inference.local_strategies.detector.yolo_detector_strategy import (
     YOLODetectorStrategy,
 )
@@ -12,17 +23,13 @@ from conceptgraph.inference.remote_strategies.segmenter.gemini_segmenter_strateg
 )
 from conceptgraph.inference.local_strategies import LocalFeatureExtractor, LMStudioVLM
 from conceptgraph.inference.remote_strategies import OpenrouterVLM
-from dotenv import load_dotenv
-from pathlib import Path
-import numpy as np
-import traceback
-import logging
-import httpx
-import torch
-import agno
-import cv2
-import os
-
+from conceptgraph.utils.prompts import (
+    SYSTEM_PROMPT_ONLY_TOP,
+    SYSTEM_PROMPT_CAPTIONS,
+    SYSTEM_PROMPT_ROOM_CLASS,
+    SYSTEM_PROMPT_CONSOLIDATE_CAPTIONS,
+    ENVIRONMENT_CLASSIFIER,
+)
 from conceptgraph.inference.interfaces import (
     IObjectDetector,
     ISegmenter,
@@ -56,6 +63,23 @@ class SystemContext:
         """
         self.connectivity_status = self._check_network()
 
+    def set_environment_profile(self, profile: str) -> None:
+        """
+        Set the environment profile based on classification.
+
+        :param profile: The environment profile ('indoor' or 'outdoor').
+        :type profile: str
+        :raises ValueError: If profile is not 'indoor' or 'outdoor'.
+        :return: None
+        :rtype: None
+        """
+        if profile not in {"indoor", "outdoor"}:
+            raise ValueError(
+                f"Invalid profile: {profile}. Must be 'indoor' or 'outdoor'"
+            )
+        self.environment_profile = profile
+        logging.info(f"Environment profile set to: {profile}")
+
     def _check_network(self, timeout: float = 2.0) -> str:
         """
         Check internet connectivity by attempting to reach a known endpoint.
@@ -76,7 +100,7 @@ class SystemContext:
 
 class StrategySwitcher:
     """
-    Selects and switches between preferred and fallback inference models based on runtime conditions.
+    Manages dynamic switching between preferred and fallback models based on connectivity.
     """
 
     def __init__(
@@ -84,6 +108,7 @@ class StrategySwitcher:
         preferred_factories: dict[str, callable],
         fallback_factories: dict[str, callable],
         shared_model: IFeatureExtractor,
+        vlm_prompts: dict[str, str] | None = None,
     ) -> None:
         """
         Initialize the strategy switcher with factory functions for preferred and fallback models.
@@ -94,6 +119,8 @@ class StrategySwitcher:
         :type fallback_factories: dict[str, callable]
         :param shared_model: Shared CLIP model used across all contexts.
         :type shared_model: IFeatureExtractor
+        :param vlm_prompts: Optional dictionary of prompts to set for VLMs.
+        :type vlm_prompts: dict[str, str] | None
         :raises ValueError: If required keys are missing from either dictionary.
         :return: None
         :rtype: None
@@ -116,8 +143,82 @@ class StrategySwitcher:
         self.active_models: dict[
             str, IObjectDetector | ISegmenter | IFeatureExtractor | IVLM
         ] = {}
+        self.vlm_prompts: dict[str, str] = vlm_prompts.copy() if vlm_prompts else {}
         self.shared_clip: IFeatureExtractor = shared_model
+        self.system_context: SystemContext = SystemContext()
         self.is_offline_mode: bool = False
+
+    def set_vlm_prompts(self, prompts: dict[str, str]) -> None:
+        """
+        Set custom prompts for all VLMs managed by the switcher.
+
+        :param prompts: Dictionary of prompt names and their string values.
+        :type prompts: dict[str, str]
+        :return: None
+        :rtype: None
+        """
+        self.vlm_prompts = prompts.copy() if prompts else {}
+        for model_dict in (
+            self.preferred_models,
+            self.fallback_models,
+            self.active_models,
+        ):
+            vlm = model_dict.get("vlm")
+            if vlm and hasattr(vlm, "set_prompts"):
+                vlm.set_prompts(self.vlm_prompts)
+
+    def classify_environment(self, image_path: str) -> str:
+        """
+        Classify the environment as indoor or outdoor using VLM.
+
+        :param image_path: Path to the image to classify.
+        :type image_path: str
+        :raises RuntimeError: If environment classification fails.
+        :return: Environment classification ('indoor' or 'outdoor').
+        :rtype: str
+        """
+        try:
+            environment_class = self.execute_with_fallback(
+                "vlm", "classify_environment", image_path
+            )
+
+            if isinstance(environment_class, str) and environment_class in {
+                "indoor",
+                "outdoor",
+            }:
+                self.system_context.set_environment_profile(environment_class)
+                return environment_class
+            else:
+                raise ValueError(
+                    f"Invalid environment class returned: {environment_class}"
+                )
+
+        except (RuntimeError, ValueError, TypeError) as classification_error:
+            traceback.print_exc()
+            raise RuntimeError(
+                f"Environment classification failed: {classification_error}"
+            )
+
+    def get_classes_for_environment(self) -> list[str]:
+        """
+        Get appropriate object classes based on current environment profile.
+
+        :raises RuntimeError: If class file cannot be found or read.
+        :return: List of class names for current environment.
+        :rtype: list[str]
+        """
+        if self.system_context.environment_profile == "indoor":
+            class_file = "conceptgraph/indoor_classes.txt"
+        else:
+            class_file = "conceptgraph/outdoor_classes.txt"
+
+        try:
+            with open(class_file, "r", encoding="utf-8") as f:
+                classes = [line.strip() for line in f if line.strip()]
+            return classes
+        except (FileNotFoundError, OSError):
+            traceback.print_exc()
+            raise RuntimeError(f"Cannot load class file: {class_file}")
 
     def get_model(
         self, model_key: str
@@ -168,7 +269,7 @@ class StrategySwitcher:
                 traceback.print_exc()
                 raise RuntimeError(
                     f"Shared CLIP model execution failed for '{method_name}': {model_error}"
-                ) from model_error
+                )
 
         if model_key not in {"det", "seg", "vlm"}:
             raise ValueError(
@@ -216,13 +317,13 @@ class StrategySwitcher:
                 traceback.print_exc()
                 raise RuntimeError(
                     f"Both preferred and fallback models failed for '{model_key}'. Fallback error: {fallback_error}"
-                ) from fallback_error
+                )
 
         except (AttributeError, RuntimeError, ValueError, TypeError) as model_error:
             traceback.print_exc()
             raise RuntimeError(
                 f"Model execution failed for '{model_key}.{method_name}': {model_error}"
-            ) from model_error
+            )
 
     def _instantiate_preferred_model(self, model_key: str) -> None:
         """
@@ -237,11 +338,19 @@ class StrategySwitcher:
             logging.info(f"Instantiating preferred model for '{model_key}'")
             try:
                 self.preferred_models[model_key] = self.preferred_factories[model_key]()
+
+                if (
+                    model_key == "vlm"
+                    and self.vlm_prompts
+                    and hasattr(self.preferred_models[model_key], "set_prompts")
+                ):
+                    self.preferred_models[model_key].set_prompts(self.vlm_prompts)
+
             except (RuntimeError, ValueError, TypeError) as factory_error:
                 traceback.print_exc()
                 raise RuntimeError(
                     f"Failed to instantiate preferred model for '{model_key}': {factory_error}"
-                ) from factory_error
+                )
 
         self.active_models[model_key] = self.preferred_models[model_key]
 
@@ -289,11 +398,19 @@ class StrategySwitcher:
             logging.info(f"Instantiating fallback model for '{model_key}'")
             try:
                 self.fallback_models[model_key] = self.fallback_factories[model_key]()
+
+                if (
+                    model_key == "vlm"
+                    and self.vlm_prompts
+                    and hasattr(self.fallback_models[model_key], "set_prompts")
+                ):
+                    self.fallback_models[model_key].set_prompts(self.vlm_prompts)
+
             except (RuntimeError, ValueError, TypeError) as factory_error:
                 traceback.print_exc()
                 raise RuntimeError(
                     f"Failed to instantiate fallback model for '{model_key}': {factory_error}"
-                ) from factory_error
+                )
 
         self.active_models[model_key] = self.fallback_models[model_key]
         self.is_offline_mode = True
@@ -408,17 +525,9 @@ if __name__ == "__main__":
     load_dotenv()
 
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
-    test_image_path: str = "assets/test_image.png"
+    test_image_path: str = "assets/test_image_2.png"
     output_dir: Path = Path("test_output")
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    try:
-        with open("conceptgraph/scannet200_classes.txt", "r", encoding="utf-8") as f:
-            test_classes: list[str] = [line.strip() for line in f if line.strip()]
-    except (FileNotFoundError, OSError) as e:
-        traceback.print_exc()
-        logging.error("Failed to load class names. Exiting.")
-        raise RuntimeError("Cannot load scannet200_classes.txt") from e
 
     logging.info("Initializing shared CLIP model...")
     shared_clip: LocalFeatureExtractor = LocalFeatureExtractor(
@@ -454,20 +563,48 @@ if __name__ == "__main__":
         ),
     }
 
+    vlm_prompts: dict[str, str] = {
+        "relations": SYSTEM_PROMPT_ONLY_TOP,
+        "captions": SYSTEM_PROMPT_CAPTIONS,
+        "room_class": SYSTEM_PROMPT_ROOM_CLASS,
+        "consolidate": SYSTEM_PROMPT_CONSOLIDATE_CAPTIONS,
+        "class_env": ENVIRONMENT_CLASSIFIER,
+    }
+
     switcher: StrategySwitcher = StrategySwitcher(
         preferred_factories=preferred_factories,
         fallback_factories=fallback_factories,
         shared_model=shared_clip,
+        vlm_prompts=vlm_prompts,
     )
 
     logging.info("=" * 50)
-    logging.info("STEP 1: Object Detection")
+    logging.info("STEP 0: Environment Classification")
     logging.info("=" * 50)
 
     if not Path(test_image_path).exists():
         logging.error(f"Test image not found: {test_image_path}")
         switcher.unload_all_models()
     else:
+        try:
+            environment_type = switcher.classify_environment(test_image_path)
+            logging.info(f"Environment classified as: {environment_type}")
+
+            test_classes = switcher.get_classes_for_environment()
+            logging.info(
+                f"Loaded {len(test_classes)} classes for {environment_type} environment"
+            )
+
+        except (RuntimeError, ValueError, TypeError) as classification_error:
+            traceback.print_exc()
+            logging.error(f"Environment classification failed: {classification_error}")
+            switcher.unload_all_models()
+            raise
+
+        logging.info("=" * 50)
+        logging.info("STEP 1: Object Detection")
+        logging.info("=" * 50)
+
         image: np.ndarray | None = cv2.imread(test_image_path)
 
         if image is None:
@@ -568,6 +705,9 @@ if __name__ == "__main__":
                     logging.info("PIPELINE COMPLETED SUCCESSFULLY")
                     logging.info("=" * 50)
                     logging.info(f"Total objects detected: {len(detections)}")
+                    logging.info(
+                        f"Environment profile: {switcher.system_context.environment_profile}"
+                    )
                     logging.info(f"Using fallback: {switcher.is_using_fallback()}")
 
             except (RuntimeError, ValueError, TypeError) as execution_error:
