@@ -64,6 +64,28 @@ class IVLM(IInferenceStrategy):
         pass
 
     @abstractmethod
+    def set_prompts(self, prompt_dict: dict) -> None:
+        """
+        Sets or updates the system prompts used for VLM/LLM inference.
+
+        :param prompt_dict: Dictionary containing prompt configurations.
+        :type prompt_dict: dict
+        """
+        pass
+
+    @abstractmethod
+    def classify_environment(self, image_path: str) -> str:
+        """
+        Classifies the overall environment type from an image.
+
+        :param image_path: Path to the image file.
+        :type image_path: str
+        :return: Classified environment type as a string.
+        :rtype: str
+        """
+        pass
+
+    @abstractmethod
     def query_map(self, query: str, map_context: str, tools: list) -> str:
         """
         Answers user queries about the map using LLM inference.

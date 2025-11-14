@@ -1,20 +1,13 @@
-from agno.agent import Agent, RunResponse
 from agno.models.openrouter import OpenRouter
+from agno.agent import Agent, RunResponse
 from agno.media import Image as AgnoImage
 import traceback
 import logging
 import json
 import re
 
-from conceptgraph.inference.interfaces import IVLM
-
-from conceptgraph.utils.prompts import (
-    SYSTEM_PROMPT_ONLY_TOP,
-    SYSTEM_PROMPT_CAPTIONS,
-    SYSTEM_PROMPT_ROOM_CLASS,
-    SYSTEM_PROMPT_CONSOLIDATE_CAPTIONS,
-)
 from conceptgraph.utils.vlm import extract_list_of_tuples, vlm_extract_object_captions
+from conceptgraph.inference.interfaces import IVLM
 
 
 class OpenrouterVLM(IVLM):
@@ -41,6 +34,13 @@ class OpenrouterVLM(IVLM):
         self.model_id = model_id
         self.api_key = api_key
         self.agent: Agent | None = None
+        self.__prompts = {
+            "relations": "",
+            "captions": "",
+            "room_class": "",
+            "consolidate": "",
+            "class_env": "",
+        }
 
     def load_model(self) -> None:
         """
@@ -105,7 +105,7 @@ class OpenrouterVLM(IVLM):
         """
         self.load_model()
         try:
-            prompt = f"{SYSTEM_PROMPT_ONLY_TOP}\n\n{', '.join(labels)}"
+            prompt = f"{self.__prompts['relations']}\n\n{', '.join(labels)}"
             response: RunResponse = self.agent.run(
                 prompt, images=[AgnoImage(filepath=annotated_image_path)]
             )
@@ -129,7 +129,7 @@ class OpenrouterVLM(IVLM):
         """
         self.load_model()
         try:
-            prompt = f"{SYSTEM_PROMPT_CAPTIONS}\n\n{', '.join(labels)}"
+            prompt = f"{self.__prompts['captions']}\n\n{', '.join(labels)}"
             response: RunResponse = self.agent.run(
                 prompt, images=[AgnoImage(filepath=annotated_image_path)]
             )
@@ -154,7 +154,7 @@ class OpenrouterVLM(IVLM):
         self.load_model()
         try:
             response: RunResponse = self.agent.run(
-                SYSTEM_PROMPT_ROOM_CLASS, images=[AgnoImage(filepath=image_path)]
+                self.__prompts["room_class"], images=[AgnoImage(filepath=image_path)]
             )
             json_match = re.search(
                 r"```json\s*(\{.*?\})\s*```", response.content, re.DOTALL
@@ -185,14 +185,79 @@ class OpenrouterVLM(IVLM):
                 c["caption"] if isinstance(c, dict) and "caption" in c else str(c)
                 for c in captions
             ]
-            prompt = (
-                f"{SYSTEM_PROMPT_CONSOLIDATE_CAPTIONS}\n\n{', '.join(captions_strs)}"
-            )
+            prompt = f"{self.__prompts['consolidate']}\n\n{', '.join(captions_strs)}"
             response: RunResponse = self.agent.run(prompt)
             return response.content
         except (AttributeError, ValueError, RuntimeError) as e:
             traceback.print_exc()
             raise RuntimeError(f"Remote caption consolidation failed: {e}")
+
+    def set_prompts(self, prompt_dict: dict) -> None:
+        """
+        Sets or updates the system prompts used for VLM/LLM inference.
+
+        :param prompt_dict: Dictionary containing prompt configurations.
+        :type prompt_dict: dict
+        """
+        self.__prompts = prompt_dict
+
+    def classify_environment(self, image_path: str) -> str:
+        """
+        Classifies the overall environment type from an image.
+
+        :param image_path: Path to the image file.
+        :type image_path: str
+        :return: Classified environment type as a string.
+        :rtype: str
+        """
+        self.load_model()
+        try:
+            max_retries = 5
+            last_exception = None
+
+            for attempt in range(max_retries):
+                try:
+                    response: RunResponse = self.agent.run(
+                        self.__prompts["class_env"],
+                        images=[AgnoImage(filepath=image_path)],
+                    )
+                    json_match = re.search(
+                        r"```json\s*(\{.*?\})\s*```", response.content, re.DOTALL
+                    )
+                    if json_match:
+                        json_str = json_match.group(1)
+                        class_env = json.loads(json_str)
+                    else:
+                        class_env = json.loads(response.content)
+
+                    if "class" in class_env:
+                        return class_env["class"]
+                    else:
+                        raise ValueError(
+                            "No 'class' key found in environment classification response."
+                        )
+                except (
+                    AttributeError,
+                    ValueError,
+                    json.JSONDecodeError,
+                    RuntimeError,
+                ) as e:
+                    last_exception = e
+                    if attempt < max_retries - 1:
+                        logging.warning(
+                            f"Environment classification attempt {attempt + 1} failed: {e} -> Content: {response.content if 'response' in locals() else 'N/A'}. Retrying..."
+                        )
+                        continue
+                    else:
+                        break
+
+            traceback.print_exc()
+            raise RuntimeError(
+                f"Environment classification failed after {max_retries} attempts: {last_exception}"
+            )
+        except (AttributeError, ValueError, RuntimeError) as e:
+            traceback.print_exc()
+            raise RuntimeError(f"Environment classification failed: {e}")
 
     def query_map(self, query: str, map_context: str, tools: list) -> str:
         """
