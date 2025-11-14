@@ -1,0 +1,189 @@
+tree
+rock
+flower
+grass
+bush
+river
+lake
+ocean
+mountain
+hill
+cloud
+sun
+moon
+sand
+soil
+puddle
+stream
+street light
+traffic light
+car
+bus
+truck
+motorcycle
+fire hydrant
+sidewalk
+road
+crosswalk
+manhole cover
+building
+house
+fence
+gate
+parking meter
+billboard
+swing
+slide
+seesaw
+sandbox
+picnic table
+barbecue grill
+fountain
+statue
+tent
+cooler
+patio umbrella
+beach towel
+surfboard
+boat
+kayak
+canoe
+bridge
+tunnel
+power line
+utility pole
+antenna
+satellite dish
+bird
+squirrel
+dog
+cat
+butterfly
+lawnmower
+garden hose
+shovel
+rake
+flowerpot
+birdhouse
+bird bath
+park bench
+street trash can
+public mailbox
+street sign
+hiking backpack
+mountain bike
+van
+scooter
+skateboard
+road sign
+stop sign
+yield sign
+traffic cone
+construction barrier
+taxi
+police car
+ambulance
+fire truck
+tractor
+helicopter
+airplane
+drone
+hot air balloon
+streetlight
+pavement
+curb
+gutter
+storm drain
+bridge pillar
+highway
+roundabout
+toll booth
+railroad tracks
+train
+tram
+subway entrance
+bus stop
+taxi stand
+street vendor cart
+newsstand
+telephone booth
+parking garage
+driveway
+garage door
+porch
+chimney
+roof
+exterior window
+front door
+balcony
+patio
+deck
+swimming pool
+hot tub
+garden
+vegetable patch
+shed
+greenhouse
+watering can
+wheelbarrow
+garden gnome
+plastic flamingo
+weather vane
+wind chime
+hammock
+lawn chair
+beach chair
+life preserver
+anchor
+pier
+dock
+lighthouse
+buoy
+wave
+seaweed
+seashell
+starfish
+beach umbrella
+sandcastle
+volleyball net
+soccer goal
+basketball hoop
+tennis court
+baseball diamond
+bleachers
+stadium
+playground
+recycle bin
+traffic sign
+flagpole
+campsite
+campfire
+log
+stump
+pinecone
+acorn
+leaf
+branch
+tree trunk
+root
+vine
+moss
+mushroom
+fern
+cactus
+palm tree
+boulder
+pebble
+gravel
+dirt road
+hiking trail
+trail marker
+canyon
+valley
+cliff
+cave
+volcano
+geyser
+waterfall
+glacier
+iceberg
