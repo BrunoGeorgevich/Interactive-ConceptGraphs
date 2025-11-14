@@ -265,7 +265,7 @@ class GeminiSegmenterStrategy(ISegmenter):
                 mask_data_list = self._process(
                     preprocessed_path, classes, num_detections
                 )
-                if len(mask_data_list) == len(boxes_np):
+                if len(mask_data_list) >= len(boxes_np):
                     return self._postprocess(mask_data_list, width, height)
                 logging.warning(
                     f"Attempt {attempt + 1}: Number of segmentations ({len(mask_data_list)}) does not match number of detections ({len(boxes_np)}). Retrying..."
