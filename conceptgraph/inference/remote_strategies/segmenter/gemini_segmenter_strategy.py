@@ -1,5 +1,6 @@
 from google.genai.types import HttpOptions
 from google.genai import types
+from google.genai.errors import ServerError
 from google import genai
 from PIL import Image
 import numpy as np
@@ -270,7 +271,13 @@ class GeminiSegmenterStrategy(ISegmenter):
                 logging.warning(
                     f"Attempt {attempt + 1}: Number of segmentations ({len(mask_data_list)}) does not match number of detections ({len(boxes_np)}). Retrying..."
                 )
-            except (AttributeError, TypeError, ValueError, RuntimeError) as e:
+            except (
+                AttributeError,
+                TypeError,
+                ValueError,
+                RuntimeError,
+                ServerError,
+            ) as e:
                 traceback.print_exc()
                 if attempt == max_retries - 1:
                     raise RuntimeError(
