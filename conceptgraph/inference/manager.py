@@ -513,6 +513,29 @@ class AdaptiveInferenceManager:
         :return: None
         :rtype: None
         """
+        if detections.mask is None or len(detections.mask) == 0:
+            logging.warning("No masks available for segmentation visualization")
+            segmentation_data: dict = {
+                "num_masks": 0,
+                "used_fallback": self.switcher.is_using_fallback(),
+            }
+            with open(output_dir / "02_segmentation.json", "w", encoding="utf-8") as f:
+                json.dump(segmentation_data, f, ensure_ascii=False, indent=2)
+            return
+
+        num_detections: int = len(detections.xyxy)
+        num_masks: int = len(detections.mask)
+
+        if num_masks != num_detections:
+            logging.warning(
+                f"Mask count mismatch: {num_masks} masks for {num_detections} detections. Truncating to match."
+            )
+            min_count: int = min(num_masks, num_detections)
+            detections.mask = detections.mask[:min_count]
+            detections.xyxy = detections.xyxy[:min_count]
+            detections.class_id = detections.class_id[:min_count]
+            detections.confidence = detections.confidence[:min_count]
+
         mask_annotator = sv.MaskAnnotator()
         masked_image: np.ndarray = mask_annotator.annotate(
             scene=image_rgb.copy(), detections=detections
@@ -522,7 +545,7 @@ class AdaptiveInferenceManager:
         image_pil.save(output_dir / "02_segmentation.png")
 
         segmentation_data: dict = {
-            "num_masks": len(detections.mask) if detections.mask is not None else 0,
+            "num_masks": len(detections.mask),
             "used_fallback": self.switcher.is_using_fallback(),
         }
 
@@ -701,7 +724,7 @@ if __name__ == "__main__":
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
-    test_image_path: str = "assets/test_image_3.png"
+    test_image_path: str = "assets/test_image.png"
     output_directory: str = "test_output"
 
     if not Path(test_image_path).exists():
