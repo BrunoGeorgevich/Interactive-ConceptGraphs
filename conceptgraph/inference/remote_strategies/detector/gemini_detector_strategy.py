@@ -231,7 +231,7 @@ class GeminiDetectorStrategy(IObjectDetector):
                 new_det["bbox"] = scale_bbox(det.get("bbox"))
                 converted.append(new_det)
             return converted
-        except (TypeError, ValueError) as e:
+        except (TypeError, ValueError, AttributeError) as e:
             traceback.print_exc()
             raise ValueError(f"Failed to convert bounding boxes: {e}") from e
 
