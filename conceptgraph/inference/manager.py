@@ -1,5 +1,5 @@
+from pathlib import Path, WindowsPath
 from dotenv import load_dotenv
-from pathlib import Path
 import supervision as sv
 from PIL import Image
 import numpy as np
@@ -7,7 +7,9 @@ import traceback
 import logging
 import torch
 import json
+import uuid
 import cv2
+import re
 import os
 
 from conceptgraph.inference.remote_strategies.detector.gemini_detector_strategy import (
@@ -28,6 +30,12 @@ from conceptgraph.inference.components.system_resource_logger import (
 from conceptgraph.inference.local_strategies import LocalFeatureExtractor, LMStudioVLM
 from conceptgraph.inference.remote_strategies import OpenrouterVLM
 from conceptgraph.inference.switcher import StrategySwitcher
+from conceptgraph.utils.general_utils import (
+    annotate_for_vlm,
+    plot_edges_from_vlm,
+    ObjectClasses,
+    filter_detections,
+)
 
 from conceptgraph.utils.prompts import (
     SYSTEM_PROMPT_ONLY_TOP,
@@ -49,12 +57,12 @@ class AdaptiveInferenceManager:
         sam_checkpoint: str = "models/sam2.1_l.pt",
         clip_model_name: str = "ViT-H-14",
         clip_pretrained: str = "laion2b_s32b_b79k",
-        vlm_local_model_id: str = "qwen/qwen3-vl-8b",
+        vlm_local_model_id: str = "qwen3-vl-8b-instruct",
         vlm_remote_model_id: str = "google/gemini-2.5-flash-lite",
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
         openrouter_api_key: str | None = None,
         gemini_api_key: str | None = None,
-        output_dir: str | None = None,
+        output_dir: str | WindowsPath | None = None,
         save_frame_outputs: bool = True,
         resource_log_interval: float = 0.1,
     ) -> None:
@@ -101,6 +109,8 @@ class AdaptiveInferenceManager:
         )
         self.gemini_api_key: str | None = gemini_api_key or os.getenv("GEMINI_API_KEY")
 
+        if isinstance(output_dir, WindowsPath):
+            output_dir = str(output_dir)
         self.output_dir: Path = Path(output_dir or "test_output")
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -183,8 +193,8 @@ class AdaptiveInferenceManager:
             }
 
             switcher: StrategySwitcher = StrategySwitcher(
-                preferred_factories=preferred_factories,
-                fallback_factories=fallback_factories,
+                preferred_factories,
+                fallback_factories,
                 shared_model=self.shared_clip,
                 vlm_prompts=vlm_prompts,
             )
@@ -207,7 +217,7 @@ class AdaptiveInferenceManager:
         if self.resource_logger is not None and self.resource_logger.running:
             raise RuntimeError("Resource logger is already running")
 
-        resource_log_path: str = str(self.output_dir / "resource_log.csv")
+        resource_log_path: str = str(self.output_dir / "manager" / "resource_log.csv")
         self.resource_logger = SystemResourceLogger(
             sample_interval=self.resource_log_interval,
             output_path=resource_log_path,
@@ -247,6 +257,80 @@ class AdaptiveInferenceManager:
         if self.resource_logger is not None:
             self.resource_logger.set_baseline_collection_flag(flag)
 
+    def associate_masks_to_detections(
+        self,
+        detections: sv.Detections,
+        masks: np.ndarray,
+    ) -> sv.Detections:
+        """
+        Associate segmentation masks to detection bounding boxes based on centroid proximity.
+
+        :param detections: Detection results containing bounding boxes, class IDs, and confidences.
+        :type detections: sv.Detections
+        :param masks: Array of segmentation masks.
+        :type masks: np.ndarray
+        :raises ValueError: If detections or masks are empty or invalid.
+        :return: Detections object with masks associated to bounding boxes.
+        :rtype: sv.Detections
+        """
+        if len(detections) == 0:
+            raise ValueError("Detections cannot be empty")
+        if len(masks) == 0:
+            raise ValueError("Masks cannot be empty")
+
+        detection_centers: list[tuple[float, float]] = []
+        for bbox in detections.xyxy:
+            center_x: float = (bbox[0] + bbox[2]) / 2.0
+            center_y: float = (bbox[1] + bbox[3]) / 2.0
+            detection_centers.append((center_x, center_y))
+
+        mask_centers: list[tuple[float, float]] = []
+        for mask in masks:
+            y_coords, x_coords = np.where(mask > 0)
+            if len(y_coords) == 0:
+                mask_centers.append((0.0, 0.0))
+                continue
+            center_x: float = float(np.mean(x_coords))
+            center_y: float = float(np.mean(y_coords))
+            mask_centers.append((center_x, center_y))
+
+        associated_masks: list[np.ndarray] = []
+        used_mask_indices: set[int] = set()
+
+        for det_center in detection_centers:
+            min_distance: float = float("inf")
+            closest_mask_idx: int = -1
+
+            for mask_idx, mask_center in enumerate(mask_centers):
+                if mask_idx in used_mask_indices:
+                    continue
+
+                distance: float = np.sqrt(
+                    (det_center[0] - mask_center[0]) ** 2
+                    + (det_center[1] - mask_center[1]) ** 2
+                )
+
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_mask_idx = mask_idx
+
+            if closest_mask_idx != -1:
+                associated_masks.append(masks[closest_mask_idx])
+                used_mask_indices.add(closest_mask_idx)
+            else:
+                associated_masks.append(np.zeros_like(masks[0]))
+
+        associated_masks = np.array(associated_masks)
+
+        detections = sv.Detections(
+            xyxy=detections.xyxy,
+            confidence=detections.confidence,
+            class_id=detections.class_id,
+            mask=associated_masks,
+        )
+
+        return detections
+
     def process_frame(
         self,
         image_path: str,
@@ -263,13 +347,392 @@ class AdaptiveInferenceManager:
         :return: Dictionary containing detection results, features, and VLM outputs.
         :rtype: dict
         """
-        frame_output_dir: Path | None = None
+        self.prepare_results(image_path)
 
-        if self.save_frame_outputs:
-            frame_output_dir = self.output_dir / f"frame_{self.frame_counter:05d}"
-            frame_output_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            logging.info(f"Processing frame {self.frame_counter}: {image_path}")
 
-        results: dict = {
+            self.classify_environment(image_path)
+            detections = self.detect_objects(image_path, image_np)
+
+            if len(detections) == 0:
+                return self.results
+
+            masks = self.segment_objects(image_path, image_np, detections)
+            detections = self.associate_masks_to_detections(detections, masks)
+
+            self.perform_vlm_inference(image_path, image_np, detections)
+            self.extract_features(image_np, detections)
+
+            logging.info(f"Frame {self.frame_counter} processed successfully")
+            self.frame_counter += 1
+            return self.results
+
+        except (RuntimeError, ValueError, TypeError) as e:
+            traceback.print_exc()
+            raise RuntimeError(
+                f"Failed to process frame {self.frame_counter}: {e}"
+            ) from e
+
+    def get_detection_classes(self, detections: sv.Detections) -> list[str]:
+        """
+        Get the list of detection classes based on the classified environment.
+
+        :param detections: Detection results containing class IDs.
+        :type detections: sv.Detections
+        :raises RuntimeError: If environment is not classified.
+        :return: List of class names for detection.
+        :rtype: list[str]
+        """
+        _, obj_classes = self.switcher.get_classes_for_environment(False)
+
+        labels = [
+            f"{obj_classes.get_classes_arr()[class_id]} {class_idx}"
+            for class_idx, class_id in enumerate(detections.class_id)
+        ]
+
+        return labels
+
+    def perform_vlm_inference(
+        self,
+        image_path: str,
+        image_np: np.ndarray,
+        detections: sv.Detections,
+        save_results: bool = False,
+    ) -> tuple[list, list, np.ndarray | None, list, dict]:
+        """
+        Perform VLM inference to extract room data, object captions, and spatial relations.
+
+        :param image_path: Path to the image file.
+        :type image_path: str
+        :param image_np: Image as a numpy array in RGB format.
+        :type image_np: np.ndarray
+        :param detections: Detection results with masks.
+        :type detections: sv.Detections
+        :raises RuntimeError: If VLM inference fails.
+        :return: Tuple containing labels, edges, edge_image, captions, and room_data.
+        :rtype: tuple[list, list, np.ndarray | None, list, dict]
+        """
+
+        logging.info("Step 3: VLM Inference")
+
+        classes, obj_classes = self.switcher.get_classes_for_environment(False)
+
+        labels = [
+            f"{obj_classes.get_classes_arr()[class_id]} {class_idx}"
+            for class_idx, class_id in enumerate(detections.class_id)
+        ]
+
+        detections, labels = filter_detections(
+            image=image_np,
+            detections=detections,
+            classes=obj_classes,
+            top_x_detections=150000,
+            confidence_threshold=0.5,
+            given_labels=labels,
+        )
+
+        edges: list = []
+        edge_image: np.ndarray | None = None
+        captions: list = []
+        room_data: dict = {"room_class": "None", "room_description": "None"}
+
+        vlm_labels_numbered: list[str] = [
+            f"{i+1}: {classes[class_id]}"
+            for i, class_id in enumerate(detections.class_id)
+        ]
+        vlm_annotated_path, vlm_annotated_image, sorted_indices = (
+            self._save_vlm_annotated_image(
+                image_np,
+                detections,
+                obj_classes,
+                vlm_labels_numbered,
+                self.frame_output_dir,
+            )
+        )
+
+        vlm_image_input: str = (
+            str(vlm_annotated_path) if vlm_annotated_path else image_path
+        )
+
+        label_list: list[str] = []
+        for label in labels:
+            label_num: str = str(label.split(" ")[-1])
+            label_name: str = re.sub(r"\s*\d+$", "", label).strip()
+            full_label: str = f"{label_num}: {label_name}"
+            label_list.append(full_label)
+
+        logging.info("Getting object captions...")
+        captions = self.switcher.execute_with_fallback(
+            "vlm",
+            "get_captions",
+            vlm_image_input,
+            label_list,
+        )
+
+        logging.info("Getting spatial relations...")
+        edges = self.switcher.execute_with_fallback(
+            "vlm",
+            "get_relations",
+            vlm_image_input,
+            label_list,
+        )
+
+        logging.info("Getting room classification...")
+        room_data = self.switcher.execute_with_fallback(
+            "vlm",
+            "get_room_data",
+            image_path,
+            [],
+        )
+
+        self.results["vlm_outputs"] = {
+            "room_data": room_data,
+            "captions": captions,
+            "relations": edges,
+        }
+
+        if (self.save_frame_outputs and self.frame_output_dir) or (
+            save_results and self.frame_output_dir
+        ):
+            edge_image = plot_edges_from_vlm(
+                vlm_annotated_image,
+                edges,
+                detections,
+                obj_classes,
+                labels,
+                sorted_indices,
+            )
+            vlm_image_path = self.frame_output_dir / "04_vlm_edges.png"
+            image_pil = Image.fromarray(edge_image)
+            image_pil.save(vlm_image_path)
+            self._save_vlm_outputs(room_data, captions, edges, self.frame_output_dir)
+        else:
+            os.remove(vlm_annotated_path)
+
+        return labels, edges, edge_image, captions, room_data
+
+    def consolidate_captions(
+        self,
+        obj: dict,
+        save_results: bool = False,
+    ) -> str:
+        """
+        Consolidate multiple captions for the same object into a single, clear caption using VLM.
+
+        :param obj: Dictionary containing object captions.
+        :type obj: dict
+        :param save_results: Whether to save the consolidated caption to a file.
+        :type save_results: bool
+        :raises ValueError: If captions list is empty or invalid.
+        :return: A single consolidated caption string.
+        :rtype: str
+        """
+        obj_captions = obj["captions"][:20]
+
+        obj_captions = [
+            caption
+            for caption in obj_captions
+            if caption is not None
+            and ("caption" in caption)
+            and (caption["caption"] is not None)
+        ]
+
+        if len(obj_captions) == 0:
+            obj["consolidated_caption"] = "No captions available."
+            return "No captions available."
+
+        captions_text: str = "\n".join(
+            [
+                f"{cap['caption']}"
+                for cap in obj_captions
+                if cap.get("caption") is not None
+            ]
+        )
+
+        if not captions_text.strip():
+            logging.warning("No valid captions to consolidate")
+            return ""
+
+        consolidated_caption: str = ""
+        try:
+            logging.info("Consolidating captions...")
+            consolidated_caption = self.switcher.execute_with_fallback(
+                "vlm",
+                "consolidate_captions",
+                obj_captions,
+            )
+            obj["consolidated_caption"] = consolidated_caption
+            logging.info(f"Consolidated Caption: {consolidated_caption}")
+        except (ValueError, TypeError, KeyError) as e:
+            traceback.print_exc()
+            logging.error(f"Failed to consolidate captions: {str(e)}")
+            consolidated_caption = ""
+            obj["consolidated_caption"] = consolidated_caption
+
+        if (self.save_frame_outputs and self.frame_output_dir) or (
+            save_results and self.frame_output_dir
+        ):
+
+            def to_serializable(obj):
+                if isinstance(obj, torch.Tensor):
+                    if obj.dim() == 0:
+                        return obj.item()
+                    return obj.tolist()
+
+                if isinstance(obj, np.ndarray):
+                    return obj.tolist()
+
+                if isinstance(obj, (np.integer, np.floating)):
+                    return obj.item()
+
+                if isinstance(obj, set):
+                    return list(obj)
+
+                if isinstance(obj, (Path, WindowsPath)):
+                    return str(obj)
+
+                if isinstance(obj, uuid.UUID):
+                    return str(obj)
+
+                if isinstance(obj, dict):
+                    return {k: to_serializable(v) for k, v in obj.items()}
+
+                if isinstance(obj, (list, tuple)):
+                    return [to_serializable(item) for item in obj]
+
+                if isinstance(obj, (int, float, str, bool, type(None))):
+                    return obj
+
+                raise TypeError(f"Type {type(obj)} not serializable")
+
+            obj_id = obj.get("id", None)
+            if obj_id is None:
+                obj["id"] = str(uuid.uuid4())
+                obj_id = obj["id"]
+
+            with open(
+                self.frame_output_dir / f"{obj_id}.json",
+                "w",
+                encoding="utf-8",
+            ) as f:
+                obj_data = obj.copy()
+                del obj_data["pcd"]
+                del obj_data["bbox"]
+                del obj_data["contain_number"]
+                del obj_data["mask"]
+                del obj_data["xyxy"]
+                json.dump(obj_data, f, ensure_ascii=False, indent=2, default=to_serializable)
+
+        return consolidated_caption
+
+    def extract_features(self, image_np, detections, save_results: bool = False):
+        logging.info("Step 4: Feature Extraction")
+        classes: list[str] = self.switcher.get_classes_for_environment()
+        crops, image_feats, text_feats = self.switcher.execute_with_fallback(
+            "clip",
+            "extract_features",
+            image_np,
+            detections,
+            classes,
+        )
+
+        image_feats_array = np.array(image_feats)
+        text_feats_array = np.array(text_feats)
+        logging.info(
+            f"Extracted features: image_feats={image_feats_array.shape}, text_feats={text_feats_array.shape}"
+        )
+
+        self.results["features"] = {
+            "crops": crops,
+            "image_features": image_feats_array,
+            "text_features": text_feats_array,
+        }
+
+        if (self.save_frame_outputs and self.frame_output_dir) or (
+            save_results and self.frame_output_dir
+        ):
+            self._save_crops(crops, detections, self.frame_output_dir)
+
+        return crops, image_feats, text_feats
+
+    def segment_objects(
+        self, image_path, image_np, detections, save_results: bool = False
+    ):
+        logging.info("Step 2: Segmentation")
+        classes: list[str] = self.switcher.get_classes_for_environment()
+        boxes_tensor = torch.tensor(detections.xyxy, device=self.device)
+        classes_detected = [classes[i] for i in detections.class_id]
+
+        masks = self.switcher.execute_with_fallback(
+            "seg", "segment", image_path, image_np, boxes_tensor, classes_detected
+        )
+
+        masks = masks.cpu().numpy()
+        detections.mask = masks
+        logging.info(f"Generated {len(masks)} segmentation masks")
+        self.results["masks"] = masks
+
+        if (self.save_frame_outputs and self.frame_output_dir) or (
+            save_results and self.frame_output_dir
+        ):
+            self._save_segmentation_visualization(
+                image_np, detections, self.frame_output_dir
+            )
+
+        return masks
+
+    def detect_objects(self, image_path, image_np, save_results: bool = False):
+        logging.info("Step 1: Object Detection")
+        classes: list[str] = self.switcher.get_classes_for_environment()
+        detector = self.switcher.get_model("det")
+        detector.set_classes(classes)
+
+        detections = self.switcher.execute_with_fallback(
+            "det", "detect", image_path, image_np
+        )
+
+        logging.info(f"Detected {len(detections)} objects")
+        self.results["detections"] = detections
+        self.results["used_fallback"] = self.switcher.is_using_fallback()
+
+        if len(detections) == 0:
+            logging.warning("No objects detected in frame")
+            if (self.save_frame_outputs and self.frame_output_dir) or (
+                save_results and self.frame_output_dir
+            ):
+                self._save_empty_frame_info(self.frame_output_dir, self.results)
+
+        if (self.save_frame_outputs and self.frame_output_dir) or (
+            save_results and self.frame_output_dir
+        ):
+            self._save_detection_visualization(
+                image_np, detections, classes, self.frame_output_dir
+            )
+
+        return detections
+
+    def set_frame_output_dir(
+        self, frame_idx: int | None = None, output_dir_name: str | None = None
+    ):
+        self.frame_output_dir: Path | None = None
+
+        if frame_idx is not None:
+            self.frame_counter = frame_idx
+
+        if output_dir_name is not None:
+            self.frame_output_dir = self.output_dir / "manager" / output_dir_name
+            self.frame_output_dir.mkdir(parents=True, exist_ok=True)
+        elif self.save_frame_outputs:
+            self.frame_output_dir = (
+                self.output_dir / "manager" / f"frame_{self.frame_counter:05d}"
+            )
+            self.frame_output_dir.mkdir(parents=True, exist_ok=True)
+
+    def prepare_results(self, image_path, frame_idx: int | None = None):
+        self.set_frame_output_dir(frame_idx)
+
+        self.results: dict = {
             "frame_number": self.frame_counter,
             "image_path": image_path,
             "environment_profile": None,
@@ -280,144 +743,22 @@ class AdaptiveInferenceManager:
             "used_fallback": False,
         }
 
-        try:
-            logging.info(f"Processing frame {self.frame_counter}: {image_path}")
+    def classify_environment(self, image_path):
+        logging.info("Step 0: Environment Classification")
+        environment_type = self.switcher.classify_environment(image_path)
+        self.environment_classified = True
+        logging.info(f"Environment classified as: {environment_type}")
+        self.results["environment_profile"] = environment_type
 
-            logging.info("Step 0: Environment Classification")
-            environment_type = self.switcher.classify_environment(image_path)
-            self.environment_classified = True
-            logging.info(f"Environment classified as: {environment_type}")
-            results["environment_profile"] = environment_type
-
-            if self.save_frame_outputs and frame_output_dir:
-                env_data: dict = {
-                    "environment_type": environment_type,
-                    "frame_number": self.frame_counter,
-                }
-                with open(
-                    frame_output_dir / "00_environment.json", "w", encoding="utf-8"
-                ) as f:
-                    json.dump(env_data, f, ensure_ascii=False, indent=2)
-
-            classes: list[str] = self.switcher.get_classes_for_environment()
-            results["environment_profile"] = (
-                self.switcher.system_context.environment_profile
-            )
-
-            logging.info("Step 1: Object Detection")
-            detector = self.switcher.get_model("det")
-            detector.set_classes(classes)
-
-            detections = self.switcher.execute_with_fallback(
-                "det", "detect", image_path, image_np
-            )
-
-            logging.info(f"Detected {len(detections)} objects")
-            results["detections"] = detections
-            results["used_fallback"] = self.switcher.is_using_fallback()
-
-            if len(detections) == 0:
-                logging.warning("No objects detected in frame")
-                if self.save_frame_outputs and frame_output_dir:
-                    self._save_empty_frame_info(frame_output_dir, results)
-                self.frame_counter += 1
-                return results
-
-            if self.save_frame_outputs and frame_output_dir:
-                self._save_detection_visualization(
-                    image_np, detections, classes, frame_output_dir
-                )
-
-            logging.info("Step 2: Segmentation")
-            boxes_tensor = torch.tensor(detections.xyxy, device=self.device)
-            classes_detected = [classes[i] for i in detections.class_id]
-
-            masks = self.switcher.execute_with_fallback(
-                "seg", "segment", image_path, image_np, boxes_tensor, classes_detected
-            )
-
-            detections.mask = masks.cpu().numpy()
-            logging.info(f"Generated {len(masks)} segmentation masks")
-            results["masks"] = masks
-
-            if self.save_frame_outputs and frame_output_dir:
-                self._save_segmentation_visualization(
-                    image_np, detections, frame_output_dir
-                )
-
-            logging.info("Step 3: Feature Extraction")
-            crops, image_feats, text_feats = self.switcher.execute_with_fallback(
-                "clip",
-                "extract_features",
-                image_np,
-                detections,
-                classes,
-            )
-
-            image_feats_array = np.array(image_feats)
-            text_feats_array = np.array(text_feats)
-            logging.info(
-                f"Extracted features: image_feats={image_feats_array.shape}, text_feats={text_feats_array.shape}"
-            )
-
-            results["features"] = {
-                "crops": crops,
-                "image_features": image_feats_array,
-                "text_features": text_feats_array,
+        if self.save_frame_outputs and self.frame_output_dir:
+            env_data: dict = {
+                "environment_type": environment_type,
+                "frame_number": self.frame_counter,
             }
-
-            if self.save_frame_outputs and frame_output_dir:
-                self._save_crops(crops, detections, frame_output_dir)
-
-            logging.info("Step 4: VLM Inference")
-            vlm_labels: list[str] = [
-                f"{i+1}: {classes[class_id]}"
-                for i, class_id in enumerate(detections.class_id)
-            ]
-
-            vlm_annotated_path: Path | None = None
-            if self.save_frame_outputs and frame_output_dir:
-                vlm_annotated_path = self._save_vlm_annotated_image(
-                    image_np, detections, vlm_labels, frame_output_dir
-                )
-
-            vlm_image_input: str = (
-                str(vlm_annotated_path) if vlm_annotated_path else image_path
-            )
-
-            logging.info("Getting room classification...")
-            room_data = self.switcher.execute_with_fallback(
-                "vlm", "get_room_data", image_path, []
-            )
-
-            logging.info("Getting object captions...")
-            captions = self.switcher.execute_with_fallback(
-                "vlm", "get_captions", vlm_image_input, vlm_labels
-            )
-
-            logging.info("Getting spatial relations...")
-            relations = self.switcher.execute_with_fallback(
-                "vlm", "get_relations", vlm_image_input, vlm_labels
-            )
-
-            results["vlm_outputs"] = {
-                "room_data": room_data,
-                "captions": captions,
-                "relations": relations,
-            }
-
-            if self.save_frame_outputs and frame_output_dir:
-                self._save_vlm_outputs(room_data, captions, relations, frame_output_dir)
-
-            logging.info(f"Frame {self.frame_counter} processed successfully")
-            self.frame_counter += 1
-            return results
-
-        except (RuntimeError, ValueError, TypeError) as e:
-            traceback.print_exc()
-            raise RuntimeError(
-                f"Failed to process frame {self.frame_counter}: {e}"
-            ) from e
+            with open(
+                self.frame_output_dir / "00_environment.json", "w", encoding="utf-8"
+            ) as f:
+                json.dump(env_data, f, ensure_ascii=False, indent=2)
 
     def _save_empty_frame_info(self, output_dir: Path, results: dict) -> None:
         """
@@ -570,7 +911,7 @@ class AdaptiveInferenceManager:
         :return: None
         :rtype: None
         """
-        crops_dir: Path = output_dir / "03_crops"
+        crops_dir: Path = output_dir / "04_crops"
         crops_dir.mkdir(exist_ok=True)
 
         classes: list[str] = self.switcher.get_classes_for_environment()
@@ -597,9 +938,10 @@ class AdaptiveInferenceManager:
         self,
         image_rgb: np.ndarray,
         detections: object,
+        obj_classes: ObjectClasses,
         vlm_labels: list[str],
         output_dir: Path,
-    ) -> Path:
+    ) -> tuple[Path, np.ndarray, list[int]]:
         """
         Save annotated image with numbered labels for VLM input.
 
@@ -607,28 +949,25 @@ class AdaptiveInferenceManager:
         :type image_rgb: np.ndarray
         :param detections: Detection results.
         :type detections: object
+        :param obj_classes: ObjectClasses instance for class name mapping.
+        :type obj_classes: ObjectClasses
         :param vlm_labels: List of numbered labels for each detection.
         :type vlm_labels: list[str]
         :param output_dir: Directory to save the annotated image.
         :type output_dir: Path
-        :return: Path to the saved annotated image.
-        :rtype: Path
+        :return: Tuple containing the path to the saved image, the annotated image array, and sorted indices.
+        :rtype: tuple[Path, np.ndarray, list[int]]
         """
-        box_annotator = sv.BoxAnnotator()
-        label_annotator = sv.LabelAnnotator()
-
-        vlm_annotated_image: np.ndarray = box_annotator.annotate(
-            scene=image_rgb.copy(), detections=detections
-        )
-        vlm_annotated_image = label_annotator.annotate(
-            scene=vlm_annotated_image, detections=detections, labels=vlm_labels
+        vlm_annotated_image, sorted_indices = annotate_for_vlm(
+            image_rgb, detections, obj_classes, vlm_labels
         )
 
-        vlm_image_path: Path = output_dir / "04_vlm_annotated.png"
+        os.makedirs(output_dir, exist_ok=True)
+        vlm_image_path: Path = output_dir / "03_vlm_annotated.png"
         image_pil = Image.fromarray(vlm_annotated_image)
         image_pil.save(vlm_image_path)
 
-        return vlm_image_path
+        return vlm_image_path, vlm_annotated_image, sorted_indices
 
     def _save_vlm_outputs(
         self,
@@ -651,19 +990,19 @@ class AdaptiveInferenceManager:
         :return: None
         :rtype: None
         """
-        with open(output_dir / "04a_room_data.json", "w", encoding="utf-8") as f:
+        with open(output_dir / "03a_room_data.json", "w", encoding="utf-8") as f:
             json.dump(room_data, f, ensure_ascii=False, indent=2)
 
-        with open(output_dir / "04b_captions.json", "w", encoding="utf-8") as f:
+        with open(output_dir / "03b_captions.json", "w", encoding="utf-8") as f:
             json.dump(captions, f, ensure_ascii=False, indent=2)
 
-        with open(output_dir / "04c_relations.json", "w", encoding="utf-8") as f:
+        with open(output_dir / "03c_relations.json", "w", encoding="utf-8") as f:
             json.dump(relations, f, ensure_ascii=False, indent=2)
 
         vlm_data: dict = {
             "used_fallback": self.switcher.is_using_fallback(),
         }
-        with open(output_dir / "04_vlm_info.json", "w", encoding="utf-8") as f:
+        with open(output_dir / "03_vlm_info.json", "w", encoding="utf-8") as f:
             json.dump(vlm_data, f, ensure_ascii=False, indent=2)
 
     def unload_all_models(self) -> None:
@@ -724,7 +1063,7 @@ if __name__ == "__main__":
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
-    test_image_path: str = "assets/test_image.png"
+    test_image_path: str = "assets/test_image_4.jpg"
     output_directory: str = "test_output"
 
     if not Path(test_image_path).exists():

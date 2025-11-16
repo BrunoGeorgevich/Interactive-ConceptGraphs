@@ -23,6 +23,7 @@ from conceptgraph.inference.remote_strategies.segmenter.gemini_segmenter_strateg
 )
 from conceptgraph.inference.local_strategies import LocalFeatureExtractor, LMStudioVLM
 from conceptgraph.inference.remote_strategies import OpenrouterVLM
+from conceptgraph.utils.general_utils import ObjectClasses
 from conceptgraph.utils.prompts import (
     SYSTEM_PROMPT_ONLY_TOP,
     SYSTEM_PROMPT_CAPTIONS,
@@ -199,7 +200,7 @@ class StrategySwitcher:
                 f"Environment classification failed: {classification_error}"
             )
 
-    def get_classes_for_environment(self) -> list[str]:
+    def get_classes_for_environment(self, only_classes: bool = True) -> list[str]:
         """
         Get appropriate object classes based on current environment profile.
 
@@ -215,7 +216,12 @@ class StrategySwitcher:
         try:
             with open(class_file, "r", encoding="utf-8") as f:
                 classes = [line.strip() for line in f if line.strip()]
-            return classes
+            if only_classes:
+                return classes
+            object_classes = ObjectClasses(
+                class_file, ["wall", "floor", "ceiling"], True
+            )
+            return classes, object_classes
         except (FileNotFoundError, OSError):
             traceback.print_exc()
             raise RuntimeError(f"Cannot load class file: {class_file}")
