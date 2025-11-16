@@ -178,13 +178,58 @@ class LMStudioVLM(IVLM):
         """
         self.load_model()
         try:
-            captions_strs = [
-                c["caption"] if isinstance(c, dict) and "caption" in c else str(c)
-                for c in captions
-            ]
-            prompt = f"{self.__prompts['consolidate']}\n\n{', '.join(captions_strs)}"
-            response: RunResponse = self.agent.run(prompt)
-            return response.content
+            max_retries = 5
+            last_exception = None
+
+            for attempt in range(max_retries):
+                try:
+                    captions_strs = [
+                        (
+                            c["caption"]
+                            if isinstance(c, dict) and "caption" in c
+                            else str(c)
+                        )
+                        for c in captions
+                    ]
+                    prompt = (
+                        f"{self.__prompts['consolidate']}\n\n{', '.join(captions_strs)}"
+                    )
+                    response: RunResponse = self.agent.run(prompt)
+
+                    json_match = re.search(
+                        r"```json\s*(\{.*?\})\s*```", response.content, re.DOTALL
+                    )
+                    if json_match:
+                        json_str = json_match.group(1)
+                        consolidated_data = json.loads(json_str)
+                    else:
+                        consolidated_data = json.loads(response.content)
+
+                    if "consolidated_caption" in consolidated_data:
+                        return consolidated_data["consolidated_caption"]
+                    else:
+                        raise ValueError(
+                            "No 'consolidated_caption' key found in consolidation response."
+                        )
+                except (
+                    AttributeError,
+                    ValueError,
+                    json.JSONDecodeError,
+                    RuntimeError,
+                ) as e:
+                    last_exception = e
+                    if attempt < max_retries - 1:
+                        logging.warning(
+                            f"Caption consolidation attempt {attempt + 1} failed: {e} -> Content: {response.content if 'response' in locals() else 'N/A'}. Retrying..."
+                        )
+                        continue
+                    else:
+                        break
+
+            traceback.print_exc()
+            raise RuntimeError(
+                f"Caption consolidation failed after {max_retries} attempts: {last_exception}"
+            )
         except (AttributeError, ValueError, RuntimeError) as e:
             traceback.print_exc()
             raise RuntimeError(f"Caption consolidation failed: {e}")
