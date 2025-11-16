@@ -5,9 +5,8 @@ import logging
 import warnings
 import torch
 import os
-warnings.filterwarnings(
-    "ignore", category=UserWarning, module="huggingface_hub"
-)
+
+warnings.filterwarnings("ignore", category=UserWarning, module="huggingface_hub")
 
 from conceptgraph.inference.interfaces import IFeatureExtractor
 
