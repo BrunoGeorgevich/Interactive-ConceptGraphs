@@ -33,7 +33,6 @@ candle
 cart
 case of water bottles
 cd case
-ceiling
 ceiling light
 chair
 clock
@@ -74,9 +73,7 @@ file cabinet
 fire alarm
 fire extinguisher
 fireplace
-floor
 folded chair
-furniture
 guitar
 guitar case
 hair dryer
@@ -110,7 +107,6 @@ monitor
 mouse
 music stand
 nightstand
-object
 office chair
 ottoman
 oven
@@ -189,12 +185,10 @@ tv
 tv stand
 vacuum cleaner
 vent
-wall
 wardrobe
 washing machine
 water bottle
 water cooler
 water pitcher
 whiteboard
-window
 windowsill
