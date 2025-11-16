@@ -1,0 +1,6 @@
+transformers
+accelerate
+bitsandbytes
+google-genai
+openai
+agno
