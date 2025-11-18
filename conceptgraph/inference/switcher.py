@@ -24,7 +24,7 @@ from conceptgraph.inference.remote_strategies.segmenter.gemini_segmenter_strateg
 from conceptgraph.inference.local_strategies import LocalFeatureExtractor, LMStudioVLM
 from conceptgraph.inference.remote_strategies import OpenrouterVLM
 from conceptgraph.utils.general_utils import ObjectClasses
-from conceptgraph.utils.prompts import (
+from conceptgraph.inference.prompts import (
     SYSTEM_PROMPT_ONLY_TOP,
     SYSTEM_PROMPT_CAPTIONS,
     SYSTEM_PROMPT_ROOM_CLASS,

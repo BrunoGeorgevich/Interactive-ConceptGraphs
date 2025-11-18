@@ -37,7 +37,7 @@ from conceptgraph.utils.general_utils import (
     filter_detections,
 )
 
-from conceptgraph.utils.prompts import (
+from conceptgraph.inference.prompts import (
     SYSTEM_PROMPT_ONLY_TOP,
     SYSTEM_PROMPT_CAPTIONS,
     SYSTEM_PROMPT_ROOM_CLASS,
@@ -218,6 +218,7 @@ class AdaptiveInferenceManager:
             raise RuntimeError("Resource logger is already running")
 
         resource_log_path: str = str(self.output_dir / "manager" / "resource_log.csv")
+        os.makedirs(os.path.dirname(resource_log_path), exist_ok=True)
         self.resource_logger = SystemResourceLogger(
             sample_interval=self.resource_log_interval,
             output_path=resource_log_path,
@@ -622,7 +623,9 @@ class AdaptiveInferenceManager:
                 del obj_data["contain_number"]
                 del obj_data["mask"]
                 del obj_data["xyxy"]
-                json.dump(obj_data, f, ensure_ascii=False, indent=2, default=to_serializable)
+                json.dump(
+                    obj_data, f, ensure_ascii=False, indent=2, default=to_serializable
+                )
 
         return consolidated_caption
 

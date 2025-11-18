@@ -2,27 +2,32 @@
 # Imports Section
 # =========================
 
-# Standard library imports
-import enum
-from dotenv import load_dotenv
-from pathlib import Path
-import pickle
-import gzip
-import os
-import re
-
-# Third-party library imports
 from open3d.io import read_pinhole_camera_parameters
 from omegaconf import DictConfig
 from collections import Counter
+from dotenv import load_dotenv
+import supervision as sv
+from pathlib import Path
 from tqdm import trange
 from PIL import Image
 import numpy as np
+import pickle
 import torch
 import hydra
+import gzip
 import cv2
+import os
+import re
 
-# Local application/library specific imports
+from conceptgraph.utils.vlm import get_vlm_openai_like_client, consolidate_captions
+from conceptgraph.slam.slam_classes import MapEdgeMapping, MapObjectList
+from conceptgraph.utils.model_utils import compute_clip_features_batched
+from conceptgraph.utils.optional_wandb_wrapper import OptionalWandB
+from conceptgraph.inference.manager import AdaptiveInferenceManager
+from conceptgraph.utils.logging_metrics import MappingTracker
+from conceptgraph.dataset.datasets_common import get_dataset
+from conceptgraph.utils.ious import mask_subtract_contained
+
 from conceptgraph.utils.optional_rerun_wrapper import (
     OptionalReRun,
     orr_log_annotated_image,
@@ -33,9 +38,6 @@ from conceptgraph.utils.optional_rerun_wrapper import (
     orr_log_rgb_image,
     orr_log_vlm_image,
 )
-from conceptgraph.utils.optional_wandb_wrapper import OptionalWandB
-from conceptgraph.utils.logging_metrics import MappingTracker
-from conceptgraph.utils.ious import mask_subtract_contained
 from conceptgraph.utils.general_utils import (
     ObjectClasses,
     get_det_out_path,
@@ -54,14 +56,12 @@ from conceptgraph.utils.general_utils import (
     should_exit_early,
     vis_render_image,
 )
-from conceptgraph.dataset.datasets_common import get_dataset
 from conceptgraph.utils.vis import (
     OnlineObjectRenderer,
     vis_result_fast_on_depth,
     vis_result_fast,
     save_video_detections,
 )
-from conceptgraph.slam.slam_classes import MapEdgeMapping, MapObjectList
 from conceptgraph.slam.utils import (
     filter_gobs,
     filter_objects,
@@ -88,9 +88,8 @@ from conceptgraph.utils.general_utils import (
     cfg_to_dict,
     check_run_detections,
     matrix_to_translation_rotation,
+    make_vlm_edges_and_captions,
 )
-
-from conceptgraph.inference.manager import AdaptiveInferenceManager
 
 # Disable gradient computation for efficiency (inference only)
 torch.set_grad_enabled(False)
@@ -119,6 +118,12 @@ torch.set_grad_enabled(False)
 )
 def main(cfg: DictConfig):
     load_dotenv()
+    new_inference_system = os.getenv("NEW_INFERENCE_SYSTEM", "false").lower() == "true"
+
+    if not new_inference_system:
+        from ultralytics import YOLO, SAM
+        import open_clip
+
     # Initialize a tracker for mapping statistics
     tracker = MappingTracker()
 
@@ -198,6 +203,15 @@ def main(cfg: DictConfig):
         save_frame_outputs=True,
         resource_log_interval=0.05,
     )
+    if not new_inference_system:
+        detection_model = measure_time(YOLO)("yolov8l-world.pt")
+        sam_predictor = SAM("sam_l.pt")
+        clip_model, _, clip_preprocess = open_clip.create_model_and_transforms(
+            "ViT-H-14", "laion2b_s32b_b79k"
+        )
+        clip_model = clip_model.to(cfg.device)
+        clip_tokenizer = open_clip.get_tokenizer("ViT-H-14")
+        detection_model.set_classes(obj_classes.get_classes_arr())
     if run_detections:
         print("\n".join(["Running detections..."] * 10))
         det_exp_path.mkdir(parents=True, exist_ok=True)
@@ -205,13 +219,12 @@ def main(cfg: DictConfig):
         print("\n".join(["NOT Running detections..."] * 10))
 
     # # Initialize OpenAI client for VLM (Vision-Language Model) captions/edges
-    # openai_client = get_vlm_openai_like_client(
-    #     model="google/gemini-2.5-flash-lite",
-    #     # api_key=os.getenv("GLAMA_API_KEY"),
-    #     api_key=os.getenv("OPENROUTER_API_KEY"),
-    #     # base_url=os.getenv("GLAMA_API_BASE_URL"),
-    #     base_url=os.getenv("OPENROUTER_API_BASE_URL"),
-    # )
+    if not new_inference_system:
+        openai_client = get_vlm_openai_like_client(
+            model="openai/gpt-4o",
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+            base_url=os.getenv("OPENROUTER_API_BASE_URL"),
+        )
 
     # Save configuration files for reproducibility
     save_hydra_config(cfg, exp_out_path)
@@ -262,7 +275,8 @@ def main(cfg: DictConfig):
         # Load color/depth tensors and camera intrinsics
         color_tensor, depth_tensor, intrinsics, *_ = dataset[frame_idx]
 
-        manager.prepare_results(image_path=color_path, frame_idx=frame_idx * stride)
+        if new_inference_system:
+            manager.prepare_results(image_path=color_path, frame_idx=frame_idx * stride)
 
         # Convert depth and color tensors to numpy arrays for processing
         depth_tensor = depth_tensor[..., 0]
@@ -313,94 +327,95 @@ def main(cfg: DictConfig):
             image = cv2.imread(str(color_path))  # BGR color space
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-            try:
-                results = manager.detect_objects(color_path, image_rgb)
-            except RuntimeError:
-                print(
-                    f"Detection failed for frame {frame_idx * stride}, skipping frame."
-                )
-                continue
+            if new_inference_system:
+                try:
+                    results = manager.detect_objects(color_path, image_rgb)
+                except RuntimeError:
+                    print(
+                        f"Detection failed for frame {frame_idx * stride}, skipping frame."
+                    )
+                    continue
 
-            if len(results) == 0:
-                print(f"No detections found, skipping frame: {frame_idx * stride}")
-                continue
-            try:
-                masks = manager.segment_objects(color_path, image_rgb, results)
-                curr_det = manager.associate_masks_to_detections(results, masks)
-            except (AssertionError, RuntimeError):
-                print(
-                    f"Segmentation failed for frame {frame_idx * stride}, skipping frame."
+                if len(results) == 0:
+                    print(f"No detections found, skipping frame: {frame_idx * stride}")
+                    continue
+                try:
+                    masks = manager.segment_objects(color_path, image_rgb, results)
+                    curr_det = manager.associate_masks_to_detections(results, masks)
+                except (AssertionError, RuntimeError):
+                    print(
+                        f"Segmentation failed for frame {frame_idx * stride}, skipping frame."
+                    )
+                    continue
+                detection_class_labels = manager.get_detection_classes(curr_det)
+                try:
+                    labels, edges, edge_image, captions, room_data = (
+                        manager.perform_vlm_inference(color_path, image_rgb, curr_det)
+                    )
+                except ValueError:
+                    print(
+                        f"VLM inference failed for frame {frame_idx * stride}, skipping frame."
+                    )
+                    continue
+                image_crops, image_feats, text_feats = manager.extract_features(
+                    image_rgb, curr_det
                 )
-                continue
-            detection_class_labels = manager.get_detection_classes(curr_det)
-            try:
+            else:
+                # Run YOLO object detection
+                results = detection_model.predict(color_path, conf=0.5, verbose=False)
+                confidences = results[0].boxes.conf.cpu().numpy()
+                detection_class_ids = results[0].boxes.cls.cpu().numpy().astype(int)
+                detection_class_labels = [
+                    f"{obj_classes.get_classes_arr()[class_id]} {class_idx}"
+                    for class_idx, class_id in enumerate(detection_class_ids)
+                ]
+                xyxy_tensor = results[0].boxes.xyxy
+                xyxy_np = xyxy_tensor.cpu().numpy()
+
+                # If there are detections, run SAM for segmentation masks
+                if xyxy_tensor.numel() != 0:
+                    sam_out = sam_predictor.predict(
+                        color_path, bboxes=xyxy_tensor, verbose=False
+                    )
+                    masks_tensor = sam_out[0].masks.data
+                    masks_np = masks_tensor.cpu().numpy()
+                else:
+                    # No detections: create empty mask array
+                    masks_np = np.empty((0, *color_tensor.shape[:2]), dtype=np.float64)
+
+                # Create a Detections object for this frame
+                curr_det = sv.Detections(
+                    xyxy=xyxy_np,
+                    confidence=confidences,
+                    class_id=detection_class_ids,
+                    mask=masks_np,
+                )
+
+                # Generate VLM-based edges and captions for detected objects
                 labels, edges, edge_image, captions, room_data = (
-                    manager.perform_vlm_inference(color_path, image_rgb, curr_det)
+                    make_vlm_edges_and_captions(
+                        image,
+                        curr_det,
+                        obj_classes,
+                        detection_class_labels,
+                        det_exp_vis_path,
+                        color_path,
+                        cfg.make_edges,
+                        room_data_list,
+                        openai_client,
+                    )
                 )
-            except ValueError:
-                print(
-                    f"VLM inference failed for frame {frame_idx * stride}, skipping frame."
+
+                # Compute CLIP features for detected objects (image and text)
+                image_crops, image_feats, text_feats = compute_clip_features_batched(
+                    image_rgb,
+                    curr_det,
+                    clip_model,
+                    clip_preprocess,
+                    clip_tokenizer,
+                    obj_classes.get_classes_arr(),
+                    cfg.device,
                 )
-                continue
-            image_crops, image_feats, text_feats = manager.extract_features(
-                image_rgb, curr_det
-            )
-
-            # # Run YOLO object detection
-            # results = detection_model.predict(color_path, conf=0.5, verbose=False)
-            # confidences = results[0].boxes.conf.cpu().numpy()
-            # detection_class_ids = results[0].boxes.cls.cpu().numpy().astype(int)
-            # detection_class_labels = [
-            #     f"{obj_classes.get_classes_arr()[class_id]} {class_idx}"
-            #     for class_idx, class_id in enumerate(detection_class_ids)
-            # ]
-            # xyxy_tensor = results[0].boxes.xyxy
-            # xyxy_np = xyxy_tensor.cpu().numpy()
-
-            # # If there are detections, run SAM for segmentation masks
-            # if xyxy_tensor.numel() != 0:
-            #     sam_out = sam_predictor.predict(
-            #         color_path, bboxes=xyxy_tensor, verbose=False
-            #     )
-            #     masks_tensor = sam_out[0].masks.data
-            #     masks_np = masks_tensor.cpu().numpy()
-            # else:
-            #     # No detections: create empty mask array
-            #     masks_np = np.empty((0, *color_tensor.shape[:2]), dtype=np.float64)
-
-            # # Create a Detections object for this frame
-            # curr_det = sv.Detections(
-            #     xyxy=xyxy_np,
-            #     confidence=confidences,
-            #     class_id=detection_class_ids,
-            #     mask=masks_np,
-            # )
-
-            # # Generate VLM-based edges and captions for detected objects
-            # labels, edges, edge_image, captions, room_data = (
-            #     make_vlm_edges_and_captions(
-            #         image,
-            #         curr_det,
-            #         obj_classes,
-            #         detection_class_labels,
-            #         det_exp_vis_path,
-            #         color_path,
-            #         cfg.make_edges,
-            #         room_data_list,
-            #         openai_client,
-            #     )
-            # )
-
-            # # Compute CLIP features for detected objects (image and text)
-            # image_crops, image_feats, text_feats = compute_clip_features_batched(
-            #     image_rgb,
-            #     curr_det,
-            #     clip_model,
-            #     clip_preprocess,
-            #     clip_tokenizer,
-            #     obj_classes.get_classes_arr(),
-            #     cfg.device,
-            # )
 
             converted_pose = matrix_to_translation_rotation(adjusted_pose)
 
@@ -623,7 +638,7 @@ def main(cfg: DictConfig):
         # =========================
 
         # For each object, set its class name to the most common detected class
-        for idx, obj in enumerate(objects):
+        for obj in objects:
             temp_class_name = obj["class_name"]
             curr_obj_class_id_counter = Counter(obj["class_id"])
             most_common_class_id = curr_obj_class_id_counter.most_common(1)[0][0]
@@ -803,9 +818,15 @@ def main(cfg: DictConfig):
         stride = int(stride)
     except ValueError:
         stride = 1
-    manager.set_frame_output_dir(output_dir_name="objects")
-    for idx, obj in enumerate(objects):
-        manager.consolidate_captions(obj)
+    if new_inference_system:
+        manager.set_frame_output_dir(output_dir_name="objects")
+    for obj in objects:
+        if new_inference_system:
+            manager.consolidate_captions(obj)
+        else:
+            obj_captions = object["captions"][:20]
+            consolidated_caption = consolidate_captions(openai_client, obj_captions)
+            object["consolidated_caption"] = consolidated_caption
         # consolidated_caption = consolidate_captions(openai_client, obj_captions)
 
     # Save rerun logs if enabled
@@ -857,7 +878,8 @@ def main(cfg: DictConfig):
 
     # Finish wandb logging session
     manager.stop_resource_logging()
-    manager.unload_all_models()
+    if new_inference_system:
+        manager.unload_all_models()
     owandb.finish()
 
 
