@@ -127,10 +127,17 @@ def main(cfg: DictConfig):
     # Initialize a tracker for mapping statistics
     tracker = MappingTracker()
 
+    exp_out_path = get_exp_out_path(cfg.dataset_root, cfg.scene_id, cfg.exp_suffix)
+    det_exp_path = get_exp_out_path(
+        cfg.dataset_root, cfg.scene_id, cfg.detections_exp_suffix, make_dir=False
+    )
+    rerun_file_path = exp_out_path / f"rerun_{cfg.exp_suffix}.rrd"
+
     # Initialize OptionalReRun for optional logging/visualization
     orr = OptionalReRun()
     orr.set_use_rerun(cfg.use_rerun)
     orr.init("realtime_mapping")
+    orr.rerun.save(rerun_file_path)
     orr.spawn()
 
     # Initialize OptionalWandB for optional experiment tracking
@@ -171,12 +178,6 @@ def main(cfg: DictConfig):
             gray_map=False,
         )
         frames = []
-
-    # Set up output paths for experiment and detections
-    exp_out_path = get_exp_out_path(cfg.dataset_root, cfg.scene_id, cfg.exp_suffix)
-    det_exp_path = get_exp_out_path(
-        cfg.dataset_root, cfg.scene_id, cfg.detections_exp_suffix, make_dir=False
-    )
 
     # Prepare object classes and detection configuration
     detections_exp_cfg = cfg_to_dict(cfg)
@@ -824,11 +825,12 @@ def main(cfg: DictConfig):
         if new_inference_system:
             manager.consolidate_captions(obj)
         else:
-            obj_captions = object["captions"][:20]
+            obj_captions = obj["captions"][:20]
             consolidated_caption = consolidate_captions(openai_client, obj_captions)
-            object["consolidated_caption"] = consolidated_caption
+            obj["consolidated_caption"] = consolidated_caption
         # consolidated_caption = consolidate_captions(openai_client, obj_captions)
 
+    manager.stop_resource_logging()
     # Save rerun logs if enabled
     handle_rerun_saving(cfg.use_rerun, cfg.save_rerun, cfg.exp_suffix, exp_out_path)
 
@@ -877,7 +879,6 @@ def main(cfg: DictConfig):
             save_video_detections(det_exp_path)
 
     # Finish wandb logging session
-    manager.stop_resource_logging()
     if new_inference_system:
         manager.unload_all_models()
     owandb.finish()
