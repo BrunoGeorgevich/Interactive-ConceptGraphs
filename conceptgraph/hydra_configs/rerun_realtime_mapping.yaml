@@ -9,15 +9,19 @@ defaults:
   - logging_level
   - _self_
 
-run_id: 5
+selected_house: 1
+run_id: 1
 stride: 15
-detections_exp_suffix: s_detections_${run_id}_stride${stride} # helpful label to identify your detections
+preffix: original
+# preffix: online
+# preffix: offline
+detections_exp_suffix: ${preffix}_house_${selected_house}_det # helpful label to identify your detections
 force_detection: !!bool True
 save_detections: !!bool True
 
 make_edges: !!bool True
 
-exp_suffix: r_mapping_${run_id}_stride${stride} # helpful label to identify your mapping experiment
+exp_suffix: ${preffix}_house_${selected_house}_map # helpful label to identify your mapping experiment
 
 save_video: !!bool False
 save_objects_all_frames: !!bool False
