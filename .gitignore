@@ -178,3 +178,9 @@ cfslam/tmp.png
 cfslam/temp.json
 outputs
 **/*.pt
+
+# CUSTOM
+
+PaperResearch/**/*
+test_output/**/*
+models/**/*
