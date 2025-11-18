@@ -128,7 +128,7 @@ def get_stream_data_out_path(dataset_root, scene_id, make_dir=True):
 
 
 def get_exp_out_path(dataset_root, scene_id, exp_suffix, make_dir=True):
-    exp_out_path = Path(dataset_root) / scene_id / "exps" / f"{exp_suffix}"
+    exp_out_path = Path(dataset_root) / "outputs" / scene_id / "exps" / f"{exp_suffix}"
     if make_dir:
         exp_out_path.mkdir(exist_ok=True, parents=True)
     return exp_out_path
