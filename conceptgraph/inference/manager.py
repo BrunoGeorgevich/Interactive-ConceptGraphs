@@ -65,6 +65,7 @@ class AdaptiveInferenceManager:
         output_dir: str | WindowsPath | None = None,
         save_frame_outputs: bool = True,
         resource_log_interval: float = 0.1,
+        configuration: str = "online",
     ) -> None:
         """
         Initialize the adaptive inference manager with model configurations.
@@ -93,6 +94,8 @@ class AdaptiveInferenceManager:
         :type save_frame_outputs: bool
         :param resource_log_interval: Interval in seconds for resource logging.
         :type resource_log_interval: float
+        :param configuration: Inference configuration (e.g., "online" or "offline").
+        :type configuration: str
         :raises ValueError: If required parameters are invalid.
         :return: None
         :rtype: None
@@ -103,6 +106,7 @@ class AdaptiveInferenceManager:
         self.device: str = device
         self.save_frame_outputs: bool = save_frame_outputs
         self.resource_log_interval: float = resource_log_interval
+        self.configuration: str = configuration
 
         self.openrouter_api_key: str | None = openrouter_api_key or os.getenv(
             "OPENROUTER_API_KEY"
@@ -191,6 +195,11 @@ class AdaptiveInferenceManager:
                     api_key=None,
                 ),
             }
+
+            if self.configuration == "offline":
+                temp = preferred_factories
+                preferred_factories = fallback_factories
+                fallback_factories = temp
 
             switcher: StrategySwitcher = StrategySwitcher(
                 preferred_factories,
