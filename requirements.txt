@@ -4,3 +4,5 @@ bitsandbytes
 google-genai
 openai
 agno
+rerun-sdk==0.27.2
+numpy==1.26
