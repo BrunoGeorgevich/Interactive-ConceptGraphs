@@ -1,5 +1,5 @@
 from agno.models.openrouter import OpenRouter
-from agno.agent import Agent, RunResponse
+from agno.agent import Agent
 from typing import List, Tuple
 from dotenv import load_dotenv
 from textwrap import dedent
@@ -510,13 +510,13 @@ class RoomData:
 
 if __name__ == "__main__":
     load_dotenv()
-    MAP_PATH = "D:\\Documentos\\Datasets\\Robot@VirtualHome\\Home01\\CustomWandering3\\generated_map"
-    OBJECTS_PATH = "D:\\Documentos\\Datasets\\Robot@VirtualHome\\Home01\\CustomWandering3\\exps\\r_mapping_2_stride15\\pcd_r_mapping_2_stride15.pkl.gz"
+    MAP_PATH = "D:\\Documentos\\Datasets\\Robot@VirtualHomeLarge\\Home01"
+    OBJECTS_PATH = "r_mapping_6_stride15\\pcd_r_mapping_6_stride15.pkl.gz"
 
     print("Loading objects and LLM agent...")
     llm_agent = Agent(
         model=OpenRouter(
-            id="google/gemini-2.5-flash-preview-05-20",
+            id="google/gemini-2.5-flash-lite",
             api_key=os.environ["OPENROUTER_API_KEY"],
         ),
         system_message=dedent(
@@ -579,8 +579,8 @@ QUALITY CONTROL:
 
     room_data_list = [RoomData(room_data) for room_data in results["room_data_list"]]
 
-    map_image_path = os.path.join(MAP_PATH, "map.png")
-    map_settings_path = os.path.join(MAP_PATH, "map.yaml")
+    map_image_path = os.path.join(MAP_PATH, "processed_map.png")
+    map_settings_path = os.path.join(MAP_PATH, "processed_map.yaml")
     map_image = cv2.imread(map_image_path, cv2.IMREAD_GRAYSCALE)
     map_settings = yaml.safe_load(open(map_settings_path, "r"))
 
@@ -592,7 +592,7 @@ QUALITY CONTROL:
     )
 
     for contour in contours:
-        if cv2.contourArea(contour) < 500:
+        if cv2.contourArea(contour) < 100:
             cv2.drawContours(map_image, [contour], -1, (0, 0, 0), -1)
 
     try:
@@ -657,9 +657,23 @@ QUALITY CONTROL:
     print("Analyzing region classes...")
     region_class_counts = {}
 
+    class_colors = {
+        "kitchen": (255, 99, 71),
+        "bathroom": (135, 206, 250),
+        "bedroom": (186, 85, 211),
+        "living room": (60, 179, 113),
+        "office": (255, 215, 0),
+        "hallway": (255, 140, 0),
+        "laundry room": (70, 130, 180),
+        "transitioning": (128, 128, 128),
+    }
+
     for room_data in room_data_list:
         x, y = room_data.get_map_coordinates(origin, resolution, voronoi_image)
         room_class = room_data.class_name
+
+        if room_class not in class_colors:
+            room_class = "transitioning"
 
         region_id = region_mask[y, x]
         if region_id not in region_class_counts:
@@ -754,14 +768,18 @@ QUALITY CONTROL:
         next_merged_id += 1
 
     print("Generating room descriptions using LLM...")
+
     def summarize_region_descriptions(region_id, region_data, prompt_mask, llm_agent):
         dominant_class = region_data["dominant_class"]
         combined_description = "\n".join(
             [d for d in region_data["room_descriptions"] if isinstance(d, str)]
         )
-        return region_id, llm_agent.run(
-            prompt_mask.format(dominant_class, combined_description)
-        ).content
+        return (
+            region_id,
+            llm_agent.run(
+                prompt_mask.format(dominant_class, combined_description)
+            ).content,
+        )
 
     results = Parallel(n_jobs=-1)(
         delayed(summarize_region_descriptions)(
