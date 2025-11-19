@@ -1,0 +1,6 @@
+street
+alley
+park
+garden
+sidewalk
+plaza
