@@ -11,10 +11,10 @@ defaults:
 
 selected_house: 1
 run_id: 1
-stride: 15
-preffix: original
+stride: 25
+# preffix: original
 # preffix: online
-# preffix: offline
+preffix: offline
 detections_exp_suffix: ${preffix}_house_${selected_house}_det # helpful label to identify your detections
 force_detection: !!bool True
 save_detections: !!bool True
@@ -32,9 +32,14 @@ obj_pcd_max_points: 5000
 debug_render: !!bool False
 vis_render: !!bool False
 
+sim_threshold: 0.9
+merge_overlap_thresh: 0.65 # -1 means do not perform the merge_overlap_objects()
+merge_visual_sim_thresh: 0.65 # Merge only if the visual similarity is larger
+merge_text_sim_thresh: 0.65 # Merge only if the text cosine sim is larger
 denoise_interval: 20 # Run DBSCAN every k frame. This operation is heavy
 filter_interval: 5 # Filter objects that have too few associations or are too small
 merge_interval: -1 # Merge objects based on geometric and semantic similarity
+
 run_denoise_final_frame: !!bool True
 run_filter_final_frame: !!bool True
 run_merge_final_frame: !!bool True

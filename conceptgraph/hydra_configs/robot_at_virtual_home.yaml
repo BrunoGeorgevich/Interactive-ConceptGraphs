@@ -3,5 +3,4 @@ defaults:
 
 dataset_root: ${data_root}/Robot@VirtualHomeLarge
 dataset_config: ${repo_root}/conceptgraph/dataset/dataconfigs/robot_at_virtual_home/robot_at_virtual_home.yaml
-scene_id: Home11/Wandering
 render_camera_path: ${repo_root}/conceptgraph/dataset/dataconfigs/robot_at_virtual_home/robot_at_virtual_home_home1_wandering.json
