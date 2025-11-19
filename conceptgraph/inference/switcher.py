@@ -148,6 +148,7 @@ class StrategySwitcher:
         self.shared_clip: IFeatureExtractor = shared_model
         self.system_context: SystemContext = SystemContext()
         self.is_offline_mode: bool = False
+        self.room_classes: list[str] = []
 
     def set_vlm_prompts(self, prompts: dict[str, str]) -> None:
         """
@@ -159,6 +160,14 @@ class StrategySwitcher:
         :rtype: None
         """
         self.vlm_prompts = prompts.copy() if prompts else {}
+
+        if "SYSTEM_PROMPT_ROOM_CLASS" in prompts:
+            prompts[
+                "SYSTEM_PROMPT_ROOM_CLASS"
+            ] += "\n\nAvailable room classes:\n" + "\n".join(
+                f"- {rc}" for rc in self.room_classes
+            )
+
         for model_dict in (
             self.preferred_models,
             self.fallback_models,
@@ -210,8 +219,10 @@ class StrategySwitcher:
         """
         if self.system_context.environment_profile == "indoor":
             class_file = "conceptgraph/indoor_classes.txt"
+            room_class_file = "conceptgraph/indoor_room_classes.txt"
         else:
             class_file = "conceptgraph/outdoor_classes.txt"
+            room_class_file = "conceptgraph/outdoor_room_classes.txt"
 
         try:
             with open(class_file, "r", encoding="utf-8") as f:
@@ -221,6 +232,9 @@ class StrategySwitcher:
             object_classes = ObjectClasses(
                 class_file, ["wall", "floor", "ceiling"], True
             )
+
+            with open(room_class_file, "r", encoding="utf-8") as rf:
+                self.room_classes = [line.strip() for line in rf if line.strip()]
             return classes, object_classes
         except (FileNotFoundError, OSError):
             traceback.print_exc()
