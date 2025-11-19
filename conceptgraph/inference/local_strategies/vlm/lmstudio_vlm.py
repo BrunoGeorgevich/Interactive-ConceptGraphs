@@ -51,7 +51,7 @@ class LMStudioVLM(IVLM):
             logging.info(f"Loading LMStudioVLM agent with model: {self.model_id}")
             try:
                 self.agent = Agent(
-                    model=LMStudio(id=self.model_id, api_key=self.api_key),
+                    model=LMStudio(id=self.model_id),
                     markdown=True,
                 )
             except (ValueError, RuntimeError, ConnectionError) as e:
