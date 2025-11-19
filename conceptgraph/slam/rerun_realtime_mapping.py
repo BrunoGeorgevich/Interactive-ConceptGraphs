@@ -43,7 +43,6 @@ from conceptgraph.utils.general_utils import (
     get_det_out_path,
     get_exp_out_path,
     get_vlm_annotated_image_path,
-    handle_rerun_saving,
     load_saved_detections,
     measure_time,
     save_detection_results,
@@ -111,18 +110,37 @@ torch.set_grad_enabled(False)
 # TODO: Enviar e-mail para o percurso acadêmico a perguntar sobre os prazos
 
 
-@hydra.main(
-    version_base=None,
-    config_path="../hydra_configs/",
-    config_name="rerun_realtime_mapping",
-)
-def main(cfg: DictConfig):
+# @hydra.main(
+#     version_base=None,
+#     config_path="../hydra_configs/",
+#     config_name="rerun_realtime_mapping",
+# )
+def run_mapping_process(
+    cfg: DictConfig, selected_house: int | None = None, preffix: str | None = None
+) -> None:
     load_dotenv()
-    new_inference_system = os.getenv("NEW_INFERENCE_SYSTEM", "false").lower() == "true"
+
+    if selected_house is not None:
+        cfg.selected_house = selected_house
+    if preffix is not None:
+        cfg.preffix = preffix
+        cfg.detections_exp_suffix = f"{preffix}_house_{cfg.selected_house}_det"
+        cfg.exp_suffix = f"{preffix}_house_{cfg.selected_house}_map"
+
+    cfg.scene_id = f"Home{cfg.selected_house:02d}/Wandering"
+    new_inference_system = cfg.preffix != "original"
 
     if not new_inference_system:
         from ultralytics import YOLO, SAM
         import open_clip
+
+        cfg.sim_threshold = 1.2
+        cfg.merge_overlap_thresh = 0.7
+        cfg.merge_visual_sim_thresh = 0.7
+        cfg.merge_text_sim_thresh = 0.7
+        cfg.denoise_interval = 5
+        cfg.filter_interval = 5
+        cfg.merge_interval = 5
 
     # Initialize a tracker for mapping statistics
     tracker = MappingTracker()
@@ -137,8 +155,7 @@ def main(cfg: DictConfig):
     orr = OptionalReRun()
     orr.set_use_rerun(cfg.use_rerun)
     orr.init("realtime_mapping")
-    orr.rerun.save(rerun_file_path)
-    orr.spawn()
+    orr.save(rerun_file_path)
 
     # Initialize OptionalWandB for optional experiment tracking
     owandb = OptionalWandB()
@@ -203,6 +220,7 @@ def main(cfg: DictConfig):
         output_dir=det_exp_path,
         save_frame_outputs=True,
         resource_log_interval=0.05,
+        configuration=cfg.preffix,
     )
     if not new_inference_system:
         detection_model = measure_time(YOLO)("yolov8l-world.pt")
@@ -821,8 +839,13 @@ def main(cfg: DictConfig):
         stride = 1
     if new_inference_system:
         manager.set_frame_output_dir(output_dir_name="objects")
-    for obj in objects:
+        objs_to_delete = []
+
+    for idx, obj in enumerate(objects):
         if new_inference_system:
+            if len(obj["captions"]) < 3:
+                objs_to_delete.append(idx)
+                continue
             manager.consolidate_captions(obj)
         else:
             obj_captions = obj["captions"][:20]
@@ -830,9 +853,14 @@ def main(cfg: DictConfig):
             obj["consolidated_caption"] = consolidated_caption
         # consolidated_caption = consolidate_captions(openai_client, obj_captions)
 
+    if new_inference_system:
+        for idx in sorted(objs_to_delete, reverse=True):
+            del objects[idx]
+
     manager.stop_resource_logging()
     # Save rerun logs if enabled
-    handle_rerun_saving(cfg.use_rerun, cfg.save_rerun, cfg.exp_suffix, exp_out_path)
+    orr.disconnect()
+    # handle_rerun_saving(cfg.use_rerun, cfg.save_rerun, cfg.exp_suffix, exp_out_path)
 
     # Save the final point cloud to disk if enabled
     if cfg.save_pcd:
@@ -889,4 +917,22 @@ def main(cfg: DictConfig):
 # =========================
 
 if __name__ == "__main__":
-    main()
+    preffixes = ["original", "offline", "online"]
+
+    houses = {
+        "original": list(range(3, 30)),
+        "offline": list(range(1, 30)),
+        "online": list(range(1, 30)),
+    }
+
+    with hydra.initialize(version_base=None, config_path="../hydra_configs"):
+        for preffix in preffixes:
+            for selected_house in houses[preffix]:
+                cfg = hydra.compose(
+                    config_name="rerun_realtime_mapping",
+                    overrides=[
+                        f"selected_house={selected_house}",
+                        f"preffix={preffix}",
+                    ],
+                )
+                run_mapping_process(cfg, selected_house=selected_house, preffix=preffix)

@@ -1,10 +1,10 @@
+import numpy as np
 import logging
+import cv2
 import os
 
 from conceptgraph.utils.general_utils import find_existing_image_path
 from conceptgraph.utils.geometry import rotation_matrix_to_quaternion
-import numpy as np
-import cv2
 
 
 class OptionalReRun:
@@ -84,6 +84,7 @@ def orr_log_camera(
             principal_point=principal_point,
         ),
     )
+    orr.flush(blocking=True)
 
     # Convert the current adjusted pose to translation and quaternion for logging
     translation = adjusted_pose[:3, 3].tolist()
@@ -96,6 +97,7 @@ def orr_log_camera(
             from_parent=False,
         ),
     )
+    orr.flush(blocking=True)
 
     # Log trajectory if not the first frame
     if frame_idx != 0:
@@ -110,6 +112,7 @@ def orr_log_camera(
                 colors=[[255, 0, 0]],  # Red color for the trajectory line
             ),
         )
+        orr.flush(blocking=True)
     prev_adjusted_pose = adjusted_pose.copy()
     return prev_adjusted_pose
 
@@ -118,6 +121,7 @@ def orr_log_rgb_image(color_path):
     # Log RGB image from the specified path
     color_path = color_path
     orr.log("world/camera/rgb_image_encoded", orr.ImageEncoded(path=str(color_path)))
+    orr.flush(blocking=True)
 
 
 def orr_log_depth_image(depth_tensor):
@@ -145,6 +149,7 @@ def orr_log_depth_image(depth_tensor):
     # I wanna confirm its not me before making an issue on their github
     # orr.log("world/camera/depth", orr.DepthImage(depth_in_meters, meter=0.9999999))
     orr.log("world/camera/depth", orr.DepthImage(depth_in_meters, meter=1.0))
+    orr.flush(blocking=True)
 
 
 def orr_log_annotated_image(color_path, det_exp_vis_path):
@@ -160,6 +165,7 @@ def orr_log_annotated_image(color_path, det_exp_vis_path):
             "world/camera/rgb_image_annotated",
             orr.ImageEncoded(path=existing_vis_save_path),
         )
+        orr.flush(blocking=True)
 
 
 def orr_log_vlm_image(vlm_image_path, label=""):
@@ -167,6 +173,7 @@ def orr_log_vlm_image(vlm_image_path, label=""):
         orr.log(
             f"world/camera/vlm_image_{label}", orr.ImageEncoded(path=vlm_image_path)
         )
+        orr.flush(blocking=True)
     else:
         logging.warning(f"VLM image not found at path: {vlm_image_path}")
 
@@ -216,6 +223,7 @@ def orr_log_objs_pcd_and_bbox(objects, obj_classes):
                 uuid=str(obj["id"]),
             ),
         )
+        orr.flush(blocking=True)
 
         new_logged_entities.add(rgb_pcd_entity)
 
@@ -233,6 +241,7 @@ def orr_log_objs_pcd_and_bbox(objects, obj_classes):
                 uuid=str(obj["id"]),
             ),
         )
+        orr.flush(blocking=True)
 
         new_logged_entities.add(seg_pcd_entity)
 
@@ -250,6 +259,7 @@ def orr_log_objs_pcd_and_bbox(objects, obj_classes):
                 uuid=str(obj["id"]),
             ),
         )
+        orr.flush(blocking=True)
 
         new_logged_entities.add(inst_pcd_entity)
 
@@ -275,6 +285,7 @@ def orr_log_objs_pcd_and_bbox(objects, obj_classes):
                 uuid=str(obj["id"]),
             ),
         )
+        orr.flush(blocking=True)
 
         new_logged_entities.add(bbox_entity)
 
@@ -293,6 +304,7 @@ def orr_log_objs_pcd_and_bbox(objects, obj_classes):
                 uuid=str(obj["id"]),
             ),
         )
+        orr.flush(blocking=True)
 
         new_logged_entities.add(bbox_w_labels_entity)
 
@@ -312,6 +324,7 @@ def orr_log_objs_pcd_and_bbox(objects, obj_classes):
                 uuid=str(obj["id"]),
             ),
         )
+        orr.flush(blocking=True)
 
         new_logged_entities.add(bbox_w_name_entity)
 
@@ -325,6 +338,7 @@ def orr_log_objs_pcd_and_bbox(objects, obj_classes):
             if entity_path not in new_logged_entities:
                 # print(f"Clearing {entity_path}")
                 orr.log(entity_path, orr.Clear(recursive=True))
+                orr.flush(blocking=True)
         l = 1
 
     prev_logged_entities = new_logged_entities
@@ -335,6 +349,7 @@ def orr_log_edges(objects, map_edges, obj_classes):
 
     # first clear all edges
     orr.log("world/edges", orr.Clear(recursive=True))
+    orr.flush(blocking=True)
     # do the same for edges
     for map_edge_tuple in map_edges.edges_by_index.items():
         obj1_idx, obj2_idx = map_edge_tuple[0]
@@ -365,7 +380,7 @@ def orr_log_edges(objects, map_edges, obj_classes):
 
         obj_2_color = obj_classes.get_class_color(objects[obj2_idx]["class_name"])
         orr.log(
-            base_entity_path + f"/edges_no_labels" + f"/{edge_label_by_curr_num}",
+            base_entity_path + "/edges_no_labels" + f"/{edge_label_by_curr_num}",
             orr.LineStrips3D(
                 endpoints,
                 colors=[obj_2_color],
@@ -373,11 +388,10 @@ def orr_log_edges(objects, map_edges, obj_classes):
             ),
             orr.AnyValues(full_label=full_label),
         )
+        orr.flush(blocking=True)
 
         orr.log(
-            base_entity_path
-            + f"/edges_w_num_det_labels"
-            + f"/{edge_label_by_curr_num}",
+            base_entity_path + "/edges_w_num_det_labels" + f"/{edge_label_by_curr_num}",
             orr.LineStrips3D(
                 endpoints,
                 labels=[f"{num_dets}"],
@@ -385,10 +399,11 @@ def orr_log_edges(objects, map_edges, obj_classes):
             ),
             orr.AnyValues(full_label=full_label),
         )
+        orr.flush(blocking=True)
 
         orr.log(
             base_entity_path
-            + f"/edges_w_rel_type_labels"
+            + "/edges_w_rel_type_labels"
             + f"/{edge_label_by_curr_num}",
             orr.LineStrips3D(
                 endpoints,
@@ -397,9 +412,10 @@ def orr_log_edges(objects, map_edges, obj_classes):
             ),
             orr.AnyValues(full_label=full_label),
         )
+        orr.flush(blocking=True)
 
         orr.log(
-            base_entity_path + f"/edges_w_full_labels" + f"/{edge_label_by_curr_num}",
+            base_entity_path + "/edges_w_full_labels" + f"/{edge_label_by_curr_num}",
             orr.LineStrips3D(
                 endpoints,
                 labels=[f"{full_label}"],
@@ -407,9 +423,10 @@ def orr_log_edges(objects, map_edges, obj_classes):
             ),
             orr.AnyValues(full_label=full_label),
         )
+        orr.flush(blocking=True)
 
         orr.log(
-            base_entity_path + f"/edges_w_names" + f"/{edge_label_by_curr_num}",
+            base_entity_path + "/edges_w_names" + f"/{edge_label_by_curr_num}",
             orr.LineStrips3D(
                 endpoints,
                 labels=[f"{name_label}"],
@@ -417,3 +434,4 @@ def orr_log_edges(objects, map_edges, obj_classes):
             ),
             orr.AnyValues(full_label=full_label),
         )
+        orr.flush(blocking=True)
