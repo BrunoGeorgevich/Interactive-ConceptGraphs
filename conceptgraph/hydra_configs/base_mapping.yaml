@@ -37,7 +37,7 @@ match_method: "sim_sum" # "sep_thresh", "sim_sum"
 semantic_threshold: 0.5
 physical_threshold: 0.5
 # Only when match_method=="sim_sum"
-sim_threshold: 0.9
+sim_threshold: 1.2
 
 # For contain_number
 use_contain_number: !!bool False
@@ -63,16 +63,16 @@ obj_min_points: 0
 obj_min_detections: 3
 
 # For merge_overlap_objects() function
-merge_overlap_thresh: 0.65      # -1 means do not perform the merge_overlap_objects()
-merge_visual_sim_thresh: 0.65   # Merge only if the visual similarity is larger
-merge_text_sim_thresh: 0.65     # Merge only if the text cosine sim is larger
+merge_overlap_thresh: 0.7      # -1 means do not perform the merge_overlap_objects()
+merge_visual_sim_thresh: 0.7   # Merge only if the visual similarity is larger
+merge_text_sim_thresh: 0.7     # Merge only if the text cosine sim is larger
 
 # Periodically perform post-process operations every k frame
 # -1 means not perform them during the run. They are performed at the end anyway. 
 
-denoise_interval: 20           # Run DBSCAN every k frame. This operation is heavy
-filter_interval: -1            # Filter objects that have too few associations or are too small
-merge_interval: -1             # Merge objects based on geometric and semantic similarity
+denoise_interval: 5           # Run DBSCAN every k frame. This operation is heavy
+filter_interval: 5            # Filter objects that have too few associations or are too small
+merge_interval: 5             # Merge objects based on geometric and semantic similarity
 run_denoise_final_frame: !!bool True
 run_filter_final_frame: !!bool True
 run_merge_final_frame: !!bool True
