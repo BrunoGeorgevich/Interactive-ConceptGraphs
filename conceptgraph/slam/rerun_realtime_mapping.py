@@ -11,6 +11,7 @@ from pathlib import Path
 from tqdm import trange
 from PIL import Image
 import numpy as np
+import logging
 import pickle
 import torch
 import hydra
@@ -232,10 +233,10 @@ def run_mapping_process(
         clip_tokenizer = open_clip.get_tokenizer("ViT-H-14")
         detection_model.set_classes(obj_classes.get_classes_arr())
     if run_detections:
-        print("\n".join(["Running detections..."] * 10))
+        print("Running detections...")
         det_exp_path.mkdir(parents=True, exist_ok=True)
     else:
-        print("\n".join(["NOT Running detections..."] * 10))
+        print("NOT Running detections...")
 
     # # Initialize OpenAI client for VLM (Vision-Language Model) captions/edges
     if not new_inference_system:
@@ -656,12 +657,63 @@ def run_mapping_process(
         # Post-processing: Class Name Correction
         # =========================
 
+        if new_inference_system:
+            for idx, obj in enumerate(objects):
+                if isinstance(obj["captions"], str):
+                    obj["captions"] = [obj["captions"]]
+                info_combined = list(
+                    zip(
+                        obj["image_idx"],
+                        obj["mask_idx"],
+                        obj["color_path"],
+                        obj["class_id"],
+                        [
+                            el["caption"] if isinstance(el, dict) else el
+                            for el in obj["captions"]
+                        ],
+                        obj["conf"],
+                    )
+                )
+
+                info_combined = [
+                    item
+                    for item in info_combined
+                    if item is not None
+                    and all(x is not None and x != "null" and x != "" for x in item)
+                ]
+
+                if len(info_combined) == 0:
+                    obj["image_idx"] = []
+                    obj["mask_idx"] = []
+                    obj["color_path"] = []
+                    obj["class_id"] = []
+                    obj["captions"] = []
+                    obj["conf"] = []
+                    obj["num_detections"] = 0
+                    continue
+
+                obj["image_idx"] = [item[0] for item in info_combined]
+                obj["mask_idx"] = [item[1] for item in info_combined]
+                obj["color_path"] = [item[2] for item in info_combined]
+                obj["class_id"] = [item[3] for item in info_combined]
+                obj["captions"] = [item[4] for item in info_combined]
+                obj["conf"] = [item[5] for item in info_combined]
+                obj["num_detections"] = len(obj["class_id"])
+
         # For each object, set its class name to the most common detected class
         for obj in objects:
             temp_class_name = obj["class_name"]
             curr_obj_class_id_counter = Counter(obj["class_id"])
-            most_common_class_id = curr_obj_class_id_counter.most_common(1)[0][0]
-            most_common_class_name = obj_classes.get_classes_arr()[most_common_class_id]
+            try:
+                most_common_class_id = curr_obj_class_id_counter.most_common(1)[0][0]
+                most_common_class_name = obj_classes.get_classes_arr()[
+                    most_common_class_id
+                ]
+            except IndexError:
+                logging.warning(
+                    f"Object has no class IDs, skipping class name update. Object info: {obj}"
+                )
+                continue
             if temp_class_name != most_common_class_name:
                 obj["class_name"] = most_common_class_name
 
@@ -917,17 +969,20 @@ def run_mapping_process(
 # =========================
 
 if __name__ == "__main__":
-    preffixes = ["original", "offline", "online"]
-
     houses = {
-        "original": list(range(3, 30)),
-        "offline": list(range(1, 30)),
-        "online": list(range(1, 30)),
+        "offline": list(range(3, 30)),
+        # "original": list(range(3, 30)),
+        # "online": list(range(1, 30)),
     }
 
     with hydra.initialize(version_base=None, config_path="../hydra_configs"):
-        for preffix in preffixes:
+        for preffix in houses:
             for selected_house in houses[preffix]:
+                print("#" * 50)
+                print(
+                    f"Starting rerun realtime mapping for house {selected_house} with preffix {preffix}..."
+                )
+                print("#" * 50)
                 cfg = hydra.compose(
                     config_name="rerun_realtime_mapping",
                     overrides=[
@@ -936,3 +991,9 @@ if __name__ == "__main__":
                     ],
                 )
                 run_mapping_process(cfg, selected_house=selected_house, preffix=preffix)
+                print("#" * 50)
+                print(
+                    f"Finished rerun realtime mapping for house {selected_house} with preffix {preffix}."
+                )
+                print("#" * 50)
+                exit()
