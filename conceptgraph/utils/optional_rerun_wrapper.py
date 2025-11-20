@@ -19,11 +19,10 @@ class OptionalReRun:
 
     def set_use_rerun(self, config_use_rerun):
         self._config_use_rerun = config_use_rerun
+        import rerun as rr
+        self._rerun = rr
         if self._config_use_rerun and self._rerun is None:
             try:
-                import rerun as rr
-
-                self._rerun = rr
                 logging.info("rerun is installed. Using rerun for logging.")
             except ImportError:
                 logging.info("rerun is not installed. Not using rerun for logging.")

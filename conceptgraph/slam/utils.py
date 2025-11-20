@@ -3,7 +3,7 @@ import json
 import logging
 import uuid
 from collections import Counter
-from pathlib import Path
+from pathlib import Path, WindowsPath
 
 import cv2
 import faiss
@@ -1632,3 +1632,36 @@ def process_edges(
         )
 
     return map_edges
+
+
+def to_serializable(obj):
+    if isinstance(obj, torch.Tensor):
+        if obj.dim() == 0:
+            return obj.item()
+        return obj.tolist()
+
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+
+    if isinstance(obj, (np.integer, np.floating)):
+        return obj.item()
+
+    if isinstance(obj, set):
+        return list(obj)
+
+    if isinstance(obj, (Path, WindowsPath)):
+        return str(obj)
+
+    if isinstance(obj, uuid.UUID):
+        return str(obj)
+
+    if isinstance(obj, dict):
+        return {k: to_serializable(v) for k, v in obj.items()}
+
+    if isinstance(obj, (list, tuple)):
+        return [to_serializable(item) for item in obj]
+
+    if isinstance(obj, (int, float, str, bool, type(None))):
+        return obj
+
+    raise TypeError(f"Type {type(obj)} not serializable")

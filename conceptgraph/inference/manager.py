@@ -30,6 +30,7 @@ from conceptgraph.inference.components.system_resource_logger import (
 from conceptgraph.inference.local_strategies import LocalFeatureExtractor, LMStudioVLM
 from conceptgraph.inference.remote_strategies import OpenrouterVLM
 from conceptgraph.inference.switcher import StrategySwitcher
+from conceptgraph.slam.utils import to_serializable
 from conceptgraph.utils.general_utils import (
     annotate_for_vlm,
     plot_edges_from_vlm,
@@ -586,39 +587,6 @@ class AdaptiveInferenceManager:
         if (self.save_frame_outputs and self.frame_output_dir) or (
             save_results and self.frame_output_dir
         ):
-
-            def to_serializable(obj):
-                if isinstance(obj, torch.Tensor):
-                    if obj.dim() == 0:
-                        return obj.item()
-                    return obj.tolist()
-
-                if isinstance(obj, np.ndarray):
-                    return obj.tolist()
-
-                if isinstance(obj, (np.integer, np.floating)):
-                    return obj.item()
-
-                if isinstance(obj, set):
-                    return list(obj)
-
-                if isinstance(obj, (Path, WindowsPath)):
-                    return str(obj)
-
-                if isinstance(obj, uuid.UUID):
-                    return str(obj)
-
-                if isinstance(obj, dict):
-                    return {k: to_serializable(v) for k, v in obj.items()}
-
-                if isinstance(obj, (list, tuple)):
-                    return [to_serializable(item) for item in obj]
-
-                if isinstance(obj, (int, float, str, bool, type(None))):
-                    return obj
-
-                raise TypeError(f"Type {type(obj)} not serializable")
-
             obj_id = obj.get("id", None)
             if obj_id is None:
                 obj["id"] = str(uuid.uuid4())
@@ -706,6 +674,8 @@ class AdaptiveInferenceManager:
         detections = self.switcher.execute_with_fallback(
             "det", "detect", image_path, image_np
         )
+
+        detections = detections[detections.confidence > 0.4]
 
         logging.info(f"Detected {len(detections)} objects")
         self.results["detections"] = detections

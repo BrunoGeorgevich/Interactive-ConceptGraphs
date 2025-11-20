@@ -11,11 +11,12 @@ from pathlib import Path
 from tqdm import trange
 from PIL import Image
 import numpy as np
-import logging
 import pickle
 import torch
 import hydra
+import uuid
 import gzip
+import json
 import cv2
 import sys
 import os
@@ -32,6 +33,7 @@ from conceptgraph.inference.manager import AdaptiveInferenceManager
 from conceptgraph.utils.logging_metrics import MappingTracker
 from conceptgraph.dataset.datasets_common import get_dataset
 from conceptgraph.utils.ious import mask_subtract_contained
+from conceptgraph.slam.utils import to_serializable
 
 from conceptgraph.utils.optional_rerun_wrapper import (
     OptionalReRun,
@@ -160,7 +162,7 @@ def run_mapping_process(
     orr = OptionalReRun()
     orr.set_use_rerun(cfg.use_rerun)
     orr.init("realtime_mapping")
-    orr.save(rerun_file_path)
+    # orr.save(rerun_file_path)
 
     # Initialize OptionalWandB for optional experiment tracking
     owandb = OptionalWandB()
@@ -371,6 +373,8 @@ def run_mapping_process(
                         f"Segmentation failed for frame {frame_idx * stride}, skipping frame."
                     )
                     continue
+
+                curr_det = curr_det[curr_det.confidence > 0.4]
                 detection_class_labels = manager.get_detection_classes(curr_det)
                 try:
                     labels, edges, edge_image, captions, room_data = (
@@ -671,11 +675,11 @@ def run_mapping_process(
                         obj["mask_idx"],
                         obj["color_path"],
                         obj["class_id"],
-                        [
-                            el["caption"] if isinstance(el, dict) else el
-                            for el in obj["captions"]
-                        ],
+                        obj["xyxy"],
+                        obj["captions"],
+                        obj["mask"],
                         obj["conf"],
+                        obj["contain_number"],
                     )
                 )
 
@@ -683,7 +687,9 @@ def run_mapping_process(
                     item
                     for item in info_combined
                     if item is not None
-                    and all(x is not None and x != "null" and x != "" for x in item)
+                    and item[5]["caption"] is not None
+                    and item[5]["caption"].strip() != ""
+                    and item[5]["caption"] != "null"
                 ]
 
                 if len(info_combined) == 0:
@@ -691,8 +697,11 @@ def run_mapping_process(
                     obj["mask_idx"] = []
                     obj["color_path"] = []
                     obj["class_id"] = []
+                    obj["xyxy"] = []
                     obj["captions"] = []
+                    obj["mask"] = []
                     obj["conf"] = []
+                    obj["contain_number"] = []
                     obj["num_detections"] = 0
                     continue
 
@@ -700,8 +709,11 @@ def run_mapping_process(
                 obj["mask_idx"] = [item[1] for item in info_combined]
                 obj["color_path"] = [item[2] for item in info_combined]
                 obj["class_id"] = [item[3] for item in info_combined]
-                obj["captions"] = [item[4] for item in info_combined]
-                obj["conf"] = [item[5] for item in info_combined]
+                obj["xyxy"] = [item[4] for item in info_combined]
+                obj["captions"] = [item[5] for item in info_combined]
+                obj["mask"] = [item[6] for item in info_combined]
+                obj["conf"] = [item[7] for item in info_combined]
+                obj["contain_number"] = [item[8] for item in info_combined]
                 obj["num_detections"] = len(obj["class_id"])
 
         # For each object, set its class name to the most common detected class
@@ -714,7 +726,7 @@ def run_mapping_process(
                     most_common_class_id
                 ]
             except IndexError:
-                logging.warning(
+                print(
                     f"Object has no class IDs, skipping class name update. Object info: {obj}"
                 )
                 continue
@@ -899,7 +911,7 @@ def run_mapping_process(
 
     for idx, obj in enumerate(objects):
         if new_inference_system:
-            if len(obj["captions"]) < 3:
+            if len(obj["captions"]) < 2:
                 objs_to_delete.append(idx)
                 continue
             manager.consolidate_captions(obj)
@@ -907,6 +919,22 @@ def run_mapping_process(
             obj_captions = obj["captions"][:20]
             consolidated_caption = consolidate_captions(openai_client, obj_captions)
             obj["consolidated_caption"] = consolidated_caption
+            output_path = det_exp_path / "detections" / "objects"
+            os.makedirs(str(output_path), exist_ok=True)
+            obj_id = obj.get("id", None)
+            if obj_id is None:
+                obj["id"] = str(uuid.uuid4())
+                obj_id = obj["id"]
+            with open(output_path / f"{obj_id}.json", "w", encoding="utf-8") as f:
+                obj_data = obj.copy()
+                del obj_data["pcd"]
+                del obj_data["bbox"]
+                del obj_data["contain_number"]
+                del obj_data["mask"]
+                del obj_data["xyxy"]
+                json.dump(
+                    obj_data, f, ensure_ascii=False, indent=2, default=to_serializable
+                )
         # consolidated_caption = consolidate_captions(openai_client, obj_captions)
 
     if new_inference_system:
@@ -939,7 +967,7 @@ def run_mapping_process(
                 exp_suffix=cfg.exp_suffix, exp_out_path=exp_out_path, objects=objects
             )
         except IndexError:
-            logging.warning("No edges to save to JSON, skipping edge JSON saving.")
+            print("No edges to save to JSON, skipping edge JSON saving.")
         try:
             save_edge_json(
                 exp_suffix=cfg.exp_suffix,
@@ -948,7 +976,7 @@ def run_mapping_process(
                 edges=map_edges,
             )
         except IndexError:
-            logging.warning("No edges to save to JSON, skipping edge JSON saving.")
+            print("No edges to save to JSON, skipping edge JSON saving.")
 
     # Save metadata for all frames if enabled
     if cfg.save_objects_all_frames:
@@ -982,7 +1010,7 @@ if __name__ == "__main__":
     houses = {
         "offline": list(range(1, 30)),
         "online": list(range(1, 30)),
-        "originasl": list(range(1, 30)),
+        "original": list(range(1, 30)),
     }
 
     with hydra.initialize(version_base=None, config_path="../hydra_configs"):
@@ -990,7 +1018,7 @@ if __name__ == "__main__":
             for selected_house in houses[preffix]:
                 print("#" * 50)
                 print(
-                f"Starting rerun realtime mapping for house {selected_house} with preffix {preffix}..."
+                    f"Starting rerun realtime mapping for house {selected_house} with preffix {preffix}..."
                 )
                 print("#" * 50)
                 cfg = hydra.compose(
@@ -998,6 +1026,7 @@ if __name__ == "__main__":
                     overrides=[
                         f"selected_house={selected_house}",
                         f"preffix={preffix}",
+                        f"save_detections={preffix=='original'}",
                     ],
                 )
                 run_mapping_process(cfg, selected_house=selected_house, preffix=preffix)
@@ -1006,4 +1035,3 @@ if __name__ == "__main__":
                     f"Finished rerun realtime mapping for house {selected_house} with preffix {preffix}."
                 )
                 print("#" * 50)
-                exit()
