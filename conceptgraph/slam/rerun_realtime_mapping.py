@@ -990,7 +990,7 @@ if __name__ == "__main__":
             for selected_house in houses[preffix]:
                 print("#" * 50)
                 print(
-                    f"Starting rerun realtime mapping for house {selected_house} with preffix {preffix}..."
+                f"Starting rerun realtime mapping for house {selected_house} with preffix {preffix}..."
                 )
                 print("#" * 50)
                 cfg = hydra.compose(
