@@ -3,10 +3,12 @@ accelerate
 bitsandbytes
 google-genai
 openai
+pandas
+idna==3.11
 qdrant-client==1.16
 agno<2
 agno==1.5.4
 rerun-sdk==0.23
 numpy==1.26
-nvidia-ml-py==13.5
+nvidia-ml-py==13.580.82
 flashrank==0.2.10
