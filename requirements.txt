@@ -3,6 +3,8 @@ accelerate
 bitsandbytes
 google-genai
 openai
-agno
-rerun-sdk==0.27.2
+qdrant-client==1.16
+agno<2
+rerun-sdk==0.24
 numpy==1.26
+flashrank==0.2.10
