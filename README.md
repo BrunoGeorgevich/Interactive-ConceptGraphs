@@ -158,23 +158,14 @@ conda activate conceptgraph
 
 ##### Install Pytorch according to your own setup #####
 # For example, if you have a GPU with CUDA 11.8 (We tested it Pytorch 2.0.1)
-conda install pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 pytorch-cuda=11.8 -c pytorch -c nvidia
-
-# Install the Faiss library (CPU version should be fine), this is used for quick indexing of pointclouds for duplicate object matching and merging
-conda install -c pytorch faiss-cpu=1.7.4 mkl=2021 blas=1.0=mkl
-
-# Install Pytorch3D (https://github.com/facebookresearch/pytorch3d/blob/main/INSTALL.md)
-# conda install pytorch3d -c pytorch3d # This detects a conflict. You can use the command below, maybe with a different version
-conda install https://anaconda.org/pytorch3d/pytorch3d/0.7.4/download/linux-64/pytorch3d-0.7.4-py310_cu118_pyt201.tar.bz2
-
-# We find that cuda development toolkit is the least problemantic way to install cuda. 
-# Make sure the version you install is at least close to your cuda version. 
-# See here: https://anaconda.org/conda-forge/cudatoolkit-dev
-conda install -c conda-forge cudatoolkit-dev
-
-# Install the other required libraries
-pip install tyro open_clip_torch wandb h5py openai hydra-core distinctipy ultralytics dill supervision open3d imageio natsort kornia rerun-sdk pyliblzfse pypng git+https://github.com/ultralytics/CLIP.git
-
+pip install uv
+uv pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
+git clone https://github.com/facebookresearch/pytorch3d.git
+cd pytorch3d
+uv pip install -e . --no-build-isolation
+uv pip install tyro open_clip_torch wandb h5py openai hydra-core distinctipy ultralytics dill supervision open3d imageio natsort kornia rerun-sdk pyliblzfse pypng git+https://github.com/ultralytics/CLIP.git
+uv pip install -r requirements.txt
+uv pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
 # You also need to ensure that the installed packages can find the right cuda installation.
 # You can do this by setting the CUDA_HOME environment variable.
 # You can manually set it to the python environment you are using, or set it to the conda prefix of the environment.
