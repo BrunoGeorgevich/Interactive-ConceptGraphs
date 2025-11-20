@@ -17,8 +17,12 @@ import torch
 import hydra
 import gzip
 import cv2
+import sys
 import os
 import re
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from conceptgraph.utils.vlm import get_vlm_openai_like_client, consolidate_captions
 from conceptgraph.slam.slam_classes import MapEdgeMapping, MapObjectList
@@ -241,7 +245,7 @@ def run_mapping_process(
     # # Initialize OpenAI client for VLM (Vision-Language Model) captions/edges
     if not new_inference_system:
         openai_client = get_vlm_openai_like_client(
-            model="openai/gpt-4o",
+            model="openai/gpt-4o-mini",
             api_key=os.getenv("OPENROUTER_API_KEY"),
             base_url=os.getenv("OPENROUTER_API_BASE_URL"),
         )
@@ -970,9 +974,9 @@ def run_mapping_process(
 
 if __name__ == "__main__":
     houses = {
-        "original": list(range(1, 30)),
         "offline": list(range(1, 30)),
         "online": list(range(1, 30)),
+        "original": list(range(1, 30)),
     }
 
     with hydra.initialize(version_base=None, config_path="../hydra_configs"):
