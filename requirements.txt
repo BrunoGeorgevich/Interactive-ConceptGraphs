@@ -5,6 +5,8 @@ google-genai
 openai
 qdrant-client==1.16
 agno<2
-rerun-sdk==0.24
+agno==1.5.4
+rerun-sdk==0.23
 numpy==1.26
+nvidia-ml-py==13.5
 flashrank==0.2.10

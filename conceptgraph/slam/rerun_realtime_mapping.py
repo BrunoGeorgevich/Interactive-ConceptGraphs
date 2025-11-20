@@ -970,9 +970,9 @@ def run_mapping_process(
 
 if __name__ == "__main__":
     houses = {
-        "offline": list(range(3, 30)),
-        # "original": list(range(3, 30)),
-        # "online": list(range(1, 30)),
+        "original": list(range(1, 30)),
+        "offline": list(range(1, 30)),
+        "online": list(range(1, 30)),
     }
 
     with hydra.initialize(version_base=None, config_path="../hydra_configs"):
