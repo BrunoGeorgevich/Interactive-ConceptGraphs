@@ -447,16 +447,12 @@ class AdaptiveInferenceManager:
         captions: list = []
         room_data: dict = {"room_class": "None", "room_description": "None"}
 
-        vlm_labels_numbered: list[str] = [
-            f"{i+1}: {classes[class_id]}"
-            for i, class_id in enumerate(detections.class_id)
-        ]
         vlm_annotated_path, vlm_annotated_image, sorted_indices = (
             self._save_vlm_annotated_image(
                 image_np,
                 detections,
                 obj_classes,
-                vlm_labels_numbered,
+                labels,
                 self.frame_output_dir,
             )
         )
@@ -538,7 +534,12 @@ class AdaptiveInferenceManager:
         :return: A single consolidated caption string.
         :rtype: str
         """
-        obj_captions = obj["captions"][:20]
+        obj_captions = obj["captions"]
+        obj_class_name = obj.get("class_name", None)
+
+        if obj_class_name is None:
+            logging.warning("Object class name is missing")
+            return ""
 
         obj_captions = [
             caption
@@ -554,11 +555,13 @@ class AdaptiveInferenceManager:
 
         captions_text: str = "\n".join(
             [
-                f"{cap['caption']}"
+                f" - {cap['caption']}"
                 for cap in obj_captions
                 if cap.get("caption") is not None
             ]
         )
+
+        captions_text += f"\nClass: {obj_class_name}"
 
         if not captions_text.strip():
             logging.warning("No valid captions to consolidate")
