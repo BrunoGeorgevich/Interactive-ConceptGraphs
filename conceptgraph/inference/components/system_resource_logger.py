@@ -375,7 +375,7 @@ class SystemResourceLogger:
             raise ValueError("CSV file missing 'timestamp' column.")
 
         try:
-            df["timestamp"] = pd.to_datetime(df["timestamp"])
+            df["timestamp"] = pd.to_datetime(df["timestamp"], format="mixed")
             start_time = df["timestamp"].iloc[0]
             df["elapsed_seconds"] = (df["timestamp"] - start_time).dt.total_seconds()
         except (ValueError, TypeError, AttributeError) as e:
