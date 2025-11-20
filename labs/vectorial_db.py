@@ -641,8 +641,8 @@ def reconstruct_voronoi_image(
 if __name__ == "__main__":
     load_dotenv()
 
-    INFERENCE = True
-    OBJECTS_PATH = "D:\\Documentos\\Datasets\\Robot@VirtualHome\\Home01\\CustomWandering3\\exps\\r_mapping_5_stride15\\pcd_r_mapping_5_stride15.pkl.gz"
+    INFERENCE = False
+    OBJECTS_PATH = "r_mapping_6_stride15\\pcd_r_mapping_6_stride15.pkl.gz"
 
     MAP_PATH = "voronoi_map.pkl.gz"
     USER_LOCATION = (155, 60)
@@ -676,9 +676,9 @@ if __name__ == "__main__":
     else:
         print("Loading LLM model...")
         llm_model = OpenAIChatGenerator(
-            api_key=Secret.from_env_var("REQUESTY_API_KEY"),
-            api_base_url=os.getenv("REQUESTY_API_BASE_URL"),
-            model="google/gemini-2.5-flash",
+            api_key=Secret.from_env_var("OPENROUTER_API_KEY"),
+            api_base_url=os.getenv("OPENROUTER_API_BASE_URL"),
+            model="x-ai/grok-4.1-fast",
         )
         query = input("Please provide your query: ")
 
