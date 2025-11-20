@@ -36,7 +36,7 @@ O gerenciador irá monitorar continuamente a conectividade da rede.
   * **Modo Online (Ideal):** Por padrão, o sistema utilizará estratégias baseadas em nuvem (APIs e VLMs potentes) para todas as tarefas de IA (Detecção, Segmentação, Relações, Legendas). Isso garante a maior qualidade semântica com o menor custo computacional local.
   * **Modo Offline (Fallback):** Se a conexão de rede for perdida, o gerenciador (inspirado no `CSSM` do `AIMSM`) detecta a falha e, no *frame* seguinte, automaticamente:
     1.  Chama `unload_model()` nas estratégias de nuvem (que não fazem nada).
-    2.  Chama `load_model()` nas estratégias locais (ex: `LocalDetector` (YOLO), `LocalSegmenter` (SAM) e `LocalVLM` (ex: LLaVA GGUF)).
+    2.  Chama `load_model()` nas estratégias locais (ex: `LocalDetector` (YOLO), `LocalSegmenter` (SAM) e `LMStudioVLM` (ex: LLaVA GGUF)).
   * **O Papel do CLIP:** Conforme nossa análise, os *features* do CLIP são essenciais para a lógica de *matching* e *merging* local do `ConceptGraphs`. A arquitetura suportará isso:
     1.  **Modo Offline:** O `LocalFeatureExtractor` (executando `open_clip`) será carregado e gerará os *features* localmente.
     2.  **Modo Online:** O `CloudFeatureExtractor` chamará uma API de CLIP. A API retornará o *vetor* (ex: JSON), que será então convertido num `torch.Tensor` local.

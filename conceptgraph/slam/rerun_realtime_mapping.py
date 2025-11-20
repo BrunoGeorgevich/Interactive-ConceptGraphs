@@ -934,15 +934,21 @@ def run_mapping_process(
 
     # Save objects and edges as JSON if enabled
     if cfg.save_json:
-        save_obj_json(
-            exp_suffix=cfg.exp_suffix, exp_out_path=exp_out_path, objects=objects
-        )
-        save_edge_json(
-            exp_suffix=cfg.exp_suffix,
-            exp_out_path=exp_out_path,
-            objects=objects,
-            edges=map_edges,
-        )
+        try:
+            save_obj_json(
+                exp_suffix=cfg.exp_suffix, exp_out_path=exp_out_path, objects=objects
+            )
+        except IndexError:
+            logging.warning("No edges to save to JSON, skipping edge JSON saving.")
+        try:
+            save_edge_json(
+                exp_suffix=cfg.exp_suffix,
+                exp_out_path=exp_out_path,
+                objects=objects,
+                edges=map_edges,
+            )
+        except IndexError:
+            logging.warning("No edges to save to JSON, skipping edge JSON saving.")
 
     # Save metadata for all frames if enabled
     if cfg.save_objects_all_frames:
@@ -976,7 +982,7 @@ if __name__ == "__main__":
     houses = {
         "offline": list(range(1, 30)),
         "online": list(range(1, 30)),
-        "original": list(range(1, 30)),
+        "originasl": list(range(1, 30)),
     }
 
     with hydra.initialize(version_base=None, config_path="../hydra_configs"):

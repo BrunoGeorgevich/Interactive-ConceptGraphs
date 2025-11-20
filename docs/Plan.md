@@ -41,7 +41,7 @@ O padrão central será uma combinação de **Facade**, **Abstract Factory** e *
     |
     '--> [IVLM]
           |
-          +-- [LocalVLM] (Ollama/GGUF)
+          +-- [LMStudioVLM] (Ollama/GGUF)
           '-- [CloudVLM] (OpenAI/Gemini)
 ```
 
@@ -247,8 +247,8 @@ class LocalFeatureExtractor(IFeatureExtractor):
             self.clip_tokenizer, classes, self.device
         )
 
-# --- Classe LocalVLM (Placeholder) ---
-class LocalVLM(IVLM):
+# --- Classe LMStudioVLM (Placeholder) ---
+class LMStudioVLM(IVLM):
     def __init__(self, cfg):
         self.client = None # TODO: Implementar Ollama/Llama.cpp
     
@@ -258,19 +258,19 @@ class LocalVLM(IVLM):
     def get_type(self) -> str: return "local"
 
     def get_relations(self, *args, **kwargs) -> list:
-        logging.warning("LocalVLM.get_relations não implementado. Retornando [].")
+        logging.warning("LMStudioVLM.get_relations não implementado. Retornando [].")
         return []
     def get_captions(self, *args, **kwargs) -> list:
-        logging.warning("LocalVLM.get_captions não implementado. Retornando [].")
+        logging.warning("LMStudioVLM.get_captions não implementado. Retornando [].")
         return []
     def get_room_data(self, *args, **kwargs) -> dict:
-        logging.warning("LocalVLM.get_room_data não implementado. Retornando {}.")
+        logging.warning("LMStudioVLM.get_room_data não implementado. Retornando {}.")
         return {"room_class": "N/A", "room_description": "VLM Local não implementado."}
     def consolidate_captions(self, captions: list) -> str:
-        logging.warning("LocalVLM.consolidate_captions não implementado.")
+        logging.warning("LMStudioVLM.consolidate_captions não implementado.")
         return "Consolidação local não implementada."
     def query_map(self, *args, **kwargs) -> str:
-        logging.warning("LocalVLM.query_map não implementado.")
+        logging.warning("LMStudioVLM.query_map não implementado.")
         return "VLM Local não implementado."
 ```
 
@@ -487,7 +487,7 @@ import logging
 import torch
 from omegaconf import DictConfig
 from .interfaces import *
-from .local_strategies import LocalDetector, LocalSegmenter, LocalFeatureExtractor, LocalVLM
+from .local_strategies import LocalDetector, LocalSegmenter, LocalFeatureExtractor, LMStudioVLM
 from .cloud_strategies import CloudDetector, CloudSegmenter, CloudFeatureExtractor, CloudVLM
 from .switcher import SystemContext, StrategySwitcher
 
@@ -523,7 +523,7 @@ class AdaptiveInferenceManager:
         self.local_features = LocalFeatureExtractor(
             cfg_local.clip_model_name, cfg_local.clip_pretrained, self.device
         )
-        self.local_vlm = LocalVLM(cfg_local.get("vlm_config", None))
+        self.local_vlm = LMStudioVLM(cfg_local.get("vlm_config", None))
 
         # Instancia estratégias da nuvem (se configuradas)
         self.cloud_detector = self.cloud_segmenter = self.cloud_features = self.cloud_vlm = None
@@ -810,7 +810,7 @@ offline_models:
   sam_path: "sam2.1_l.pt" # (Caminho para o modelo local)
   clip_model_name: "ViT-H-14"
   clip_pretrained: "laion2b_s32b_b79k"
-  vlm_config: null # (Configuração para o futuro LocalVLM)
+  vlm_config: null # (Configuração para o futuro LMStudioVLM)
 
 online_models: null
 ```
