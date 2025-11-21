@@ -248,7 +248,7 @@ Analyze the provided image, the list of allowed room classes, and optional conte
 
 <CLASSIFICATION_LOGIC>
     <STANDARD_ROOMS>
-    Select the class from the provided list that best matches the dominant visual features.
+    Select the class from the provided list (POSSIBLE_ROOM_CLASSES) that best matches the dominant visual features.
     </STANDARD_ROOMS>
 
     <TRANSITIONING_LOGIC>
@@ -277,6 +277,17 @@ Structure:
     "room_description": "string (Detailed visual report)"
 }
 </OUTPUT_FORMAT>
+
+<POSSIBLE_ROOM_CLASSES>
+ - kitchen
+ - bathroom
+ - bedroom
+ - living room
+ - office
+ - hallway
+ - laundry room
+ - transitioning
+<\POSSIBLE_ROOM_CLASSES>
 
 <FEW_SHOT_EXAMPLES>
     <EXAMPLE_1>
