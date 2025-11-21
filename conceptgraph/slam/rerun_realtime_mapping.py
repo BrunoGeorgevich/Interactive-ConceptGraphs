@@ -11,6 +11,7 @@ from pathlib import Path
 from tqdm import trange
 from PIL import Image
 import numpy as np
+import traceback
 import pickle
 import torch
 import hydra
@@ -750,8 +751,6 @@ def run_mapping_process(
         for curr_map_edge in map_edges.edges_by_index.values():
             curr_obj1_idx = curr_map_edge.obj1_idx
             curr_obj2_idx = curr_map_edge.obj2_idx
-            obj1_class_name = objects[curr_obj1_idx]["class_name"]
-            obj2_class_name = objects[curr_obj2_idx]["class_name"]
             curr_first_detected = curr_map_edge.first_detected
             curr_num_det = curr_map_edge.num_detections
             if (frame_idx - curr_first_detected > 5) and curr_num_det < 2:
@@ -1008,7 +1007,7 @@ def run_mapping_process(
 
 if __name__ == "__main__":
     houses = {
-        "offline": list(range(1, 30)),
+        "offline": list(range(7, 30)),
         "online": list(range(1, 30)),
         "original": list(range(1, 30)),
     }
@@ -1016,22 +1015,50 @@ if __name__ == "__main__":
     with hydra.initialize(version_base=None, config_path="../hydra_configs"):
         for preffix in houses:
             for selected_house in houses[preffix]:
-                print("#" * 50)
-                print(
-                    f"Starting rerun realtime mapping for house {selected_house} with preffix {preffix}..."
-                )
-                print("#" * 50)
-                cfg = hydra.compose(
-                    config_name="rerun_realtime_mapping",
-                    overrides=[
-                        f"selected_house={selected_house}",
-                        f"preffix={preffix}",
-                        f"save_detections={preffix=='original'}",
-                    ],
-                )
-                run_mapping_process(cfg, selected_house=selected_house, preffix=preffix)
-                print("#" * 50)
-                print(
-                    f"Finished rerun realtime mapping for house {selected_house} with preffix {preffix}."
-                )
-                print("#" * 50)
+                while True:
+                    try:
+                        print("#" * 50)
+                        print(
+                            f"Starting rerun realtime mapping for house {selected_house} with preffix {preffix}..."
+                        )
+                        print("#" * 50)
+                        cfg = hydra.compose(
+                            config_name="rerun_realtime_mapping",
+                            overrides=[
+                                f"selected_house={selected_house}",
+                                f"preffix={preffix}",
+                                f"save_detections={preffix=='original'}",
+                            ],
+                        )
+                        run_mapping_process(
+                            cfg, selected_house=selected_house, preffix=preffix
+                        )
+                        print("#" * 50)
+                        print(
+                            f"Finished rerun realtime mapping for house {selected_house} with preffix {preffix}."
+                        )
+                        print("#" * 50)
+                    except Exception as e:
+                        traceback.print_exc()
+                        with open("failed.txt", "a") as f:
+                            f.write(("#" * 25) + "  ERROR  " + ("#" * 25))
+                            f.write(
+                                f"\n\nThe processing of the house Home{selected_house:02d} failed for the mode {preffix}\n\n"
+                                + ("-" * 50)
+                                + "Error:\n"
+                            )
+                            f.write(e)
+                            f.write("\n\n" + ("-" * 50) + "\n")
+                        if preffix == "offline":
+                            dataset_path = "C:\\Users\\lab\\Documents\\Datasets\\Robot@VirtualHomeLarge\\outputs\\Home{selected_house:02d}\\Wandering\\exps"
+                            det_path = os.path.join(
+                                dataset_path, f"{preffix}_house_{selected_house}_det"
+                            )
+                            map_path = os.path.join(
+                                dataset_path, f"{preffix}_house_{selected_house}_map"
+                            )
+                            os.rmdir(det_path)
+                            os.rmdir(map_path)
+                            continue
+                        else:
+                            break
