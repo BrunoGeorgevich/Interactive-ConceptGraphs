@@ -13,11 +13,14 @@ from PIL import Image
 import numpy as np
 import traceback
 import pickle
+import shutil
+import pprint
 import torch
 import hydra
 import uuid
 import gzip
 import json
+import glob
 import cv2
 import sys
 import os
@@ -1000,17 +1003,88 @@ def run_mapping_process(
         manager.unload_all_models()
     owandb.finish()
 
+def clean_and_check_progress() -> dict[str, list[int]]:
+    """
+    Checks the integrity of experiment outputs and cleans up interrupted runs.
+
+    Iterates through defined house datasets, checking if the expected output
+    files exist. If a directory exists but the specific .pkl.gz file is missing,
+    it is considered an interrupted run and the directories are deleted to allow
+    a fresh restart.
+
+    :return: A dictionary where keys are the experiment modes (prefixes) and values
+             are lists of house indices that need to be processed (either pending or cleaned).
+    :rtype: Dict[str, List[int]]
+    """
+    houses = {
+        "offline": list(range(1, 30)),
+        "online": list(range(1, 30)),
+        "original": list(range(1, 30)),
+    }
+
+    base_dataset_path = (
+        r"C:\Users\lab\Documents\Datasets\Robot@VirtualHomeLarge\outputs"
+    )
+
+    pending_tasks: dict[str, list[int]] = {k: [] for k in houses}
+
+    print("Starting verification and cleanup of interrupted executions...\n")
+
+    for prefix, house_list in houses.items():
+        print(f"--- Verifying mode: {prefix} ---")
+
+        for house_id in house_list:
+            house_folder_name = f"Home{house_id:02d}"
+            exp_path = os.path.join(
+                base_dataset_path, house_folder_name, "Wandering", "exps"
+            )
+
+            map_dir_name = f"{prefix}_house_{house_id}_map"
+            det_dir_name = f"{prefix}_house_{house_id}_det"
+
+            full_map_path = os.path.join(exp_path, map_dir_name)
+            full_det_path = os.path.join(exp_path, det_dir_name)
+
+            if os.path.exists(full_map_path):
+                pkl_files = glob.glob(os.path.join(full_map_path, "*.pkl.gz"))
+
+                if pkl_files:
+                    print(f"[OK] House {house_id}: Complete execution found.")
+                else:
+                    print(
+                        f"[FAIL] House {house_id}: Folder found without .pkl.gz (Interrupted)."
+                    )
+                    print(f"   -> Deleting folders for restart...")
+
+                    try:
+                        shutil.rmtree(full_map_path)
+                        print(f"      Removed: {map_dir_name}")
+                    except Exception as e:
+                        print(f"      Error removing _map: {e}")
+
+                    if os.path.exists(full_det_path):
+                        try:
+                            shutil.rmtree(full_det_path)
+                            print(f"      Removed: {det_dir_name}")
+                        except Exception as e:
+                            print(f"      Error removing _det: {e}")
+
+                    pending_tasks[prefix].append(house_id)
+
+            else:
+                print(f"[PENDING] House {house_id}: Not yet started.")
+                pending_tasks[prefix].append(house_id)
+
+        print("\n")
+
+    return pending_tasks
 
 # =========================
 # Entry Point
 # =========================
 
 if __name__ == "__main__":
-    houses = {
-        "offline": list(range(7, 30)),
-        "online": list(range(1, 30)),
-        "original": list(range(1, 30)),
-    }
+    houses = clean_and_check_progress()
 
     with hydra.initialize(version_base=None, config_path="../hydra_configs"):
         for preffix in houses:
@@ -1038,6 +1112,7 @@ if __name__ == "__main__":
                             f"Finished rerun realtime mapping for house {selected_house} with preffix {preffix}."
                         )
                         print("#" * 50)
+                        break
                     except Exception as e:
                         traceback.print_exc()
                         with open("failed.txt", "a") as f:
