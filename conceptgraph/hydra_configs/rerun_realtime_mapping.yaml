@@ -11,13 +11,13 @@ defaults:
 
 selected_house: 1
 run_id: 1
-stride: 25
+stride: 20
 # preffix: original
 # preffix: online
 preffix: offline
 detections_exp_suffix: ${preffix}_house_${selected_house}_det # helpful label to identify your detections
 force_detection: !!bool True
-save_detections: !!bool True
+save_detections: !!bool False
 
 make_edges: !!bool True
 
@@ -53,8 +53,8 @@ obj_min_points: 0
 obj_min_detections: 1
 
 # For merge_overlap_objects() function
-use_rerun: !!bool True
-save_rerun: !!bool True
+use_rerun: !!bool False
+save_rerun: !!bool False
 # hydra:
 #   verbose: true
 # mode: MULTIRUN
