@@ -201,6 +201,21 @@ class AdaptiveInferenceManager:
                 temp = preferred_factories
                 preferred_factories = fallback_factories
                 fallback_factories = temp
+            elif self.configuration == "improved":
+                preferred_factories: dict = {
+                    "det": lambda: YOLODetectorStrategy(
+                        checkpoint_path=self.yolo_checkpoint,
+                        device=self.device,
+                    ),
+                    "seg": lambda: SAMSegmenterStrategy(
+                        checkpoint_path=self.sam_checkpoint,
+                        device=self.device,
+                    ),
+                    "vlm": lambda: OpenrouterVLM(
+                        model_id=self.vlm_remote_model_id,
+                        api_key=self.openrouter_api_key,
+                    ),
+                }
 
             switcher: StrategySwitcher = StrategySwitcher(
                 preferred_factories,
