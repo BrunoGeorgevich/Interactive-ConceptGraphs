@@ -106,9 +106,10 @@ class OpenrouterVLM(IVLM):
         self.load_model()
         try:
             prompt = f"{self.__prompts['relations']}\n\n{', '.join(labels)}"
-            response: RunResponse = self.agent.run(
-                prompt, images=[AgnoImage(filepath=annotated_image_path)]
-            )
+            response: RunResponse = Agent(
+                model=OpenRouter(id=self.model_id, api_key=self.api_key),
+                markdown=True,
+            ).run(prompt, images=[AgnoImage(filepath=annotated_image_path)])
             relations = extract_list_of_tuples(response.content)
             return relations
         except (AttributeError, ValueError, RuntimeError) as e:
@@ -130,9 +131,10 @@ class OpenrouterVLM(IVLM):
         self.load_model()
         try:
             prompt = f"{self.__prompts['captions']}\n\n{', '.join(labels)}"
-            response: RunResponse = self.agent.run(
-                prompt, images=[AgnoImage(filepath=annotated_image_path)]
-            )
+            response: RunResponse = Agent(
+                model=OpenRouter(id=self.model_id, api_key=self.api_key),
+                markdown=True,
+            ).run(prompt, images=[AgnoImage(filepath=annotated_image_path)])
             captions = vlm_extract_object_captions(response.content)
             return captions
         except (AttributeError, ValueError, RuntimeError) as e:
@@ -153,9 +155,10 @@ class OpenrouterVLM(IVLM):
         """
         self.load_model()
         try:
-            response: RunResponse = self.agent.run(
-                self.__prompts["room_class"], images=[AgnoImage(filepath=image_path)]
-            )
+            response: RunResponse = Agent(
+                model=OpenRouter(id=self.model_id, api_key=self.api_key),
+                markdown=True,
+            ).run(self.__prompts["room_class"], images=[AgnoImage(filepath=image_path)])
             json_match = re.search(
                 r"```json\s*(\{.*?\})\s*```", response.content, re.DOTALL
             )
@@ -186,7 +189,14 @@ class OpenrouterVLM(IVLM):
                 for c in captions
             ]
             prompt = f"{self.__prompts['consolidate']}\n\n{', '.join(captions_strs)}"
-            response: RunResponse = self.agent.run(prompt)
+            response: RunResponse = Agent(
+                model=OpenRouter(
+                    id="openai/gpt-oss-120b:nitro",
+                    reasoning_effort="low",
+                    api_key=self.api_key,
+                ),
+                markdown=True,
+            ).run(prompt)
             return response.content
         except (AttributeError, ValueError, RuntimeError) as e:
             traceback.print_exc()
