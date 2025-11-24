@@ -687,14 +687,18 @@ def run_mapping_process(
                     )
                 )
 
-                info_combined = [
-                    item
-                    for item in info_combined
-                    if item is not None
-                    and item[5]["caption"] is not None
-                    and item[5]["caption"].strip() != ""
-                    and item[5]["caption"] != "null"
-                ]
+                try:
+                    info_combined = [
+                        item
+                        for item in info_combined
+                        if item is not None
+                        and item[5]["caption"] is not None
+                        and item[5]["caption"].strip() != ""
+                        and item[5]["caption"] != "null"
+                    ]
+                except KeyError:
+                    print(f"No caption in item 5: {info_combined}")
+                    info_combined = []
 
                 if len(info_combined) == 0:
                     obj["image_idx"] = []
@@ -1003,6 +1007,7 @@ def run_mapping_process(
         manager.unload_all_models()
     owandb.finish()
 
+
 def clean_and_check_progress() -> dict[str, list[int]]:
     """
     Checks the integrity of experiment outputs and cleans up interrupted runs.
@@ -1017,9 +1022,10 @@ def clean_and_check_progress() -> dict[str, list[int]]:
     :rtype: Dict[str, List[int]]
     """
     houses = {
-        "offline": list(range(1, 30)),
-        "online": list(range(1, 30)),
-        "original": list(range(1, 30)),
+        "offline": list(range(1, 31)),
+        "online": list(range(1, 31)),
+        "original": list(range(1, 31)),
+        "improved": list(range(1, 31)),
     }
 
     base_dataset_path = (
@@ -1079,6 +1085,7 @@ def clean_and_check_progress() -> dict[str, list[int]]:
 
     return pending_tasks
 
+
 # =========================
 # Entry Point
 # =========================
@@ -1122,7 +1129,7 @@ if __name__ == "__main__":
                                 + ("-" * 50)
                                 + "Error:\n"
                             )
-                            f.write(e)
+                            f.write(str(e))
                             f.write("\n\n" + ("-" * 50) + "\n")
                         if preffix == "offline":
                             dataset_path = "C:\\Users\\lab\\Documents\\Datasets\\Robot@VirtualHomeLarge\\outputs\\Home{selected_house:02d}\\Wandering\\exps"
