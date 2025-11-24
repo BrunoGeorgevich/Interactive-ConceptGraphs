@@ -12,3 +12,4 @@ rerun-sdk==0.23
 numpy==1.26
 nvidia-ml-py==13.580.82
 flashrank==0.2.10
+flashrank[listwise]==0.2.10
