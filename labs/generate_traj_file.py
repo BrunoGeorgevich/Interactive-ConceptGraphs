@@ -65,7 +65,7 @@ def translation_rotation_to_matrix(
 def main():
     DATA_FOLDER = os.path.join("D:", "Documentos", "Datasets", "Robot@VirtualHomeLarge")
 
-    for home_number in range(1, 30):
+    for home_number in range(1, 31):
         home_name = f"Home{home_number:02d}"
         for experiment in [
             # "Wandering",
