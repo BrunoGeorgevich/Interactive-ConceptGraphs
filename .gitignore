@@ -183,4 +183,4 @@ outputs
 
 PaperResearch/**/*
 test_output/**/*
-models/**/*
+**/models/**/*
