@@ -1,56 +1,34 @@
 slam_toolbox:
   ros__parameters:
-    # --- SOLVER (Padrão Ceres é o melhor) ---
-    solver_plugin: solver_plugins::CeresSolver
-    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
-    ceres_preconditioner: SCHUR_JACOBI
-    ceres_trust_strategy: LEVENBERG_MARQUARDT
-
-    # --- MATCHING: O AJUSTE REAL ---
-    # Aumentamos para 2.0m. Se a odometria errar feio na curva,
-    # o SLAM busca paredes até 2 metros ao redor.
-    correlation_search_space_dimension: 2.0
-
-    # Mantemos 5cm para performance (evitar fila cheia no RViz)
-    correlation_search_space_resolution: 0.05
-
-    # [CORREÇÃO CRÍTICA] Voltamos para 0.1.
-    # 0.025 estava rejeitando correções válidas.
-    # 0.1 permite que o SLAM corrija a odometria "arrastando" o robô para o lugar certo.
-    correlation_search_space_smear_deviation: 0.1
-
-    # --- FILTROS DE ENTRADA ---
-    # Distância mínima para processar scan.
-    # Valores muito baixos (0.05) com smear alto (0.1) podem causar "jitter".
-    # 0.2 é um bom compromisso.
-    minimum_travel_distance: 0.2
-    minimum_travel_heading: 0.2
-
-    # --- QUALIDADE DO MATCH ---
-    # Se o algoritmo encontrar uma parede, quão "igual" ela tem que ser?
-    # 0.65 é alto o suficiente para evitar falsos positivos em corredores.
-    link_match_minimum_response_fine: 0.65
-
-    # --- LOOP CLOSURE (Ajuste Fino) ---
-    do_loop_closing: true
-    loop_match_minimum_chain_size: 10 # Exige consistência antes de fechar loop
-    loop_match_maximum_variance_coarse: 0.1
-    loop_match_minimum_response_coarse: 0.35
-    loop_match_minimum_response_fine: 0.6
-
-    # --- PERFORMANCE E GESTÃO ---
-    transform_publish_period: 0.05
-    map_update_interval: 2.0
-    throttle_scans: 1
-    scan_buffer_size: 100
-    scan_subscriber_queue_size: 100
-
-    # --- GERAL ---
     odom_frame: odom
     map_frame: map
     base_frame: base_footprint
     scan_topic: /scan
     mode: mapping
-    resolution: 0.05 # Resolução do mapa final
+
+    solver_plugin: solver_plugins::CeresSolver
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+    ceres_preconditioner: SCHUR_JACOBI
+    ceres_trust_strategy: LEVENBERG_MARQUARDT
+    
+    correlation_search_space_dimension: 2.0
+    correlation_search_space_resolution: 0.05
+    correlation_search_space_smear_deviation: 0.1
+    
+    minimum_travel_distance: 0.2
+    minimum_travel_heading: 0.2
+    
+    link_match_minimum_response_fine: 0.65
+    do_loop_closing: true
+    loop_match_minimum_chain_size: 10
+    loop_match_maximum_variance_coarse: 0.1
+    loop_match_minimum_response_coarse: 0.35
+    loop_match_minimum_response_fine: 0.6
+    transform_publish_period: 0.05
+    map_update_interval: 2.0
+    throttle_scans: 1
+    scan_buffer_size: 100
+    scan_subscriber_queue_size: 100
+    resolution: 0.05
     max_laser_range: 10.0
     use_scan_matching: true
