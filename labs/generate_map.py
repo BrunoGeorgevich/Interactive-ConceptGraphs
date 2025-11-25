@@ -448,28 +448,33 @@ def run_simulation(
     save_path = os.path.join(path, "..")
     os.makedirs(save_path, exist_ok=True)
     map_file = os.path.join(save_path, "generated_map")
-    subprocess.run(
-        [
-            "ros2",
-            "run",
-            "nav2_map_server",
-            "map_saver_cli",
-            "-f",
-            map_file,
-            "--mode",
-            "trinary",
-            "--fmt",
-            "png",
-            "--ros-args",
-        ],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    final_png = map_file + ".png"
-    if os.path.exists(final_png) and os.path.getsize(final_png) > 0:
-        print(f"[{home_name}] SUCCESS: {final_png}")
-    else:
-        print(f"[{home_name}] FAILURE: Empty map.")
+
+    num_attempts = 3
+    for i in range(num_attempts):
+        print(f"Trying to save map for {home_name}... [{i+1}/{num_attempts}]")
+        subprocess.run(
+            [
+                "ros2",
+                "run",
+                "nav2_map_server",
+                "map_saver_cli",
+                "-f",
+                map_file,
+                "--mode",
+                "trinary",
+                "--fmt",
+                "png",
+                "--ros-args",
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        final_png = map_file + ".png"
+        if os.path.exists(final_png) and os.path.getsize(final_png) > 0:
+            print(f"[{home_name}] SUCCESS: {final_png}")
+            break
+        else:
+            print(f"[{home_name}] FAILURE: Empty map.")
 
 
 if __name__ == "__main__":
