@@ -1,0 +1,11 @@
+{
+    "door_size_px": 19,
+    "door_ratio_thresh": 0.3,
+    "bias_thresh": 1.11,
+    "min_fragment_size": 420,
+    "min_door_area": 45,
+    "max_unknown_iters": 5,
+    "min_noise_area": 1,
+    "door_dist_factor": 0.86,
+    "door_mask_scale": 0.02
+}
