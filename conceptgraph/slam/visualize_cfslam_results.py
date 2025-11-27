@@ -216,8 +216,6 @@ def main(args) -> None:
 
         :param vis: The Open3D visualizer.
         :type vis: o3d.visualization.VisualizerWithKeyCallback
-        :return: None
-        :rtype: None
         """
         if bg_objects is None:
             print("No background objects found.")
@@ -241,8 +239,6 @@ def main(args) -> None:
 
         :param vis: The Open3D visualizer.
         :type vis: o3d.visualization.VisualizerWithKeyCallback
-        :return: None
-        :rtype: None
         """
         if args.rgb_pcd_path is None:
             print("No RGB pcd path provided.")
@@ -263,8 +259,6 @@ def main(args) -> None:
 
         :param vis: The Open3D visualizer.
         :type vis: o3d.visualization.VisualizerWithKeyCallback
-        :return: None
-        :rtype: None
         """
         if args.edge_file is None:
             print("No edge file provided.")
@@ -285,8 +279,6 @@ def main(args) -> None:
 
         :param vis: The Open3D visualizer.
         :type vis: o3d.visualization.VisualizerWithKeyCallback
-        :return: None
-        :rtype: None
         """
         for i in range(len(objects)):
             pcd = pcds[i]
@@ -303,8 +295,6 @@ def main(args) -> None:
 
         :param vis: The Open3D visualizer.
         :type vis: o3d.visualization.VisualizerWithKeyCallback
-        :return: None
-        :rtype: None
         """
         for i in range(len(pcds)):
             pcd = pcds[i]
@@ -318,8 +308,6 @@ def main(args) -> None:
 
         :param vis: The Open3D visualizer.
         :type vis: o3d.visualization.VisualizerWithKeyCallback
-        :return: None
-        :rtype: None
         """
         instance_colors = cmap(np.linspace(0, 1, len(pcds)))
         for i in range(len(pcds)):
@@ -338,8 +326,6 @@ def main(args) -> None:
 
         :param vis: The Open3D visualizer.
         :type vis: o3d.visualization.VisualizerWithKeyCallback
-        :return: None
-        :rtype: None
         """
         if args.no_clip:
             print("CLIP model is not initialized.")
@@ -398,8 +384,6 @@ def main(args) -> None:
 
         :param vis: The Open3D visualizer.
         :type vis: o3d.visualization.VisualizerWithKeyCallback
-        :return: None
-        :rtype: None
         """
         param = vis.get_view_control().convert_to_pinhole_camera_parameters()
         o3d.io.write_pinhole_camera_parameters("temp.json", param)
