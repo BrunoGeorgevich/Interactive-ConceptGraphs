@@ -1,4 +1,3 @@
-import trace
 from qdrant_client import QdrantClient
 from flashrank import Ranker, RerankRequest
 from joblib import Parallel, delayed
@@ -60,7 +59,7 @@ except ImportError:
 console = Console()
 
 PREFFIX = "online"
-SELECTED_HOUSE = 1
+SELECTED_HOUSE = 5
 FORCE_RECREATE_TABLE = False
 QDRANT_URL = "http://localhost:6333"
 
@@ -747,12 +746,13 @@ def reconstruct_map_debug_image(
             if len(pts[0]) > 0:
                 cy, cx = int(np.mean(pts[0])), int(np.mean(pts[1]))
                 cls_name = unique_names.get(mid, data.get("dominant_class", "unknown"))
+                num_char = len(cls_name)
                 cv2.putText(
                     reconstructed_image,
                     cls_name,
-                    (cx - 30, cy),
+                    (int(cx + (2 * num_char) - 30), cy),
                     cv2.FONT_HERSHEY_SIMPLEX,
-                    0.2,
+                    0.3,
                     (0, 0, 0),
                     3,
                     cv2.LINE_AA,
@@ -760,9 +760,9 @@ def reconstruct_map_debug_image(
                 cv2.putText(
                     reconstructed_image,
                     cls_name,
-                    (cx - 30, cy),
+                    (int(cx + (2 * num_char) - 30), cy),
                     cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
+                    0.3,
                     (255, 255, 255),
                     1,
                     cv2.LINE_AA,
@@ -896,7 +896,7 @@ def inject_objects_into_map(
                 class_name,
                 text_pos,
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.3,
+                0.2,
                 (0, 0, 0),
                 2,
                 cv2.LINE_AA,
@@ -906,7 +906,7 @@ def inject_objects_into_map(
                 class_name,
                 text_pos,
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.3,
+                0.2,
                 (255, 255, 255),
                 1,
                 cv2.LINE_AA,
@@ -1701,7 +1701,9 @@ if __name__ == "__main__":
                             active_rag_context = []
                             continue
 
-                        center_coordinates = selected_room.get("center_coordinates", None)
+                        center_coordinates = selected_room.get(
+                            "center_coordinates", None
+                        )
                         if center_coordinates is None:
                             console.print(
                                 "[bold red]Error: Center coordinates missing in response.[/bold red]"
