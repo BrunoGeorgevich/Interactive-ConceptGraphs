@@ -1178,12 +1178,13 @@ class SceneGraphNode:
             .replace("```", "")
             .strip()
         )
-        try:
-            loaded = json.loads(caption_clean)
-            if isinstance(loaded, dict):
-                caption_clean = loaded.get("consolidated_caption", caption_clean)
-        except (json.JSONDecodeError, TypeError):
-            traceback.print_exc()
+        if caption_clean:
+            try:
+                loaded = json.loads(caption_clean)
+                if isinstance(loaded, dict):
+                    caption_clean = loaded.get("consolidated_caption", caption_clean)
+            except (json.JSONDecodeError, TypeError):
+                traceback.print_exc()
 
         self.caption: str = caption_clean
 
@@ -1213,6 +1214,11 @@ class SceneGraphManager:
         self.nodes: List[SceneGraphNode] = [
             SceneGraphNode(obj) for obj in enriched_objects
         ]
+
+        self.nodes = [
+            node for node in self.nodes if node.centroid is not None and node.caption
+        ]
+
         self.nodes_by_room: Dict[str, List[SceneGraphNode]] = {}
         for node in self.nodes:
             if node.room not in self.nodes_by_room:
