@@ -1,5 +1,6 @@
 from typing import Any, Tuple, Dict, List
 from joblib import Parallel, delayed
+from functools import lru_cache
 from dotenv import load_dotenv
 import numpy as np
 import traceback
@@ -59,7 +60,7 @@ except ImportError:
 
 # --- Constants & Configuration ---
 
-PREFFIX = "improved"
+PREFFIX = "offline"
 SELECTED_HOUSE = 1
 FORCE_RECREATE_TABLE = False
 QDRANT_URL = "http://localhost:6333"
@@ -114,7 +115,8 @@ def log_debug_interaction(
         print(f"[DEBUG LOG ERROR]: {e}")
 
 
-def get_embedder(preffix: str = "online") -> OpenAIEmbedder:
+@lru_cache(maxsize=1000)
+def get_embedder(preffix: str) -> OpenAIEmbedder:
     if preffix == "offline":
         return OpenAIEmbedder(
             id="text-embedding-qwen3-embedding-0.6b",
@@ -122,12 +124,15 @@ def get_embedder(preffix: str = "online") -> OpenAIEmbedder:
             base_url="http://localhost:1234/v1",
             dimensions=1024,
         )
-    return OpenAIEmbedder(
-        id="qwen/qwen3-embedding-8b",
-        api_key=os.getenv("OPENROUTER_API_KEY"),
-        base_url="https://openrouter.ai/api/v1",
-        dimensions=4096,
-    )
+    elif preffix == "online" or preffix == "improved":
+        return OpenAIEmbedder(
+            id="qwen/qwen3-embedding-8b",
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+            base_url="https://openrouter.ai/api/v1",
+            dimensions=4096,
+        )
+    else:
+        raise ValueError(f"Unknown preffix for embedder: {preffix}")
 
 
 def create_qdrant_vector_db(collection: str, url: str = QDRANT_URL) -> Qdrant:
@@ -145,11 +150,25 @@ def create_qdrant_vector_db(collection: str, url: str = QDRANT_URL) -> Qdrant:
         raise ValueError(f"Failed to create Qdrant VectorDb: {e}")
 
 
-def check_collection_exists_and_not_empty(collection_name: str, url: str) -> bool:
+def check_collection_exists_and_not_empty(
+    collection_name: str, url: str, vector_size: int
+) -> bool:
     try:
         client = QdrantClient(url=url)
         if client.collection_exists(collection_name=collection_name):
             count_res = client.count(collection_name=collection_name, exact=True)
+            vector_size_check = (
+                client.get_collection(collection_name)
+                .config.params.vectors["dense"]
+                .size
+            )
+
+            if vector_size_check != vector_size:
+                print(
+                    f"Collection '{collection_name}' has vector size {vector_size_check}, expected {vector_size}."
+                )
+                return False
+
             if count_res.count > 0:
                 print(
                     f"Collection '{collection_name}' exists with {count_res.count} items."
@@ -329,6 +348,7 @@ def retrieve(vector_db: Qdrant, query: str, limit: int = 100) -> list[Any]:
 def populate_qdrant_from_objects(
     objects: MapObjectList | dict | List[dict], collection_name: str
 ) -> int:
+
     vector_db = create_qdrant_vector_db(collection=collection_name)
     vector_db.create()
 
@@ -1006,7 +1026,11 @@ if __name__ == "__main__":
     print("Initializing Interpreter Agent...")
     if PREFFIX == "offline":
         interpreter_model = LMStudio(
-            id=LOCAL_MODEL_ID, temperature=0.0, top_p=0.1, reasoning_effort="high"
+            id=LOCAL_MODEL_ID,
+            temperature=0.0,
+            top_p=0.1,
+            reasoning_effort="high",
+            max_tokens=16000,
         )
     else:
         interpreter_model = OpenRouter(
@@ -1014,6 +1038,8 @@ if __name__ == "__main__":
             api_key=os.getenv("OPENROUTER_API_KEY"),
             temperature=0.0,
             top_p=0.1,
+            reasoning_effort="high",
+            max_tokens=16000,
         )
 
     interpreter_agent = Agent(
@@ -1072,8 +1098,18 @@ if __name__ == "__main__":
         exit(1)
 
     exists_and_valid = check_collection_exists_and_not_empty(
-        COLLECTION_NAME, QDRANT_URL
+        COLLECTION_NAME, QDRANT_URL, get_embedder(PREFFIX).dimensions
     )
+
+    if not exists_and_valid:
+        client = QdrantClient(url=QDRANT_URL)
+        try:
+            print(f"Deleting the existing collection {COLLECTION_NAME} if it exists...")
+            client.delete_collection(collection_name=COLLECTION_NAME)
+        except Exception:
+            traceback.print_exc()
+            raise
+
     enriched_objects = []
 
     if FORCE_RECREATE_TABLE:
@@ -1208,6 +1244,7 @@ if __name__ == "__main__":
             )
 
             rag_decision_response = interpreter_agent.run(intention_input).content
+            print(f"[INTERPRETER] Response: {rag_decision_response}")
             log_debug_interaction(
                 DEBUG_OUTPUT_FILE_PATH,
                 "INTERPRETER",
@@ -1315,13 +1352,23 @@ if __name__ == "__main__":
             print("Generating response...")
             response = bot_agent.run(bot_input_prompt)
             response_text = response.content
+            print(f"[BOT] Raw Response: {response_text}")
             log_debug_interaction(
                 DEBUG_OUTPUT_FILE_PATH,
                 "BOT",
                 content=str(response_text),
                 mode="a",
             )
-            print(f"\nAssistant: {response_text}\n{'-'*30}")
+
+            if "<message>" in response_text:
+                try:
+                    response_text = (
+                        response_text.split("<message>")[1]
+                        .split("</message>")[0]
+                        .strip()
+                    )
+                except Exception as e:
+                    print(f"Error extracting message: {e}")
 
             # Update History & Memory
             last_bot_message = response_text
@@ -1331,26 +1378,53 @@ if __name__ == "__main__":
 
             if "<selected_object>" in response_text:
                 try:
-                    raw_obj = (
-                        response_text.split("<selected_object>")[1]
-                        .split("</selected_object>")[0]
-                        .replace("'", '"').replace("```json", "").replace("```", "")
-                    )
-                    obj_data = json.loads(raw_obj)
-                    print(f"[NAVIGATION] Parsed selected object data: {obj_data}")
-                    coords = obj_data.get("target_coordinates") or obj_data.get(
-                        "bbox_center"
-                    )
+                    response_message = response_text
+                    coords = None
+                    obj_tag = None
+                    room_name = None
+                    if "<answer>" in response_text:
+                        response_message = (
+                            response_text.split("<answer>")[1]
+                            .split("</answer>")[0]
+                            .strip()
+                        )
+                    if "<object_tag>" in response_text:
+                        obj_tag = (
+                            response_text.split("<object_tag>")[1]
+                            .split("</object_tag>")[0]
+                            .strip()
+                        )
+                    if "<room_name>" in response_text:
+                        room_name = (
+                            response_text.split("<room_name>")[1]
+                            .split("</room_name>")[0]
+                            .strip()
+                        )
+                    try:
+                        if "<target_coordinates>" in response_text:
+                            coords_str = (
+                                response_text.split("<target_coordinates>")[1]
+                                .split("</target_coordinates>")[0]
+                                .strip()
+                            )
+                            coords = [float(x.strip()) for x in coords_str.split(",")]
 
-                    print(
-                        f"\n[NAVIGATION] Destination confirmed: {obj_data.get('object_tag')} in {obj_data.get('room_name')}"
-                    )
-                    print(f"[NAVIGATION] Target Coordinates: {coords}")
+                            print(
+                                f"\n[NAVIGATION] Destination confirmed: {obj_tag} in {room_name}"
+                            )
+                            print(f"[NAVIGATION] Target Coordinates: {coords}")
+                    except TypeError:
+                        print(f"Error parsing target coordinates: {coords_str}")
+                        coords = None
 
                     if coords:
                         navigator.move_to_coordinate(tuple(coords))
                 except Exception as e:
                     print(f"Error parsing selected object tag: {e}")
+            else:
+                response_message = response_text
+
+            print(f"\nAssistant: {response_message}\n{'-'*30}")
 
         except KeyboardInterrupt:
             navigator.stop()
