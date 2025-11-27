@@ -1,12 +1,12 @@
-from qdrant_client import QdrantClient
 from flashrank import Ranker, RerankRequest
+from typing import Any, Tuple, Dict, List
+from qdrant_client import QdrantClient
 from joblib import Parallel, delayed
 from functools import lru_cache
 from dotenv import load_dotenv
-from typing import Any, Tuple, Dict, List
+import numpy as np
 import traceback
 import threading
-import numpy as np
 import pickle
 import gzip
 import json
@@ -18,18 +18,19 @@ import os
 from agno.document import Document as AgnoDocument
 from agno.embedder.openai import OpenAIEmbedder
 from agno.models.openrouter import OpenRouter
-from agno.models.lmstudio import LMStudio
 from agno.vectordb.search import SearchType
+from agno.models.lmstudio import LMStudio
 from agno.vectordb.qdrant import Qdrant
 from agno.agent import Agent
 
-from conceptgraph.slam.slam_classes import MapObjectList
-from prompts import AGENT_PROMPT_V3, INTENTION_INTERPRETATION_PROMPT
-
-from rich.console import Console
-from rich.panel import Panel
-from rich.prompt import Prompt
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.console import Console
+from rich.prompt import Prompt
+from rich.panel import Panel
+
+from prompts import AGENT_PROMPT_V3, INTENTION_INTERPRETATION_PROMPT
+from conceptgraph.slam.slam_classes import MapObjectList
+
 
 try:
     from watershed_segmenter import (
@@ -156,13 +157,13 @@ def create_qdrant_vector_db(collection: str, url: str = QDRANT_URL) -> Qdrant:
     """
     Creates and returns a Qdrant vector database instance.
 
-    :param collection: Collection name.
+    :param collection: Name of the Qdrant collection.
     :type collection: str
     :param url: Qdrant server URL.
     :type url: str
-    :return: Configured Qdrant vector database.
+    :return: Configured Qdrant vector database instance.
     :rtype: Qdrant
-    :raises ValueError: If database creation fails.
+    :raises ValueError: If the Qdrant vector database cannot be created.
     """
     try:
         vector_db = Qdrant(
@@ -173,35 +174,42 @@ def create_qdrant_vector_db(collection: str, url: str = QDRANT_URL) -> Qdrant:
             search_type=SearchType.hybrid,
         )
         return vector_db
-    except Exception as e:
+    except (TypeError, AttributeError, ImportError) as e:
         traceback.print_exc()
-        raise ValueError(f"Failed to create Qdrant VectorDb: {e}")
+        raise ValueError(f"Failed to create Qdrant VectorDb: {e}") from e
 
 
 def check_collection_exists_and_not_empty(
     collection_name: str, url: str, vector_size: int
 ) -> bool:
     """
-    Checks if a collection exists and contains items with the correct vector size.
+    Checks if a Qdrant collection exists, is not empty, and has the expected vector size.
 
-    :param collection_name: Name of the collection.
+    :param collection_name: Name of the Qdrant collection to check.
     :type collection_name: str
-    :param url: Qdrant server URL.
+    :param url: URL of the Qdrant server.
     :type url: str
-    :param vector_size: Expected vector dimensionality.
+    :param vector_size: Expected dimensionality of the vectors in the collection.
     :type vector_size: int
-    :return: True if collection exists and is valid, False otherwise.
+    :return: True if the collection exists, is not empty, and has the correct vector size; False otherwise.
     :rtype: bool
+    :raises ValueError: If there is an error communicating with Qdrant or retrieving collection information.
     """
     try:
         client = QdrantClient(url=url)
         if client.collection_exists(collection_name=collection_name):
             count_res = client.count(collection_name=collection_name, exact=True)
-            vector_size_check = (
-                client.get_collection(collection_name)
-                .config.params.vectors["dense"]
-                .size
-            )
+            try:
+                vector_size_check = (
+                    client.get_collection(collection_name)
+                    .config.params.vectors["dense"]
+                    .size
+                )
+            except (KeyError, AttributeError, TypeError) as e:
+                traceback.print_exc()
+                raise ValueError(
+                    f"Failed to retrieve vector size for collection '{collection_name}': {e}"
+                ) from e
 
             if vector_size_check != vector_size:
                 console.print(
@@ -226,15 +234,17 @@ def check_collection_exists_and_not_empty(
                 f"[yellow]Collection '{collection_name}' does not exist.[/yellow]"
             )
             return False
-    except Exception as e:
+    except (ConnectionError, RuntimeError, ValueError, TypeError, AttributeError) as e:
         traceback.print_exc()
         console.print(f"[bold red]Error checking collection status:[/bold red] {e}")
-        return False
+        raise ValueError(
+            f"Error checking collection '{collection_name}' status: {e}"
+        ) from e
 
 
 def delete_collection_if_exists(collection_name: str, url: str) -> None:
     """
-    Deletes a collection if it exists in Qdrant.
+    Deletes a collection from Qdrant if it exists.
 
     :param collection_name: Name of the collection to delete.
     :type collection_name: str
@@ -242,15 +252,17 @@ def delete_collection_if_exists(collection_name: str, url: str) -> None:
     :type url: str
     :return: None
     :rtype: None
+    :raises ValueError: If there is an error deleting the collection.
     """
     try:
         client = QdrantClient(url=url)
         if client.collection_exists(collection_name=collection_name):
             client.delete_collection(collection_name=collection_name)
             console.print(f"[green]Collection '{collection_name}' deleted.[/green]")
-    except Exception as e:
+    except (ConnectionError, RuntimeError, AttributeError, TypeError) as e:
         traceback.print_exc()
         console.print(f"[bold red]Error deleting collection:[/bold red] {e}")
+        raise ValueError(f"Failed to delete collection '{collection_name}': {e}") from e
 
 
 def rerank_with_flashrank(
@@ -267,7 +279,7 @@ def rerank_with_flashrank(
     :type top_k: int
     :return: Reranked list of documents.
     :rtype: list[AgnoDocument]
-    :raises ValueError: If reranking fails.
+    :raises ValueError: If reranking fails due to a runtime or type error.
     """
     if not documents:
         return []
@@ -285,7 +297,7 @@ def rerank_with_flashrank(
             doc.reranking_score = float(response[idx]["score"])
 
         return sorted(documents, key=lambda d: d.reranking_score, reverse=True)[:top_k]
-    except Exception as e:
+    except (RuntimeError, TypeError, AttributeError, KeyError) as e:
         traceback.print_exc()
         raise ValueError(f"Error during FlashRank reranking: {e}") from e
 
@@ -484,13 +496,25 @@ def populate_qdrant_from_objects(
     )
 
     def insert_single_doc(doc: AgnoDocument) -> None:
+        """
+        Inserts a single AgnoDocument into the vector database.
+
+        :param doc: The document to insert.
+        :type doc: AgnoDocument
+        :return: None
+        :rtype: None
+        :raises RuntimeError: If insertion fails due to a database or serialization error.
+        """
         try:
             vector_db.insert([doc])
-        except Exception as e:
+        except (ValueError, TypeError, AttributeError) as e:
             traceback.print_exc()
             console.print(
                 f"[bold red]Failed to insert doc {getattr(doc, 'id', '?')}:[/bold red] {e}"
             )
+            raise RuntimeError(
+                f"Failed to insert document with id {getattr(doc, 'id', '?')}: {e}"
+            ) from e
 
     Parallel(n_jobs=-1, backend="threading")(
         delayed(insert_single_doc)(doc) for doc in docs_to_insert
@@ -732,6 +756,7 @@ def reconstruct_map_debug_image(
     :type unique_names: dict
     :return: Reconstructed debug map image.
     :rtype: np.ndarray
+    :raises ValueError: If an error occurs during image reconstruction.
     """
     try:
         reconstructed_image = np.zeros((height, width, 3), dtype=np.uint8)
@@ -768,9 +793,9 @@ def reconstruct_map_debug_image(
                     cv2.LINE_AA,
                 )
         return reconstructed_image
-    except Exception:
+    except (TypeError, ValueError, KeyError, AttributeError) as e:
         traceback.print_exc()
-        return np.zeros((height, width, 3), dtype=np.uint8)
+        raise ValueError(f"Error reconstructing map debug image: {e}") from e
 
 
 def get_object_map_coordinates(
@@ -1126,6 +1151,9 @@ class MapNavigator(threading.Thread):
 class SceneGraphNode:
     """
     Represents a node in the scene graph corresponding to an object.
+
+    This class encapsulates the properties of an object in the environment,
+    including its class name, room association, caption, and centroid position.
     """
 
     def __init__(self, obj_dict: dict) -> None:
@@ -1134,14 +1162,17 @@ class SceneGraphNode:
 
         :param obj_dict: Object data dictionary.
         :type obj_dict: dict
+        :return: None
+        :rtype: None
+        :raises ValueError: If centroid calculation fails due to invalid data.
         """
-        self.name = obj_dict.get("class_name", "unknown_object")
-        self.room = obj_dict.get("room_name", "Unknown Area")
+        self.name: str = obj_dict.get("class_name", "unknown_object")
+        self.room: str = obj_dict.get("room_name", "Unknown Area")
 
-        raw_caption = obj_dict.get("consolidated_caption", "") or obj_dict.get(
+        raw_caption: str = obj_dict.get("consolidated_caption", "") or obj_dict.get(
             "object_caption", ""
         )
-        caption_clean = (
+        caption_clean: str = (
             raw_caption.replace("'", '"')
             .replace("```json", "")
             .replace("```", "")
@@ -1151,15 +1182,20 @@ class SceneGraphNode:
             loaded = json.loads(caption_clean)
             if isinstance(loaded, dict):
                 caption_clean = loaded.get("consolidated_caption", caption_clean)
-        except Exception:
-            pass
-        self.caption = caption_clean
+        except (json.JSONDecodeError, TypeError):
+            traceback.print_exc()
 
-        self.centroid = None
-        if "pcd_np" in obj_dict and len(obj_dict["pcd_np"]) > 0:
-            self.centroid = np.mean(obj_dict["pcd_np"], axis=0)
-        elif "bbox_np" in obj_dict:
-            self.centroid = np.mean(obj_dict["bbox_np"], axis=0)
+        self.caption: str = caption_clean
+
+        self.centroid: np.ndarray | None = None
+        try:
+            if "pcd_np" in obj_dict and len(obj_dict["pcd_np"]) > 0:
+                self.centroid = np.mean(obj_dict["pcd_np"], axis=0)
+            elif "bbox_np" in obj_dict:
+                self.centroid = np.mean(obj_dict["bbox_np"], axis=0)
+        except (KeyError, TypeError, ValueError) as e:
+            traceback.print_exc()
+            raise ValueError("Failed to calculate centroid for SceneGraphNode.") from e
 
 
 class SceneGraphManager:
@@ -1247,21 +1283,27 @@ class SceneGraphManager:
 
 def get_or_compute_watershed_data(
     house_id: int, prefix: str, base_path: str, local_dir: str
-) -> Tuple[Dict, np.ndarray, Dict, int, int]:
+) -> tuple[dict, np.ndarray, dict, int, int]:
     """
-    Retrieves cached watershed data or computes it if unavailable.
+    Retrieves cached watershed segmentation data for a given house and prefix, or computes it if unavailable.
 
-    :param house_id: House identifier.
+    This function attempts to load precomputed watershed segmentation data from a local cache. If the cache is missing or
+    loading fails due to an I/O or deserialization error, it recomputes the segmentation using the provided parameters,
+    saves the result to the cache, and returns the computed data.
+
+    :param house_id: Identifier for the house.
     :type house_id: int
-    :param prefix: Data prefix.
+    :param prefix: Data prefix for context and segmentation.
     :type prefix: str
-    :param base_path: Base dataset path.
+    :param base_path: Base path to the dataset.
     :type base_path: str
-    :param local_dir: Local cache directory.
+    :param local_dir: Local directory for caching segmentation data.
     :type local_dir: str
-    :return: Tuple of merged regions, region mask, merged colors, width, height.
-    :rtype: Tuple[Dict, np.ndarray, Dict, int, int]
-    :raises ValueError: If context loading fails.
+    :return: Tuple containing merged regions, region mask, merged colors, width, and height.
+    :rtype: tuple[dict, np.ndarray, dict, int, int]
+    :raises ValueError: If context loading fails or the prefix is not found in the context.
+    :raises OSError: If there is an error reading or writing the cache file.
+    :raises pickle.UnpicklingError: If the cache file cannot be unpickled.
     """
     os.makedirs(local_dir, exist_ok=True)
     filename = f"Home{house_id:02d}_{prefix}_watershed.pkl.gz"
@@ -1281,7 +1323,7 @@ def get_or_compute_watershed_data(
                 data["width"],
                 data["height"],
             )
-        except Exception as e:
+        except (OSError, pickle.UnpicklingError) as e:
             traceback.print_exc()
             console.print(f"[yellow]Failed to load cache: {e}. Recomputing...[/yellow]")
 
@@ -1289,14 +1331,18 @@ def get_or_compute_watershed_data(
         f"[cyan]Cache missing. Computing Watershed data for House {house_id} "
         f"({prefix})...[/cyan]"
     )
-    context = load_house_context(
-        house_id=house_id,
-        base_path=base_path,
-        prefixes=[prefix],
-        map_binary_threshold=MAP_BINARY_THRESHOLD,
-        min_contour_area=MIN_CONTOUR_AREA,
-        crop_padding=CROP_PADDING,
-    )
+    try:
+        context = load_house_context(
+            house_id=house_id,
+            base_path=base_path,
+            prefixes=[prefix],
+            map_binary_threshold=MAP_BINARY_THRESHOLD,
+            min_contour_area=MIN_CONTOUR_AREA,
+            crop_padding=CROP_PADDING,
+        )
+    except (KeyError, OSError, TypeError) as e:
+        traceback.print_exc()
+        raise ValueError(f"Could not load context for prefix '{prefix}': {e}") from e
 
     if prefix not in context:
         raise ValueError(f"Could not load context for prefix '{prefix}'.")
@@ -1323,8 +1369,12 @@ def get_or_compute_watershed_data(
         "height": res_data["height"],
     }
 
-    with gzip.open(local_path, "wb") as f:
-        pickle.dump(data_to_save, f)
+    try:
+        with gzip.open(local_path, "wb") as f:
+            pickle.dump(data_to_save, f)
+    except (OSError, pickle.PicklingError) as e:
+        traceback.print_exc()
+        console.print(f"[yellow]Failed to save cache: {e}[/yellow]")
 
     return (
         res_data["merged_regions"],
@@ -1385,13 +1435,15 @@ if __name__ == "__main__":
     try:
         with open(DEBUG_INPUT_FILE_PATH, "w", encoding="utf-8") as f:
             f.write("=== New Session Started ===\n")
-    except Exception:
-        pass
+    except (OSError, IOError) as e:
+        traceback.print_exc()
+        console.print(f"[bold red][DEBUG LOG ERROR][/bold red]: {e}")
     try:
         with open(DEBUG_OUTPUT_FILE_PATH, "w", encoding="utf-8") as f:
             f.write("=== New Session Started ===\n")
-    except Exception:
-        pass
+    except (OSError, IOError) as e:
+        traceback.print_exc()
+        console.print(f"[bold red][DEBUG LOG ERROR][/bold red]: {e}")
 
     console.print("[cyan]Initializing Interpreter Agent...[/cyan]")
     if PREFFIX == "offline":
@@ -1462,7 +1514,14 @@ if __name__ == "__main__":
         map_origin = temp_context[PREFFIX]["origin"]
         map_resolution = temp_context[PREFFIX]["resolution"]
 
-    except Exception as e:
+    except (
+        KeyError,
+        OSError,
+        TypeError,
+        ValueError,
+        pickle.UnpicklingError,
+        gzip.BadGzipFile,
+    ) as e:
         console.print(f"[bold red]Critical Error loading map data:[/bold red] {e}")
         traceback.print_exc()
         exit(1)
@@ -1478,9 +1537,17 @@ if __name__ == "__main__":
                 f"[yellow]Deleting the existing collection {COLLECTION_NAME} if it exists...[/yellow]"
             )
             client.delete_collection(collection_name=COLLECTION_NAME)
-        except Exception:
+        except (
+            ConnectionError,
+            RuntimeError,
+            AttributeError,
+            TypeError,
+            ValueError,
+        ) as e:
             traceback.print_exc()
-            raise
+            raise RuntimeError(
+                f"Failed to delete collection '{COLLECTION_NAME}': {e}"
+            ) from e
 
     enriched_objects = []
 
@@ -1826,7 +1893,8 @@ if __name__ == "__main__":
                         .split("</message>")[0]
                         .strip()
                     )
-                except Exception as e:
+                except (IndexError, AttributeError) as e:
+                    traceback.print_exc()
                     console.print(f"[bold red]Error extracting message:[/bold red] {e}")
 
             last_bot_message = response_text
@@ -1881,7 +1949,8 @@ if __name__ == "__main__":
 
                     if coords:
                         navigator.move_to_coordinate(tuple(coords))
-                except Exception as e:
+                except (KeyError, ValueError, AttributeError, IndexError) as e:
+                    traceback.print_exc()
                     console.print(
                         f"[bold red]Error parsing selected object tag:[/bold red] {e}"
                     )
@@ -1893,9 +1962,18 @@ if __name__ == "__main__":
             )
 
         except KeyboardInterrupt:
+            console.print("\n[yellow]Keyboard interrupt received. Exiting...[/yellow]")
             navigator.stop()
             break
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            TypeError,
+            AttributeError,
+            KeyError,
+            OSError,
+            IOError,
+        ) as e:
             console.print(f"[bold red]Error during chat loop:[/bold red] {e}")
             traceback.print_exc()
 
