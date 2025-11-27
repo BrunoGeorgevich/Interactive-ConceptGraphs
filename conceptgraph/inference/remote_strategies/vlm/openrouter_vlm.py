@@ -47,8 +47,6 @@ class OpenrouterVLM(IVLM):
         Initialize the VLM agent with OpenRouter backend.
 
         :raises RuntimeError: If agent initialization fails.
-        :return: None
-        :rtype: None
         """
         if not self.is_loaded():
             logging.info(f"Loading OpenrouterVLM agent with model: {self.model_id}")
@@ -65,8 +63,6 @@ class OpenrouterVLM(IVLM):
         """
         Unload the VLM agent.
 
-        :return: None
-        :rtype: None
         """
         if self.is_loaded():
             logging.info("Unloading OpenrouterVLM agent.")

@@ -59,8 +59,6 @@ class GeminiSegmenterStrategy(ISegmenter):
         :type model_id: str
         :param api_key: The API key for Gemini, or None if not required.
         :type api_key: str | None
-        :return: None
-        :rtype: None
         """
         self.model_id = model_id
         self.api_key = api_key
@@ -71,8 +69,6 @@ class GeminiSegmenterStrategy(ISegmenter):
         Load and initialize the Gemini client.
 
         :raises RuntimeError: If the client fails to initialize.
-        :return: None
-        :rtype: None
         """
         if not self.is_loaded():
             logging.info(f"Loading Gemini segmenter client with model: {self.model_id}")
@@ -88,8 +84,6 @@ class GeminiSegmenterStrategy(ISegmenter):
         """
         Unload the Gemini client and release associated resources.
 
-        :return: None
-        :rtype: None
         """
         if self.is_loaded():
             logging.info("Unloading Gemini segmenter client.")

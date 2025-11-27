@@ -32,8 +32,6 @@ class YOLODetectorStrategy(IObjectDetector):
         Load the YOLO model if not already loaded.
 
         :raises RuntimeError: If model loading fails.
-        :return: None
-        :rtype: None
         """
         if not self.is_loaded():
             logging.info(f"Loading YOLO detector model from: {self.checkpoint_path}")
@@ -47,8 +45,6 @@ class YOLODetectorStrategy(IObjectDetector):
         """
         Unload the YOLO model and clear CUDA cache if applicable.
 
-        :return: None
-        :rtype: None
         """
         if self.is_loaded():
             logging.info("Unloading YOLO detector model.")
@@ -82,8 +78,6 @@ class YOLODetectorStrategy(IObjectDetector):
         :param classes: List of class names.
         :type classes: list[str]
         :raises RuntimeError: If setting classes fails.
-        :return: None
-        :rtype: None
         """
         self.load_model()
         try:

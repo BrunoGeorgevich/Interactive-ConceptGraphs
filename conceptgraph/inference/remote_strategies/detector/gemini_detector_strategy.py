@@ -61,8 +61,6 @@ class GeminiDetectorStrategy(IObjectDetector):
         Initialize the VLM agent with OpenRouter backend.
 
         :raises RuntimeError: If agent initialization fails.
-        :return: None
-        :rtype: None
         """
         if not self.is_loaded():
             logging.info(f"Loading Gemini detector agent with model: {self.model_id}")
@@ -81,8 +79,6 @@ class GeminiDetectorStrategy(IObjectDetector):
         """
         Unload the VLM agent.
 
-        :return: None
-        :rtype: None
         """
         if self.is_loaded():
             logging.info("Unloading Gemini detector agent.")
@@ -113,8 +109,6 @@ class GeminiDetectorStrategy(IObjectDetector):
 
         :param classes: List of class names to detect.
         :type classes: list[str]
-        :return: None
-        :rtype: None
         """
         self.classes = classes
         logging.info(f"Gemini detector classes set to: {classes}")

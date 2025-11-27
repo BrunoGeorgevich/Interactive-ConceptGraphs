@@ -153,8 +153,6 @@ class SystemResourceLogger:
         :param resource_keys: List of resource metric names to use as CSV headers.
         :type resource_keys: list[str]
         :raises OSError: If the CSV file cannot be created or written.
-        :return: None
-        :rtype: None
         """
         try:
             self.csv_file = open(self.output_path, "w", newline="", encoding="utf-8")
@@ -171,8 +169,6 @@ class SystemResourceLogger:
         Main logging loop that runs in a separate thread.
 
         :raises RuntimeError: If resource logging fails due to system errors.
-        :return: None
-        :rtype: None
         """
         try:
             self._get_current_resources()
@@ -212,8 +208,6 @@ class SystemResourceLogger:
         Start the resource logging in a separate thread.
 
         :raises RuntimeError: If the logger is already running.
-        :return: None
-        :rtype: None
         """
         if self.running:
             raise RuntimeError("SystemResourceLogger is already running.")
@@ -233,8 +227,6 @@ class SystemResourceLogger:
 
         :param flag: True if collecting baseline data, False otherwise.
         :type flag: bool
-        :return: None
-        :rtype: None
         """
         self.baseline_collection_flag = flag
 
@@ -242,8 +234,6 @@ class SystemResourceLogger:
         """
         Stop the resource logging and perform cleanup.
 
-        :return: None
-        :rtype: None
         """
         if not self.running:
             print("SystemResourceLogger is not running.")
@@ -332,8 +322,6 @@ class SystemResourceLogger:
         :type baseline_hatch_alpha: float
         :raises FileNotFoundError: If the CSV log file does not exist.
         :raises ValueError: If the CSV file is empty or has invalid data, or if parameters are invalid.
-        :return: None
-        :rtype: None
         """
         if not os.path.exists(self.output_path):
             raise FileNotFoundError(f"CSV log file not found: {self.output_path}")
@@ -620,8 +608,6 @@ class SystemResourceLogger:
         :type exc_value: object | None
         :param tb: Traceback object, if any.
         :type tb: object | None
-        :return: None
-        :rtype: None
         """
         self._cleanup()
 

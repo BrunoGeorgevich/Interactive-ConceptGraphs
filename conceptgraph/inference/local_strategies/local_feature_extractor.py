@@ -42,8 +42,6 @@ class LocalFeatureExtractor(IFeatureExtractor):
         Load the CLIP model if not already loaded.
 
         :raises RuntimeError: If model loading fails.
-        :return: None
-        :rtype: None
         """
         model_cache_dir = "models"
 
@@ -83,8 +81,6 @@ class LocalFeatureExtractor(IFeatureExtractor):
         """
         Unload the CLIP model and clear CUDA cache if applicable.
 
-        :return: None
-        :rtype: None
         """
         if self.is_loaded():
             logging.info("Unloading LocalFeatureExtractor model.")

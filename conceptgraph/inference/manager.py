@@ -98,8 +98,6 @@ class AdaptiveInferenceManager:
         :param configuration: Inference configuration (e.g., "online" or "offline").
         :type configuration: str
         :raises ValueError: If required parameters are invalid.
-        :return: None
-        :rtype: None
         """
         if resource_log_interval <= 0:
             raise ValueError("resource_log_interval must be a positive number")
@@ -236,8 +234,6 @@ class AdaptiveInferenceManager:
         Start resource logging in the background.
 
         :raises RuntimeError: If resource logger is already running.
-        :return: None
-        :rtype: None
         """
         if self.resource_logger is not None and self.resource_logger.running:
             raise RuntimeError("Resource logger is already running")
@@ -255,8 +251,6 @@ class AdaptiveInferenceManager:
         """
         Stop resource logging and generate plots.
 
-        :return: None
-        :rtype: None
         """
         if self.resource_logger is not None:
             self.resource_logger._cleanup()
@@ -277,8 +271,6 @@ class AdaptiveInferenceManager:
 
         :param flag: True if collecting baseline data, False otherwise.
         :type flag: bool
-        :return: None
-        :rtype: None
         """
         if self.resource_logger is not None:
             self.resource_logger.set_baseline_collection_flag(flag)
@@ -768,8 +760,6 @@ class AdaptiveInferenceManager:
         :type output_dir: Path
         :param results: Results dictionary.
         :type results: dict
-        :return: None
-        :rtype: None
         """
         empty_data: dict = {
             "frame_number": results["frame_number"],
@@ -797,8 +787,6 @@ class AdaptiveInferenceManager:
         :type classes: list[str]
         :param output_dir: Directory to save the visualization.
         :type output_dir: Path
-        :return: None
-        :rtype: None
         """
         box_annotator = sv.BoxAnnotator()
         label_annotator = sv.LabelAnnotator()
@@ -851,8 +839,6 @@ class AdaptiveInferenceManager:
         :type detections: object
         :param output_dir: Directory to save the visualization.
         :type output_dir: Path
-        :return: None
-        :rtype: None
         """
         if detections.mask is None or len(detections.mask) == 0:
             logging.warning("No masks available for segmentation visualization")
@@ -908,8 +894,6 @@ class AdaptiveInferenceManager:
         :type detections: object
         :param output_dir: Directory to save the crops.
         :type output_dir: Path
-        :return: None
-        :rtype: None
         """
         crops_dir: Path = output_dir / "04_crops"
         crops_dir.mkdir(exist_ok=True)
@@ -987,8 +971,6 @@ class AdaptiveInferenceManager:
         :type relations: dict | list
         :param output_dir: Directory to save the outputs.
         :type output_dir: Path
-        :return: None
-        :rtype: None
         """
         with open(output_dir / "03a_room_data.json", "w", encoding="utf-8") as f:
             json.dump(room_data, f, ensure_ascii=False, indent=2)
@@ -1009,8 +991,6 @@ class AdaptiveInferenceManager:
         """
         Unload all loaded models from memory.
 
-        :return: None
-        :rtype: None
         """
         logging.info("Unloading all models...")
         self.switcher.unload_all_models()
@@ -1050,8 +1030,6 @@ class AdaptiveInferenceManager:
         :type exc_value: object | None
         :param tb: Traceback object, if any.
         :type tb: object | None
-        :return: None
-        :rtype: None
         """
         self.stop_resource_logging()
         self.unload_all_models()

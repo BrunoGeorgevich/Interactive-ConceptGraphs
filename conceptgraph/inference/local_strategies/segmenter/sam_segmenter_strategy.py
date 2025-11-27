@@ -31,8 +31,6 @@ class SAMSegmenterStrategy(ISegmenter):
         Load the SAM model if not already loaded.
 
         :raises RuntimeError: If model loading fails.
-        :return: None
-        :rtype: None
         """
         if not self.is_loaded():
             logging.info(f"Loading SAM segmenter model from: {self.checkpoint_path}")
@@ -46,8 +44,6 @@ class SAMSegmenterStrategy(ISegmenter):
         """
         Unload the SAM model and clear CUDA cache if applicable.
 
-        :return: None
-        :rtype: None
         """
         if self.is_loaded():
             logging.info("Unloading SAM segmenter model.")

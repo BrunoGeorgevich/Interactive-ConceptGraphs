@@ -44,8 +44,6 @@ class LMStudioVLM(IVLM):
         Initialize the VLM agent with LM Studio backend.
 
         :raises RuntimeError: If agent initialization fails.
-        :return: None
-        :rtype: None
         """
         if not self.is_loaded():
             logging.info(f"Loading LMStudioVLM agent with model: {self.model_id}")
@@ -62,8 +60,6 @@ class LMStudioVLM(IVLM):
         """
         Unload the VLM agent.
 
-        :return: None
-        :rtype: None
         """
         if self.is_loaded():
             logging.info("Unloading LMStudioVLM agent.")

@@ -48,8 +48,6 @@ class SystemContext:
         """
         Initialize the system context with default values.
 
-        :return: None
-        :rtype: None
         """
         self.connectivity_status: str = "offline"
         self.environment_profile: str = "indoor"
@@ -59,8 +57,6 @@ class SystemContext:
         """
         Update the current system state by checking network connectivity.
 
-        :return: None
-        :rtype: None
         """
         self.connectivity_status = self._check_network()
 
@@ -71,8 +67,6 @@ class SystemContext:
         :param profile: The environment profile ('indoor' or 'outdoor').
         :type profile: str
         :raises ValueError: If profile is not 'indoor' or 'outdoor'.
-        :return: None
-        :rtype: None
         """
         if profile not in {"indoor", "outdoor"}:
             raise ValueError(
@@ -123,8 +117,6 @@ class StrategySwitcher:
         :param vlm_prompts: Optional dictionary of prompts to set for VLMs.
         :type vlm_prompts: dict[str, str] | None
         :raises ValueError: If required keys are missing from either dictionary.
-        :return: None
-        :rtype: None
         """
         required_keys: set[str] = {"det", "seg", "vlm"}
 
@@ -156,8 +148,6 @@ class StrategySwitcher:
 
         :param prompts: Dictionary of prompt names and their string values.
         :type prompts: dict[str, str]
-        :return: None
-        :rtype: None
         """
         self.vlm_prompts = prompts.copy() if prompts else {}
 
@@ -351,8 +341,6 @@ class StrategySwitcher:
 
         :param model_key: The model key to instantiate.
         :type model_key: str
-        :return: None
-        :rtype: None
         """
         if model_key not in self.preferred_models:
             logging.info(f"Instantiating preferred model for '{model_key}'")
@@ -378,8 +366,6 @@ class StrategySwitcher:
         """
         Check current connectivity and update model state accordingly.
 
-        :return: None
-        :rtype: None
         """
         current_status: str = self._check_network()
 
@@ -411,8 +397,6 @@ class StrategySwitcher:
 
         :param model_key: The model key to switch to fallback.
         :type model_key: str
-        :return: None
-        :rtype: None
         """
         if model_key not in self.fallback_models:
             logging.info(f"Instantiating fallback model for '{model_key}'")
@@ -440,8 +424,6 @@ class StrategySwitcher:
         """
         Switch all active models back to preferred online models and unload fallback models.
 
-        :return: None
-        :rtype: None
         """
         for key in list(self.fallback_models.keys()):
             if (
@@ -482,8 +464,6 @@ class StrategySwitcher:
         """
         Reset active models to preferred models.
 
-        :return: None
-        :rtype: None
         """
         logging.info("Resetting to preferred models")
         self.active_models.clear()
@@ -493,8 +473,6 @@ class StrategySwitcher:
         """
         Unload all active models from memory.
 
-        :return: None
-        :rtype: None
         """
         for key, model in self.active_models.items():
             if hasattr(model, "unload_model"):
