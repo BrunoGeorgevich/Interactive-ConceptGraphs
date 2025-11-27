@@ -9,6 +9,7 @@ import pickle
 import gzip
 import json
 import time
+import math
 import cv2
 import sys
 import os
@@ -60,7 +61,7 @@ except ImportError:
 
 # --- Constants & Configuration ---
 
-PREFFIX = "offline"
+PREFFIX = "online"
 SELECTED_HOUSE = 1
 FORCE_RECREATE_TABLE = False
 QDRANT_URL = "http://localhost:6333"
@@ -1295,7 +1296,7 @@ if __name__ == "__main__":
 
                 if queries:
                     print(f"[RAG] Executing queries: {queries}")
-                    relevant_chunks = query_relevant_chunks(
+                    relevant_docs = query_relevant_chunks(
                         collection_name=COLLECTION_NAME,
                         queries=queries,
                         rerank_query=rerank_query,
@@ -1304,11 +1305,23 @@ if __name__ == "__main__":
                         rerank=False,
                         rerank_top_k=10,
                     )
-                    # Store full objects (chunk[1] is metadata) in memory
+
+                    docs_to_remove = []
+                    for idx, doc in enumerate(relevant_docs):
+                        centroid = doc[1].get("centroid", None)
+                        distance = (
+                            math.dist(centroid, current_user_pos) if centroid else None
+                        )
+                        if distance is None:
+                            docs_to_remove.append(idx)
+
+                        doc[1]["distance_to_user"] = distance
+
+                    for idx in reversed(docs_to_remove):
+                        relevant_docs.pop(idx)
+
                     rag_docs = (
-                        [chunk[1] for chunk in relevant_chunks]
-                        if relevant_chunks
-                        else []
+                        [chunk[1] for chunk in relevant_docs] if relevant_docs else []
                     )
                     active_rag_context = rag_docs  # Update Memory
                 else:
@@ -1333,9 +1346,6 @@ if __name__ == "__main__":
     <INTERPRETED_INTENT>
     {intent_explanation}
     </INTERPRETED_INTENT>
-    <SCENE_GRAPH_FULL>
-    {scene_tree}
-    </SCENE_GRAPH_FULL>
     <RETRIEVED_CONTEXT_RAG>
     {rag_context_str}
     </RETRIEVED_CONTEXT_RAG>

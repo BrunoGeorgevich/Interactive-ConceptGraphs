@@ -14,7 +14,8 @@ AGENT_PROMPT_V3 = dedent(
         2. <CURRENT_ROOM>: User's location.
         3. <CURRENT_STATE>: State from Interpreter.
         4. <RETRIEVED_CONTEXT_RAG>: List of candidate objects (Inventory Validated).
-        5. <SCENE_GRAPH_FULL>: Local spatial context.
+        5. <INTERPRETED_INTENT>: User's intent based on the query and context.
+        6. <CHAT_HISTORY>: Previous messages from user and assistant.
     </INPUT_DATA>
 
     <STRICT_CONSTRAINTS>
@@ -41,6 +42,7 @@ AGENT_PROMPT_V3 = dedent(
           - Are there multiple matching objects (e.g., 3 beds)?
           - **Action:** Generate `<possible_objects>` listing ALL of them with coordinates.
           - Let the user choose.
+          - If the user has already specified an object in the query (e.g., "the one in the kitchen", "the nearest one", "choose anyone"), identify that single object and output `<selected_object>`.
 
         * **CASE D: User Confirmation (CONTINUE_REQUEST)**
           - If the user is replying to a `<possible_objects>` list (e.g., "The one in the kitchen"), resolve it to a single object.
