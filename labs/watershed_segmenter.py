@@ -16,6 +16,32 @@ import ast
 import cv2
 import os
 
+MAP_BINARY_THRESHOLD = 250
+MIN_CONTOUR_AREA = 100
+CROP_PADDING = 5
+TRAJECTORY_IMAGE_DIMMING = 0.6
+DEFAULT_PARAMS = {
+    "door_size_px": 18,
+    "door_ratio_thresh": 0.30,
+    "bias_thresh": 2.0,
+    "min_fragment_size": 50,
+    "min_door_area": 60,
+    "max_unknown_iters": 5,
+    "min_noise_area": 10,
+    "door_dist_factor": 1.1,
+    "door_mask_scale": 0.1,
+}
+CLASS_COLORS = {
+    "kitchen": (255, 99, 71),
+    "bathroom": (135, 206, 250),
+    "bedroom": (186, 85, 211),
+    "living room": (60, 179, 113),
+    "office": (255, 215, 0),
+    "hallway": (255, 140, 0),
+    "laundry room": (70, 130, 180),
+    "transitioning": (128, 128, 128),
+}
+
 
 def save_watershed_map(
     filepath: str,
@@ -1758,26 +1784,6 @@ if __name__ == "__main__":
     DATASET_BASE_PATH = "D:\\Documentos\\Datasets\\Robot@VirtualHomeLarge"
     OUTPUT_FILENAME_TEMPLATE = "watershed_map_{prefix}.pkl"
 
-    MAP_BINARY_THRESHOLD = 250
-    MIN_CONTOUR_AREA = 100
-    CROP_PADDING = 5
-
-    MIN_NOISE_AREA = 10
-    DOOR_DIST_FACTOR = 1.1
-    DOOR_MASK_SCALE = 0.1
-
-    DEFAULT_PARAMS = {
-        "door_size_px": 18,
-        "door_ratio_thresh": 0.30,
-        "bias_thresh": 2.0,
-        "min_fragment_size": 50,
-        "min_door_area": 60,
-        "max_unknown_iters": 5,
-        "min_noise_area": MIN_NOISE_AREA,
-        "door_dist_factor": DOOR_DIST_FACTOR,
-        "door_mask_scale": DOOR_MASK_SCALE,
-    }
-
     TRACKBAR_CONFIG = [
         {
             "label": "Door Size",
@@ -1853,7 +1859,7 @@ if __name__ == "__main__":
         },
     ]
 
-    LLM_MODEL_ID = "google/gemini-2.5-flash-lite"
+    LLM_MODEL_ID = "openai/gpt-oss-120b:nitro"
     SYSTEM_MESSAGE_TEXT = dedent(
         """
         PERSONA:
@@ -1861,18 +1867,6 @@ if __name__ == "__main__":
         """
     )
     PROMPT_MASK = "The environment is a {} and these are its descriptions: {}"
-
-    TRAJECTORY_IMAGE_DIMMING = 0.6
-    CLASS_COLORS = {
-        "kitchen": (255, 99, 71),
-        "bathroom": (135, 206, 250),
-        "bedroom": (186, 85, 211),
-        "living room": (60, 179, 113),
-        "office": (255, 215, 0),
-        "hallway": (255, 140, 0),
-        "laundry room": (70, 130, 180),
-        "transitioning": (128, 128, 128),
-    }
 
     print("Loading LLM agent...")
     llm_agent = Agent(
