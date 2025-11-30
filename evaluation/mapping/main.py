@@ -1,16 +1,17 @@
-from concurrent.futures import ThreadPoolExecutor, wait, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from agno.models.openrouter import OpenRouter
 from scipy.spatial import cKDTree
 from dotenv import load_dotenv
 from agno.agent import Agent
 from openai import OpenAI
 from typing import Union
-import multiprocessing
 import numpy as np
 import traceback
 import threading
 import yaml
+import json
 import csv
+import time
 import cv2
 import os
 
@@ -26,14 +27,14 @@ from evaluation.prompts import OBJECT_COMPARISON_PROMPT
 
 def virtual_objects_csv_path(database_path: str, home_id: int) -> str:
     """
-    Constructs the file path for the VirtualObjects.csv file.
+    Constructs the path to the virtual objects CSV file for a given home.
 
-    :param database_path: The base path to the database.
+    :param database_path: Base path to the database.
     :type database_path: str
-    :param home_id: The identifier of the home.
+    :param home_id: Identifier for the home.
     :type home_id: int
     :raises ValueError: If database_path is empty or home_id is negative.
-    :return: The absolute path to the CSV file.
+    :return: Path to the virtual objects CSV file.
     :rtype: str
     """
     if not database_path or home_id < 0:
@@ -43,14 +44,14 @@ def virtual_objects_csv_path(database_path: str, home_id: int) -> str:
 
 def map_image_path(database_path: str, home_id: int) -> str:
     """
-    Constructs the file path for the generated map image.
+    Constructs the path to the generated map image for a given home.
 
-    :param database_path: The base path to the database.
+    :param database_path: Base path to the database.
     :type database_path: str
-    :param home_id: The identifier of the home.
+    :param home_id: Identifier for the home.
     :type home_id: int
     :raises ValueError: If database_path is empty or home_id is negative.
-    :return: The absolute path to the map image.
+    :return: Path to the generated map image.
     :rtype: str
     """
     if not database_path or home_id < 0:
@@ -62,13 +63,12 @@ def map_image_path(database_path: str, home_id: int) -> str:
 
 def read_map_properties_yaml(map_path: str) -> dict:
     """
-    Reads the map properties from a YAML file associated with the map image.
+    Reads the YAML file containing map properties.
 
-    :param map_path: The path to the map image file.
+    :param map_path: Path to the map image file.
     :type map_path: str
-    :raises FileNotFoundError: If the YAML file does not exist.
-    :raises yaml.YAMLError: If the YAML file cannot be parsed.
-    :return: A dictionary containing map properties.
+    :raises RuntimeError: If the YAML file cannot be read or parsed.
+    :return: Dictionary with map properties.
     :rtype: dict
     """
     map_properties_path = map_path.replace(".png", ".yaml")
@@ -78,6 +78,46 @@ def read_map_properties_yaml(map_path: str) -> dict:
     except (FileNotFoundError, yaml.YAMLError) as e:
         traceback.print_exc()
         raise RuntimeError(f"Error reading map properties YAML: {e}")
+
+
+def get_paths(output_dir: str, home_id: int, processing_type: str) -> dict[str, str]:
+    """
+    Generates output file paths for a given home and processing type.
+
+    :param output_dir: Directory for output files.
+    :type output_dir: str
+    :param home_id: Identifier for the home.
+    :type home_id: int
+    :param processing_type: Type of processing.
+    :type processing_type: str
+    :return: Dictionary with paths for objects CSV, detailed CSV, and metrics JSON.
+    :rtype: dict[str, str]
+    """
+    base_name = f"Home{home_id:02d}_{processing_type}"
+    return {
+        "objects_csv": os.path.join(output_dir, f"{base_name}_objects.csv"),
+        "detailed_csv": os.path.join(
+            output_dir, f"{base_name}_detailed_comparisons.csv"
+        ),
+        "metrics_json": os.path.join(output_dir, f"{base_name}_metrics.json"),
+    }
+
+
+def is_already_processed(output_dir: str, home_id: int, processing_type: str) -> bool:
+    """
+    Checks if the metrics JSON file already exists for a given home and processing type.
+
+    :param output_dir: Directory for output files.
+    :type output_dir: str
+    :param home_id: Identifier for the home.
+    :type home_id: int
+    :param processing_type: Type of processing.
+    :type processing_type: str
+    :return: True if metrics JSON exists, False otherwise.
+    :rtype: bool
+    """
+    paths = get_paths(output_dir, home_id, processing_type)
+    return os.path.exists(paths["metrics_json"])
 
 
 def match_virtual_to_processed(
@@ -94,127 +134,182 @@ def match_virtual_to_processed(
     lock: threading.Lock,
     min_votes: int,
     object_votes: list,
+    all_comparisons_log: list,
     to_replace_object_classes: dict[str, str],
 ) -> None:
     """
-    Matches a virtual object to processed objects using the LLM agent.
+    Performs sequential voting comparison with early stopping between a virtual object and processed objects.
 
     :param virt_idx: Index of the virtual object.
     :type virt_idx: int
-    :param processed_indices: List of indices of processed objects within distance.
+    :param processed_indices: Indices of candidate processed objects.
     :type processed_indices: list[int]
-    :param virtual_obj: Properties of the virtual object.
+    :param virtual_obj: Virtual object properties.
     :type virtual_obj: dict
-    :param parsed_processed_objects_props: List of processed objects' properties.
+    :param parsed_processed_objects_props: List of processed object properties.
     :type parsed_processed_objects_props: list[dict]
-    :param llm_agent: The language model agent for object comparison.
+    :param llm_agent: LLM agent or callable for comparison.
     :type llm_agent: Union[Agent, callable]
-    :param tp: List to store true positive matches.
+    :param tp: List to store true positives.
     :type tp: list
     :param fn: List to store false negatives.
     :type fn: list
-    :param matched_processed_indices: Set of processed indices already claimed.
+    :param matched_processed_indices: Set of already matched processed indices.
     :type matched_processed_indices: set[int]
-    :param progress_counter: List containing the current progress count.
+    :param progress_counter: List containing progress counter.
     :type progress_counter: list[int]
     :param total: Total number of virtual objects.
     :type total: int
     :param lock: Threading lock for synchronization.
     :type lock: threading.Lock
-    :param min_votes: Minimum number of votes required for decision.
+    :param min_votes: Minimum number of votes for majority.
     :type min_votes: int
-    :param object_votes: List to store voting results for each object.
+    :param object_votes: List to store voting results.
     :type object_votes: list
-    :param to_replace_object_classes: Mapping of object classes to replace.
+    :param all_comparisons_log: List to store detailed comparison logs.
+    :type all_comparisons_log: list
+    :param to_replace_object_classes: Mapping for object class replacements.
     :type to_replace_object_classes: dict[str, str]
-    :raises RuntimeError: If the LLM agent fails to run.
     :return: None
     :rtype: None
     """
-    found_match: bool = False
+    try:
+        found_match: bool = False
+        majority_threshold: int = (min_votes // 2) + 1
 
-    if processed_indices:
-        for proc_idx in processed_indices:
-            with lock:
-                if proc_idx in matched_processed_indices:
-                    continue
-            processed_obj = parsed_processed_objects_props[proc_idx]
-            caption = (
-                processed_obj.get("consolidated_caption", '{"Unknown}')
-                .split("}")[-2]
-                .split('"')[-2]
-            )
-            prompt_message: str = (
-                f"\n<PROCESSED_OBJECT> Class: {processed_obj.get('class_name', 'Unknown')}, "
-                f"Caption: {caption} </PROCESSED_OBJECT>\n"
-                f"<VIRTUAL_OBJECT> Type: {to_replace_object_classes.get(virtual_obj.get('type').lower(), virtual_obj.get('type'))} </VIRTUAL_OBJECT>"
-            )
-            results: list[str] = []
-            try:
-                with ThreadPoolExecutor(max_workers=min_votes) as local_executor:
-                    futures = [
-                        local_executor.submit(
-                            lambda: (
-                                llm_agent.run(message=prompt_message)
-                                if isinstance(llm_agent, Agent)
-                                else llm_agent(prompt_message)
-                            )
-                        )
-                        for _ in range(min_votes)
-                    ]
-                    for future in as_completed(futures):
-                        try:
-                            result = future.result()
-                            results.append(result)
-                        except (AttributeError, KeyError) as e:
-                            traceback.print_exc()
-                            raise RuntimeError(f"Failed to run LLM agent: {e}")
-            except (RuntimeError, OSError) as e:
-                traceback.print_exc()
-                raise RuntimeError(f"Parallel LLM execution failed: {e}")
-
-            true_count: int = sum(
-                1
-                for r in results
-                if isinstance(r.content, str) and r.content.strip().lower() == "true"
-            )
-            false_count: int = min_votes - true_count
-
-            if true_count >= (min_votes // 2 + 1):
+        if processed_indices:
+            for proc_idx in processed_indices:
                 with lock:
-                    if proc_idx not in matched_processed_indices:
-                        matched_processed_indices.add(proc_idx)
-                        tp.append((virtual_obj, processed_obj))
-                        object_votes.append(
-                            {
-                                "virtual_type": virtual_obj.get("type", "Unknown"),
-                                "processed_class": processed_obj.get(
-                                    "class_name", "Unknown"
-                                ),
-                                "true_votes": true_count,
-                                "false_votes": false_count,
-                                "matched": True,
-                            }
-                        )
-                        found_match = True
-                if found_match:
-                    break
+                    if proc_idx in matched_processed_indices:
+                        continue
 
-    if not found_match:
+                processed_obj = parsed_processed_objects_props[proc_idx]
+                raw_caption = processed_obj.get("consolidated_caption", '{"Unknown}')
+                try:
+                    caption = raw_caption.split("}")[-2].split('"')[-2]
+                except IndexError:
+                    caption = raw_caption
+
+                virtual_type_processed = to_replace_object_classes.get(
+                    virtual_obj.get("type").lower(), virtual_obj.get("type")
+                )
+
+                prompt_message: str = (
+                    f"\n<PROCESSED_OBJECT> Class: {processed_obj.get('class_name', 'Unknown')}, "
+                    f"Caption: {caption} </PROCESSED_OBJECT>\n"
+                    f"<VIRTUAL_OBJECT> Type: {virtual_type_processed} </VIRTUAL_OBJECT>"
+                )
+
+                current_true_votes: int = 0
+                current_false_votes: int = 0
+                collected_reasonings: list[str] = []
+
+                for _ in range(min_votes):
+                    try:
+                        response_content = None
+                        reasoning_content = "N/A"
+
+                        if isinstance(llm_agent, Agent):
+                            resp = llm_agent.run(message=prompt_message)
+                            response_content = resp.content
+                            reasoning_content = getattr(resp, "reasoning", "N/A")
+                        else:
+                            resp = llm_agent(prompt_message)
+                            response_content = resp.content
+                            reasoning_content = (
+                                getattr(resp, "reasoning", None)
+                                or getattr(resp, "reasoning_content", None)
+                                or "N/A"
+                            )
+
+                        collected_reasonings.append(
+                            str(reasoning_content) if reasoning_content else "N/A"
+                        )
+
+                        if (
+                            isinstance(response_content, str)
+                            and response_content.strip().lower() == "true"
+                        ):
+                            current_true_votes += 1
+                        else:
+                            current_false_votes += 1
+
+                        if current_true_votes >= majority_threshold:
+                            break
+                        if current_false_votes >= majority_threshold:
+                            break
+
+                    except (AttributeError, TypeError, ValueError) as e:
+                        traceback.print_exc()
+                        collected_reasonings.append(f"ERROR: {str(e)}")
+                        current_false_votes += 1
+                        if current_false_votes >= majority_threshold:
+                            break
+
+                is_match: bool = current_true_votes >= majority_threshold
+                reasoning_trace_str = " ||| ".join(collected_reasonings)
+
+                with lock:
+                    all_comparisons_log.append(
+                        {
+                            "virtual_idx": virt_idx,
+                            "virtual_type": virtual_obj.get("type", "Unknown"),
+                            "processed_idx": proc_idx,
+                            "processed_class": processed_obj.get(
+                                "class_name", "Unknown"
+                            ),
+                            "processed_caption": caption,
+                            "prompt_message": prompt_message.replace("\n", " "),
+                            "reasoning_trace": reasoning_trace_str.replace("\n", " "),
+                            "true_votes": current_true_votes,
+                            "false_votes": current_false_votes,
+                            "is_match_attempt": is_match,
+                        }
+                    )
+
+                if is_match:
+                    with lock:
+                        if proc_idx not in matched_processed_indices:
+                            matched_processed_indices.add(proc_idx)
+                            tp.append((virtual_obj, processed_obj))
+                            object_votes.append(
+                                {
+                                    "virtual_type": virtual_obj.get("type", "Unknown"),
+                                    "processed_class": processed_obj.get(
+                                        "class_name", "Unknown"
+                                    ),
+                                    "true_votes": current_true_votes,
+                                    "false_votes": current_false_votes,
+                                    "matched": True,
+                                }
+                            )
+                            found_match = True
+                    if found_match:
+                        break
+
+        if not found_match:
+            with lock:
+                fn.append(virtual_obj)
+                object_votes.append(
+                    {
+                        "virtual_type": virtual_obj.get("type", "Unknown"),
+                        "processed_class": "None",
+                        "true_votes": 0,
+                        "false_votes": 0,
+                        "matched": False,
+                    }
+                )
+
+    except (KeyError, AttributeError, TypeError, ValueError) as e:
+        traceback.print_exc()
         with lock:
             fn.append(virtual_obj)
-            object_votes.append(
-                {
-                    "virtual_type": virtual_obj.get("type", "Unknown"),
-                    "processed_class": "None",
-                    "true_votes": 0,
-                    "false_votes": 0,
-                    "matched": False,
-                }
-            )
-    with lock:
-        progress_counter[0] += 1
-        print_progress_bar(progress_counter[0], total)
+        raise RuntimeError(f"CRITICAL ERROR processing Virtual Object {virt_idx}: {e}")
+
+    finally:
+        with lock:
+            progress_counter[0] += 1
+            print_progress_bar(progress_counter[0], total)
 
 
 def print_progress_bar(current: int, total: int) -> None:
@@ -239,25 +334,6 @@ def print_progress_bar(current: int, total: int) -> None:
         print()
 
 
-def is_already_processed(output_dir: str, home_id: int, processing_type: str) -> bool:
-    """
-    Checks if a home and processing type combination has already been processed.
-
-    :param output_dir: Directory where output CSV files are saved.
-    :type output_dir: str
-    :param home_id: The identifier of the home.
-    :type home_id: int
-    :param processing_type: The type of processing.
-    :type processing_type: str
-    :return: True if already processed, False otherwise.
-    :rtype: bool
-    """
-    csv_path: str = os.path.join(
-        output_dir, f"Home{home_id:02d}_{processing_type}_objects.csv"
-    )
-    return os.path.exists(csv_path)
-
-
 def evaluate_home(
     home_id: int,
     database_path: str,
@@ -270,37 +346,37 @@ def evaluate_home(
     output_dir: str,
 ) -> dict:
     """
-    Evaluates mapping for a single home and processing type.
+    Evaluates a single home by matching virtual and processed objects, computing metrics, and saving results.
 
-    :param home_id: The identifier of the home.
+    :param home_id: Identifier for the home.
     :type home_id: int
-    :param database_path: The base path to the database.
+    :param database_path: Base path to the database.
     :type database_path: str
-    :param processing_type: The type of processing.
+    :param processing_type: Type of processing.
     :type processing_type: str
-    :param to_remove_object_classes: Classes of objects to remove.
+    :param to_remove_object_classes: List of object classes to ignore.
     :type to_remove_object_classes: list[str]
-    :param to_replace_object_classes: Mapping of object classes to replace.
+    :param to_replace_object_classes: Mapping for object class replacements.
     :type to_replace_object_classes: dict[str, str]
-    :param llm_agent: The language model agent for object comparison.
+    :param llm_agent: LLM agent or callable for comparison.
     :type llm_agent: Union[Agent, callable]
-    :param distance_threshold_meters: Distance threshold in meters.
+    :param distance_threshold_meters: Distance threshold in meters for matching.
     :type distance_threshold_meters: float
-    :param min_votes: Minimum number of votes required for decision.
+    :param min_votes: Minimum number of votes for majority.
     :type min_votes: int
-    :param output_dir: Directory to save output CSV files.
+    :param output_dir: Directory for output files.
     :type output_dir: str
-    :raises RuntimeError: If data loading or processing fails.
-    :return: Dictionary containing evaluation metrics.
+    :raises RuntimeError: If data loading, filtering, or output writing fails.
+    :return: Dictionary with evaluation metrics.
     :rtype: dict
     """
     try:
         virtual_objects = read_virtual_objects(
             virtual_objects_csv_path(database_path, home_id)
         )
-        map_path: str = map_image_path(database_path, home_id)
+        map_path = map_image_path(database_path, home_id)
         map_image = cv2.imread(map_path)
-        map_properties: dict = read_map_properties_yaml(map_path)
+        map_properties = read_map_properties_yaml(map_path)
         processed_data = load_pkl_gz_result(
             os.path.join(
                 database_path,
@@ -314,124 +390,91 @@ def evaluate_home(
         )
     except (FileNotFoundError, KeyError, ValueError) as e:
         traceback.print_exc()
-        raise RuntimeError(
-            f"Error loading data for Home {home_id}, Type {processing_type}: {e}"
-        )
+        raise RuntimeError(f"Error loading data for Home {home_id}: {e}")
 
-    processed_objects: list = processed_data.get("objects", [])
+    processed_objects = processed_data.get("objects", [])
 
     try:
-        filtered_processed_objects: list = []
+        filtered = []
         for obj in processed_objects:
-            obj_dict: dict = (
-                obj if isinstance(obj, dict) else getattr(obj, "__dict__", {})
-            )
-            class_name: str | None = obj_dict.get("class_name")
-            if not class_name:
-                continue
-            if any(
-                to_remove_class in class_name.lower()
-                for to_remove_class in to_remove_object_classes
-            ):
-                continue
-            filtered_processed_objects.append(obj)
-        processed_objects = filtered_processed_objects
+            d = obj if isinstance(obj, dict) else getattr(obj, "__dict__", {})
+            cls = d.get("class_name")
+            if cls and not any(r in cls.lower() for r in to_remove_object_classes):
+                filtered.append(obj)
+        processed_objects = filtered
     except (KeyError, AttributeError, TypeError) as e:
         traceback.print_exc()
-        raise RuntimeError(
-            f"Filtering error for processed objects in Home {home_id}: {e}"
-        )
+        raise RuntimeError(f"Filtering error: {e}")
 
     try:
         mask = (
             ~virtual_objects["type"]
             .astype(str)
-            .apply(
-                lambda t: any(
-                    to_remove_class in t.lower()
-                    for to_remove_class in to_remove_object_classes
-                )
-            )
+            .apply(lambda t: any(r in t.lower() for r in to_remove_object_classes))
         )
         virtual_objects = virtual_objects.loc[mask].reset_index(drop=True)
-        # virtual_objects["type"] = (
-        #     virtual_objects["type"]
-        #     .astype(str)
-        #     .apply(
-        #         lambda t: (
-        #             to_replace_object_classes[t.lower()]
-        #             if t.lower() in to_replace_object_classes
-        #             else t
-        #         )
-        #     )
-        # )
-    except (KeyError, AttributeError) as e:
+    except (KeyError, AttributeError, TypeError) as e:
         traceback.print_exc()
-        raise RuntimeError(f"Filtering error for Home {home_id}: {e}")
+        raise RuntimeError(f"Virtual filtering error: {e}")
 
     print(
         f"[Home {home_id:02d} - {processing_type}] PROCESSED: {len(processed_objects)} | VIRTUAL: {len(virtual_objects)}"
     )
 
-    origin: list | tuple = map_properties["origin"]
-    resolution: float = map_properties["resolution"]
-    image_height: int = map_image.shape[0]
+    origin = map_properties["origin"]
+    resolution = map_properties["resolution"]
+    image_height = map_image.shape[0]
 
-    parsed_virtual_objects_coords: list = []
-    parsed_virtual_objects_props: list = []
-
+    parsed_virtual_objects_coords = []
+    parsed_virtual_objects_props = []
     for _, row in virtual_objects.iterrows():
         try:
-            ros_x, ros_y, _, _ = unity_to_ros_coordinates(
+            rx, ry, _, _ = unity_to_ros_coordinates(
                 row["globalPosition"], row["rotation"], ""
             )
-            pixel_x, pixel_y = world_to_map(
-                ros_x, ros_y, origin, resolution, image_height
-            )
-            parsed_virtual_objects_coords.append((pixel_x, pixel_y))
+            px, py = world_to_map(rx, ry, origin, resolution, image_height)
+            parsed_virtual_objects_coords.append((px, py))
             parsed_virtual_objects_props.append(row.to_dict())
-        except (KeyError, TypeError, ValueError):
+        except (KeyError, AttributeError, TypeError, ValueError):
             traceback.print_exc()
             continue
 
-    parsed_processed_objects_coords: list = []
-    parsed_processed_objects_props: list = []
-
+    parsed_processed_objects_coords = []
+    parsed_processed_objects_props = []
     for obj in processed_objects:
         try:
-            obj_dict: dict = (
-                obj if isinstance(obj, dict) else getattr(obj, "__dict__", {})
-            )
-            class_name: str | None = obj_dict.get("class_name")
-            if not class_name:
+            d = obj if isinstance(obj, dict) else getattr(obj, "__dict__", {})
+            if not d.get("class_name"):
                 continue
-            centroid = None
+            cent = None
             if (
-                "pcd_np" in obj_dict
-                and isinstance(obj_dict["pcd_np"], np.ndarray)
-                and obj_dict["pcd_np"].size > 0
+                "pcd_np" in d
+                and isinstance(d["pcd_np"], np.ndarray)
+                and d["pcd_np"].size > 0
             ):
-                centroid = np.mean(obj_dict["pcd_np"], axis=0)
-            elif "bbox_np" in obj_dict and isinstance(obj_dict["bbox_np"], np.ndarray):
-                centroid = np.mean(obj_dict["bbox_np"], axis=0)
-            if centroid is not None and len(centroid) >= 2:
-                ros_x, ros_y = float(centroid[2]), -float(centroid[0])
-                pixel_x, pixel_y = world_to_map(
-                    ros_x, ros_y, origin, resolution, image_height
-                )
-                parsed_processed_objects_coords.append((pixel_x, pixel_y))
-                parsed_processed_objects_props.append(obj_dict)
-        except (KeyError, TypeError, ValueError):
+                cent = np.mean(d["pcd_np"], axis=0)
+            elif "bbox_np" in d and isinstance(d["bbox_np"], np.ndarray):
+                cent = np.mean(d["bbox_np"], axis=0)
+
+            if cent is not None and len(cent) >= 2:
+                rx, ry = float(cent[2]), -float(cent[0])
+                px, py = world_to_map(rx, ry, origin, resolution, image_height)
+                parsed_processed_objects_coords.append((px, py))
+                parsed_processed_objects_props.append(d)
+        except (KeyError, AttributeError, TypeError, ValueError):
             traceback.print_exc()
             continue
 
-    distance_threshold: int = int(distance_threshold_meters / resolution)
+    distance_threshold = int(distance_threshold_meters / resolution)
     parsed_processed_objects_coords_np = np.array(parsed_processed_objects_coords)
     parsed_virtual_objects_coords_np = np.array(parsed_virtual_objects_coords)
 
+    paths = get_paths(output_dir, home_id, processing_type)
+    os.makedirs(output_dir, exist_ok=True)
+
     if len(parsed_processed_objects_coords_np) == 0:
         print(f"[Home {home_id:02d} - {processing_type}] No processed objects found.")
-        return {
+        metrics = {
             "home_id": home_id,
             "processing_type": processing_type,
             "tp": 0,
@@ -441,6 +484,9 @@ def evaluate_home(
             "recall": 0.0,
             "f1_score": 0.0,
         }
+        with open(paths["metrics_json"], "w", encoding="utf-8") as f:
+            json.dump(metrics, f, indent=4)
+        return metrics
 
     tree = cKDTree(parsed_processed_objects_coords_np)
     neighbors = tree.query_ball_point(
@@ -454,11 +500,11 @@ def evaluate_home(
     total_virtual_objects: int = len(parsed_virtual_objects_props)
     lock = threading.Lock()
     object_votes: list = []
+    all_comparisons_log: list = []
 
     print_progress_bar(0, total_virtual_objects)
 
-    cpu_count: int = multiprocessing.cpu_count()
-    max_workers: int = max(1, (cpu_count - 1) // min_votes)
+    max_workers = 10
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = []
@@ -480,52 +526,34 @@ def evaluate_home(
                     lock=lock,
                     min_votes=min_votes,
                     object_votes=object_votes,
+                    all_comparisons_log=all_comparisons_log,
                     to_replace_object_classes=to_replace_object_classes,
                 )
             )
-        wait(futures)
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except (RuntimeError, KeyError, AttributeError, TypeError, ValueError) as e:
+                traceback.print_exc()
+                print(f"Thread failed with exception: {e}")
 
-    total_processed_count: int = len(parsed_processed_objects_props)
-    matched_count: int = len(matched_processed_indices)
-    fp_count: int = total_processed_count - matched_count
+    total_processed_count = len(parsed_processed_objects_props)
+    matched_count = len(matched_processed_indices)
+    fp_count = total_processed_count - matched_count
 
     print(
-        f"[Home {home_id:02d} - {processing_type}] TP: {len(tp)} | FN: {len(fn)} | FP: {fp_count}"
+        f"\n[Home {home_id:02d} - {processing_type}] TP: {len(tp)} | FN: {len(fn)} | FP: {fp_count}"
     )
 
-    precision: float = (
-        len(tp) / (len(tp) + fp_count) if (len(tp) + fp_count) > 0 else 0.0
-    )
-    recall: float = len(tp) / (len(tp) + len(fn)) if (len(tp) + len(fn)) > 0 else 0.0
-    f1_score: float = (
+    precision = len(tp) / (len(tp) + fp_count) if (len(tp) + fp_count) > 0 else 0.0
+    recall = len(tp) / (len(tp) + len(fn)) if (len(tp) + len(fn)) > 0 else 0.0
+    f1_score = (
         (2 * precision * recall) / (precision + recall)
         if (precision + recall) > 0
         else 0.0
     )
 
-    os.makedirs(output_dir, exist_ok=True)
-    csv_path: str = os.path.join(
-        output_dir, f"Home{home_id:02d}_{processing_type}_objects.csv"
-    )
-    try:
-        with open(csv_path, "w", newline="", encoding="utf-8") as csvfile:
-            fieldnames = [
-                "virtual_type",
-                "processed_class",
-                "true_votes",
-                "false_votes",
-                "matched",
-            ]
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=";")
-            writer.writeheader()
-            writer.writerows(object_votes)
-    except (OSError, IOError) as e:
-        traceback.print_exc()
-        raise RuntimeError(
-            f"Error writing CSV for Home {home_id}, Type {processing_type}: {e}"
-        )
-
-    return {
+    metrics = {
         "home_id": home_id,
         "processing_type": processing_type,
         "tp": len(tp),
@@ -535,6 +563,49 @@ def evaluate_home(
         "recall": recall,
         "f1_score": f1_score,
     }
+
+    try:
+        with open(paths["objects_csv"], "w", newline="", encoding="utf-8") as csvfile:
+            fieldnames = [
+                "virtual_type",
+                "processed_class",
+                "true_votes",
+                "false_votes",
+                "matched",
+            ]
+            writer = csv.DictWriter(
+                csvfile, fieldnames=fieldnames, delimiter=";", quoting=csv.QUOTE_ALL
+            )
+            writer.writeheader()
+            writer.writerows(object_votes)
+
+        with open(paths["detailed_csv"], "w", newline="", encoding="utf-8") as csvfile:
+            fieldnames = [
+                "virtual_idx",
+                "virtual_type",
+                "processed_idx",
+                "processed_class",
+                "processed_caption",
+                "prompt_message",
+                "reasoning_trace",
+                "true_votes",
+                "false_votes",
+                "is_match_attempt",
+            ]
+            writer = csv.DictWriter(
+                csvfile, fieldnames=fieldnames, delimiter=";", quoting=csv.QUOTE_ALL
+            )
+            writer.writeheader()
+            writer.writerows(all_comparisons_log)
+
+        with open(paths["metrics_json"], "w", encoding="utf-8") as f:
+            json.dump(metrics, f, indent=4)
+
+    except (OSError, KeyError, AttributeError, TypeError, ValueError) as e:
+        traceback.print_exc()
+        raise RuntimeError(f"Error writing output files: {e}")
+
+    return metrics
 
 
 def run_full_evaluation(
@@ -549,39 +620,55 @@ def run_full_evaluation(
     output_dir: str,
 ) -> None:
     """
-    Runs evaluation for all homes and processing types, then saves summary CSV.
+    Runs the full evaluation for all specified homes and processing types.
 
-    :param database_path: The base path to the database.
+    :param database_path: Base path to the database.
     :type database_path: str
-    :param processing_types: List of processing types to evaluate.
+    :param processing_types: List of processing types.
     :type processing_types: list[str]
-    :param home_ids: List of home identifiers to evaluate.
+    :param home_ids: List of home identifiers.
     :type home_ids: list[int]
-    :param to_remove_object_classes: Classes of objects to remove.
+    :param to_remove_object_classes: List of object classes to ignore.
     :type to_remove_object_classes: list[str]
-    :param to_replace_object_classes: Mapping of object classes to replace.
+    :param to_replace_object_classes: Mapping for object class replacements.
     :type to_replace_object_classes: dict[str, str]
-    :param llm_agent: The language model agent for object comparison.
+    :param llm_agent: LLM agent or callable for comparison.
     :type llm_agent: Union[Agent, callable]
-    :param distance_threshold_meters: Distance threshold in meters.
+    :param distance_threshold_meters: Distance threshold in meters for matching.
     :type distance_threshold_meters: float
-    :param min_votes: Minimum number of votes required for decision.
+    :param min_votes: Minimum number of votes for majority.
     :type min_votes: int
-    :param output_dir: Directory to save output CSV files.
+    :param output_dir: Directory for output files.
     :type output_dir: str
-    :raises RuntimeError: If evaluation or CSV writing fails.
     :return: None
     :rtype: None
     """
-    all_results: list[dict] = []
+    all_results = []
 
     for home_id in home_ids:
         for processing_type in processing_types:
+            paths = get_paths(output_dir, home_id, processing_type)
+
             if is_already_processed(output_dir, home_id, processing_type):
                 print(
-                    f"[Home {home_id:02d} - {processing_type}] Already processed, skipping..."
+                    f"[Home {home_id:02d} - {processing_type}] Already processed. Loading metrics..."
                 )
-                continue
+                try:
+                    with open(paths["metrics_json"], "r", encoding="utf-8") as f:
+                        metrics = json.load(f)
+                        all_results.append(metrics)
+                    continue
+                except (
+                    OSError,
+                    json.JSONDecodeError,
+                    KeyError,
+                    AttributeError,
+                    TypeError,
+                    ValueError,
+                ) as e:
+                    traceback.print_exc()
+                    print(f"Corrupted metrics file found. Reprocessing. Error: {e}")
+
             try:
                 result = evaluate_home(
                     home_id=home_id,
@@ -595,33 +682,40 @@ def run_full_evaluation(
                     output_dir=output_dir,
                 )
                 all_results.append(result)
-            except RuntimeError:
+            except (RuntimeError, KeyError, AttributeError, TypeError, ValueError) as e:
                 traceback.print_exc()
+                print(f"Failed to process Home {home_id} - {processing_type}: {e}")
                 continue
 
-    summary_csv_path: str = os.path.join(output_dir, "summary_all_homes.csv")
+    summary_csv_path = os.path.join(output_dir, "summary_all_homes.csv")
     try:
-        with open(summary_csv_path, "w", newline="", encoding="utf-8") as csvfile:
-            fieldnames = [
-                "home_id",
-                "processing_type",
-                "tp",
-                "fn",
-                "fp",
-                "precision",
-                "recall",
-                "f1_score",
-            ]
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=";")
-            writer.writeheader()
-            writer.writerows(all_results)
-        print(f"\nSummary saved to: {summary_csv_path}")
-    except (OSError, IOError) as e:
+        if all_results:
+            with open(summary_csv_path, "w", newline="", encoding="utf-8") as csvfile:
+                fieldnames = [
+                    "home_id",
+                    "processing_type",
+                    "tp",
+                    "fn",
+                    "fp",
+                    "precision",
+                    "recall",
+                    "f1_score",
+                ]
+                writer = csv.DictWriter(
+                    csvfile, fieldnames=fieldnames, delimiter=";", quoting=csv.QUOTE_ALL
+                )
+                writer.writeheader()
+                writer.writerows(all_results)
+            print(f"\nSummary saved to: {summary_csv_path}")
+    except (OSError, KeyError, AttributeError, TypeError, ValueError) as e:
         traceback.print_exc()
-        raise RuntimeError(f"Error writing summary CSV: {e}")
+        print(f"Error writing summary: {e}")
 
 
 if __name__ == "__main__":
+    """
+    Main entry point for running the evaluation script.
+    """
     DATABASE_PATH: str = os.path.join(
         "D:", "Documentos", "Datasets", "Robot@VirtualHomeLarge"
     )
@@ -633,6 +727,7 @@ if __name__ == "__main__":
         "ceiling",
         "door",
         "decoration",
+        "brush"
     ]
     TO_REPLACE_OBJECT_CLASSES: dict[str, str] = {
         "standard": "shelf or cabinet or standard",
@@ -641,7 +736,7 @@ if __name__ == "__main__":
         "burner": "stove or cooktop or burner",
     }
     DISTANCE_THRESHOLD_METERS: float = 1
-    MIN_VOTES: int = 1
+    MIN_VOTES: int = 3
     OUTPUT_DIR: str = os.path.join(DATABASE_PATH, "evaluation_results")
     OPENROUTER_MODEL_ID: str = "openai/gpt-oss-120b"
     OPENROUTER_TEMPERATURE: float = 0.0
@@ -650,37 +745,44 @@ if __name__ == "__main__":
 
     load_dotenv()
 
-    # llm_agent = Agent(
-    #     model=OpenRouter(
-    #         id=OPENROUTER_MODEL_ID,
-    #         api_key=os.environ.get("OPENROUTER_API_KEY", ""),
-    #         temperature=OPENROUTER_TEMPERATURE,
-    #         top_p=OPENROUTER_TOP_P,
-    #         max_tokens=OPENROUTER_MAX_TOKENS,
-    #     ),
-    #     system_message=OBJECT_COMPARISON_PROMPT,
-    # )
-
     openai_client = OpenAI(
         api_key=os.environ.get("OPENROUTER_API_KEY", ""),
         base_url="https://openrouter.ai/api/v1",
+        timeout=60.0,
     )
 
-    def llm_agent(message: str) -> str:
-        return (
-            openai_client.chat.completions.create(
-                model=OPENROUTER_MODEL_ID,
-                messages=[
-                    {"role": "system", "content": OBJECT_COMPARISON_PROMPT},
-                    {"role": "user", "content": message},
-                ],
-                temperature=OPENROUTER_TEMPERATURE,
-                top_p=OPENROUTER_TOP_P,
-                max_tokens=OPENROUTER_MAX_TOKENS,
-            )
-            .choices[0]
-            .message
-        )
+    def llm_agent_func(message: str) -> any:
+        """
+        Calls the OpenAI client with retries for LLM-based comparison.
+
+        :param message: Message to send to the LLM.
+        :type message: str
+        :raises Exception: If all retries fail.
+        :return: LLM response message.
+        :rtype: any
+        """
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                return (
+                    openai_client.chat.completions.create(
+                        model=OPENROUTER_MODEL_ID,
+                        messages=[
+                            {"role": "system", "content": OBJECT_COMPARISON_PROMPT},
+                            {"role": "user", "content": message},
+                        ],
+                        temperature=OPENROUTER_TEMPERATURE,
+                        top_p=OPENROUTER_TOP_P,
+                        max_tokens=OPENROUTER_MAX_TOKENS,
+                    )
+                    .choices[0]
+                    .message
+                )
+            except (OSError, AttributeError, TypeError, ValueError) as e:
+                traceback.print_exc()
+                if attempt == max_retries - 1:
+                    raise RuntimeError(f"LLM agent call failed after retries: {e}")
+                time.sleep(2)
 
     try:
         run_full_evaluation(
@@ -689,7 +791,7 @@ if __name__ == "__main__":
             home_ids=HOME_IDS,
             to_remove_object_classes=TO_REMOVE_OBJECT_CLASSES,
             to_replace_object_classes=TO_REPLACE_OBJECT_CLASSES,
-            llm_agent=llm_agent,
+            llm_agent=llm_agent_func,
             distance_threshold_meters=DISTANCE_THRESHOLD_METERS,
             min_votes=MIN_VOTES,
             output_dir=OUTPUT_DIR,
