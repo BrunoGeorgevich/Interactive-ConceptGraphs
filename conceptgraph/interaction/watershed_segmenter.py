@@ -14,7 +14,13 @@ import yaml
 import json
 import ast
 import cv2
+import sys
 import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
+from labs.utils import load_pkl_gz_result
+
 
 MAP_BINARY_THRESHOLD = 250
 MIN_CONTOUR_AREA = 100
@@ -401,35 +407,6 @@ def segment_map_watershed(
         }
 
     return colored_map, final_mask, regions_dict, doors_mask
-
-
-def load_pkl_gz_result(result_path: str) -> dict:
-    """
-    Loads the result file from a compressed pickle.
-
-    :param result_path: Path to the compressed pickle result file
-    :type result_path: str
-    :raises RuntimeError: If loading the result file fails
-    :return: Dictionary containing the loaded results
-    :rtype: dict
-    """
-    try:
-        potential_path = os.path.realpath(result_path)
-        if potential_path != result_path:
-            result_path = potential_path
-
-        with gzip.open(result_path, "rb") as f:
-            results = pickle.load(f)
-
-        if not isinstance(results, dict):
-            raise ValueError(
-                "Results should be a dictionary! other types are not supported!"
-            )
-
-        return results
-    except (OSError, IOError, ValueError) as e:
-        traceback.print_exc()
-        raise RuntimeError(f"Failed to load result file: {e}") from e
 
 
 class RoomData:

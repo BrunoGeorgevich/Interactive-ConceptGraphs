@@ -53,6 +53,22 @@ class SmartWheelchairSystem:
 
         self._initialize_memory()
 
+    def _on_map_click(self, new_pos: Tuple[float, float, float]) -> None:
+        """
+        Callback triggered when the map is clicked. Prints update to console.
+
+        :param new_pos: The new coordinates (x, y, z).
+        :type new_pos: Tuple[float, float, float]
+        """
+        room_name = self.spatial_manager.get_room_name_at_location(new_pos)
+        self.console.print(
+            f"\n[bold yellow]📍 Location Updated via Map:[/bold yellow] "
+            f"Room: [cyan]{room_name}[/cyan] | "
+            f"Coords: ({new_pos[0]:.2f}, {new_pos[1]:.2f}, {new_pos[2]:.2f})"
+            "\n Query (or 'q' to quit): ",
+            end="",
+        )
+
     def _initialize_memory(self) -> None:
         """
         Loads object data and ensures Qdrant is populated.
@@ -110,6 +126,9 @@ class SmartWheelchairSystem:
             self.spatial_manager.map_resolution,
             initial_pose,
         )
+
+        self.visualizer.set_change_room_callback(self._on_map_click)
+
         self.visualizer.start()
 
         self.console.print(
@@ -126,19 +145,24 @@ class SmartWheelchairSystem:
                 if self.visualizer.should_exit():
                     break
 
-                current_pose = self.visualizer.user_pos
-                current_room = self.spatial_manager.get_room_name_at_location(
-                    current_pose
+                display_pose = self.visualizer.user_pos
+                display_room = self.spatial_manager.get_room_name_at_location(
+                    display_pose
                 )
 
                 user_input = Prompt.ask(
-                    f"\n[cyan][Pos: {current_pose[0]:.2f}, {current_pose[1]:.2f}, {current_pose[2]:.2f}] "
-                    f"Room: {current_room}[/cyan] Query (or 'q')"
+                    f"\n[cyan][Pos: {display_pose[0]:.2f}, {display_pose[1]:.2f}] "
+                    f"Room: {display_room}[/cyan] Query (or 'q' to quit): "
                 )
 
                 if user_input.lower() in ["q", "quit", "exit"]:
                     self.visualizer.stop()
                     break
+
+                # CRITICAL FIX: Re-fetch the position AFTER the user hits enter.
+                # This ensures that if they clicked the map while the prompt was open,
+                # we use the NEW position for the logic.
+                actual_pose = self.visualizer.user_pos
 
                 if user_input.lower().startswith("move"):
                     try:
@@ -153,8 +177,9 @@ class SmartWheelchairSystem:
                         self.console.print("[yellow]Invalid movement format.[/yellow]")
                         continue
 
+                # Use actual_pose here, not display_pose
                 request = InteractionRequest(
-                    query=user_input, user_pose=current_pose, timestamp=time.time()
+                    query=user_input, user_pose=actual_pose, timestamp=time.time()
                 )
 
                 response = self.process_interaction(request, verbose=verbose)
@@ -394,12 +419,12 @@ if __name__ == "__main__":
 
     load_dotenv()
 
-    DATASET_BASE_PATH = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
+    DATASET_BASE_PATH = "D:\\Documentos\\Datasets\\Robot@VirtualHomeLarge"
 
     config = SystemConfig(
-        house_id=5,
+        house_id=1,
         dataset_base_path=DATASET_BASE_PATH,
-        prefix="online",
+        prefix="offline",
         qdrant_url="http://localhost:6333",
         force_recreate_table=False,
         local_data_dir="data",
@@ -414,11 +439,8 @@ if __name__ == "__main__":
             console.print(
                 f"[bold red]Warning: Dataset path '{DATASET_BASE_PATH}' does not exist.[/bold red]"
             )
-
         console.print("[cyan]Initializing Smart Wheelchair System...[/cyan]")
-
         system = SmartWheelchairSystem(config)
-
         system.start_interactive_session(initial_pose=(0.0, 0.0, 0.0))
 
     except Exception as e:

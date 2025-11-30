@@ -4,6 +4,7 @@ import numpy as np
 import pickle
 import gzip
 import json
+import math
 import cv2
 import os
 
@@ -37,8 +38,7 @@ class SceneGraphNode:
         Initializes a scene graph node from an object dictionary.
 
         :param obj_dict: Object data dictionary.
-        :type obj_dict: dict
-        """
+        :type obj_dict: dict"""
         self.name: str = obj_dict.get("class_name", "unknown_object")
         self.room: str = obj_dict.get("room_name", "Unknown Area")
 
@@ -177,6 +177,7 @@ class SpatialContextManager:
         """
         Loads cached map data or recomputes it using Watershed segmentation.
 
+
         :raises MapLoadError: If loading or computation fails.
         """
         os.makedirs(self.config.local_data_dir, exist_ok=True)
@@ -253,7 +254,6 @@ class SpatialContextManager:
     def _generate_unique_room_names(self) -> None:
         """
         Generates unique room names for regions.
-
         """
         self.unique_names = {}
         class_counters = {}
@@ -274,6 +274,7 @@ class SpatialContextManager:
     def _load_map_metadata(self) -> None:
         """
         Loads map origin and resolution from context.
+
 
         :raises MapLoadError: If context loading fails.
         """
@@ -333,6 +334,8 @@ class SpatialContextManager:
     def get_room_name_at_location(self, user_pos: Tuple[float, float, float]) -> str:
         """
         Gets the name of the room at a specific world location.
+        If the location falls into an unmapped area or hallway (negative ID),
+        it resolves to the nearest valid room based on centroid distance.
 
         :param user_pos: World coordinates.
         :type user_pos: Tuple[float, float, float]
@@ -340,12 +343,30 @@ class SpatialContextManager:
         :rtype: str
         """
         px, py = self.world_to_map_coordinates(user_pos)
+
+        # 1. Direct lookup
         if 0 <= px < self.width and 0 <= py < self.height:
             region_id = self.region_mask[py, px]
-            if region_id < 0:
-                return "Hallway/Unknown Area"
-            return self.unique_names.get(int(region_id), "Unknown Room")
-        return "Outside Map"
+            if region_id >= 0:
+                return self.unique_names.get(int(region_id), "Unknown Room")
+
+        # 2. Nearest Neighbor Fallback (if outside map or in Hallway/Negative ID)
+        min_dist = float("inf")
+        nearest_room_name = "Unknown Room"
+
+        # Use pixel coordinates for distance calculation against region centers
+        # merged_regions structure: {id: {'center': (cx, cy), ...}}
+        for rid, data in self.merged_regions.items():
+            center = data.get("center")  # Format (cx, cy)
+            if center:
+                cx, cy = center
+                # Euclidean distance in pixel space
+                dist = math.hypot(cx - px, cy - py)
+                if dist < min_dist:
+                    min_dist = dist
+                    nearest_room_name = self.unique_names.get(int(rid), "Unknown Room")
+
+        return nearest_room_name
 
     def reconstruct_debug_image(self) -> np.ndarray:
         """

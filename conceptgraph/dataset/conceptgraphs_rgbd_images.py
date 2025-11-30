@@ -45,7 +45,7 @@ def create_meshgrid(
         ys = torch.linspace(0, width - 1, width)
     # Generate grid (2 x H x W)
     base_grid: torch.Tensor = torch.stack((torch.meshgrid([xs, ys])))
-    return base_grid.permute(1, 2, 0).unsqueeze(0) 
+    return base_grid.permute(1, 2, 0).unsqueeze(0)
 
 
 def inverse_intrinsics(K: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
@@ -95,6 +95,7 @@ def inverse_intrinsics(K: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
     Kinv[..., -1, -1] = 1
     return Kinv
 
+
 def img_to_b64str(img, quality=95):
     r"""Converts a numpy array of uint8 into a base64 jpeg string.
 
@@ -118,6 +119,7 @@ def img_to_b64str(img, quality=95):
     prefix = "data:image/jpeg;base64,"
     base64_string = prefix + imstr
     return base64_string
+
 
 def numpy_to_plotly_image(img, name=None, is_depth=False, scale=None, quality=95):
     r"""Converts a numpy array img to a `plotly.graph_objects.Image` object.

@@ -501,8 +501,7 @@ def populate_qdrant_from_objects(
 
         :param doc: The document to insert.
         :type doc: AgnoDocument
-        :return: None
-        :rtype: None
+
         :raises RuntimeError: If insertion fails due to a database or serialization error.
         """
         try:
@@ -982,8 +981,7 @@ class MapNavigator(threading.Thread):
         """
         Main thread loop for rendering the map and handling input.
 
-        :return: None
-        :rtype: None
+
         """
         cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
         cv2.setMouseCallback(self.window_name, self.mouse_callback)
@@ -1020,8 +1018,7 @@ class MapNavigator(threading.Thread):
         :type flags: int
         :param param: Additional callback parameters.
         :type param: Any
-        :return: None
-        :rtype: None
+
         """
         if event == cv2.EVENT_LBUTTONDOWN:
             if 0 <= y < self.height and 0 <= x < self.width:
@@ -1047,8 +1044,7 @@ class MapNavigator(threading.Thread):
 
         :param world_coords: Target world coordinates (x, y, z).
         :type world_coords: Tuple[float, float, float]
-        :return: None
-        :rtype: None
+
         """
         px, py = world_to_map_coordinates(
             world_coords, self.origin, self.resolution, self.height
@@ -1123,8 +1119,7 @@ class MapNavigator(threading.Thread):
 
         :param val: New user world coordinates (x, y, z).
         :type val: Tuple[float, float, float]
-        :return: None
-        :rtype: None
+
         """
         with self._lock:
             self._user_pos = val
@@ -1142,8 +1137,7 @@ class MapNavigator(threading.Thread):
         """
         Stops the navigator thread.
 
-        :return: None
-        :rtype: None
+
         """
         self._running = False
 
@@ -1162,8 +1156,7 @@ class SceneGraphNode:
 
         :param obj_dict: Object data dictionary.
         :type obj_dict: dict
-        :return: None
-        :rtype: None
+
         :raises ValueError: If centroid calculation fails due to invalid data.
         """
         self.name: str = obj_dict.get("class_name", "unknown_object")

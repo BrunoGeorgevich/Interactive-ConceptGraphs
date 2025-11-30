@@ -13,7 +13,11 @@ class ISegmenter(IInferenceStrategy):
 
     @abstractmethod
     def segment(
-        self, image_path: str, image_np: np.ndarray, boxes: torch.Tensor, classes: list[str]
+        self,
+        image_path: str,
+        image_np: np.ndarray,
+        boxes: torch.Tensor,
+        classes: list[str],
     ) -> torch.Tensor:
         """
         Receives bounding boxes and returns segmentation masks.

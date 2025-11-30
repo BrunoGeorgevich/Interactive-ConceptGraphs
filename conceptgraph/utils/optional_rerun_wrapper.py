@@ -20,6 +20,7 @@ class OptionalReRun:
     def set_use_rerun(self, config_use_rerun):
         self._config_use_rerun = config_use_rerun
         import rerun as rr
+
         self._rerun = rr
         if self._config_use_rerun and self._rerun is None:
             try:

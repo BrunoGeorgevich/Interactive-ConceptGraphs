@@ -5,6 +5,8 @@ import pandas as pd
 import numpy as np
 import traceback
 import colorsys
+import pickle
+import gzip
 import csv
 import ast
 import cv2
@@ -263,10 +265,11 @@ def parse_tuple_or_list(data: str) -> tuple[float, ...] | list[float]:
 
 
 def read_virtual_objects(path: str) -> pd.DataFrame:
-    """Reads virtual object data from a CSV file and parses specific columns.
+    """
+    Reads virtual object data from a CSV file and parses specific columns.
 
     This function reads a CSV file, expecting a semicolon (;) as the separator, and parses the 'globalPosition', 'rotation', and 'color' columns.
-    It converts the string values in these columns to tuples or lists of floats.
+    It converts the string values in these columns to tuples or lists of floats, parsing 'globalPosition' and 'rotation' as lists of floats, similar to the parsing in read_log_scan.
 
     :param path: The path to the CSV file.
     :type path: str
@@ -274,34 +277,86 @@ def read_virtual_objects(path: str) -> pd.DataFrame:
     :raises pd.errors.EmptyDataError: If the CSV file is empty.
     :raises pd.errors.ParserError: If there's an error while parsing the CSV.
     :raises TypeError: If the path parameter is not a string.
+    :raises ValueError: If the data in 'globalPosition' or 'rotation' cannot be converted to the expected types.
     :return: A Pandas DataFrame with parsed 'globalPosition', 'rotation', and 'color' columns.
     :rtype: pd.DataFrame
     """
     if not isinstance(path, str):
         raise TypeError(
-            f"Expected a string for the path, but received {type(path)} instead."
+            "Expected a string for the path, but received a different type."
         )
+
     try:
         virtual_objs_df = pd.read_csv(path, sep=";")
     except FileNotFoundError:
+        traceback.print_exc()
         raise FileNotFoundError(f"The file was not found in the path: {path}")
     except pd.errors.EmptyDataError:
+        traceback.print_exc()
         raise pd.errors.EmptyDataError(f"The file in path: {path} is empty.")
     except pd.errors.ParserError as e:
+        traceback.print_exc()
         raise pd.errors.ParserError(
             f"Error parsing the CSV file in path: {path}. Details: {e}"
         )
 
-    cols = ["globalPosition", "rotation", "color"]
-    for col in cols:
-        try:
-            virtual_objs_df[col] = [
-                parse_tuple_or_list(item) for item in virtual_objs_df[col]
+    try:
+        if "globalPosition" in virtual_objs_df.columns:
+
+            def parse_position(val: str) -> list[float]:
+                try:
+                    val = val.strip()
+                    if val.startswith("(") and val.endswith(")"):
+                        val = val[1:-1]
+                    return [
+                        float(coord.strip())
+                        for coord in val.split(",")
+                        if coord.strip()
+                    ]
+                except (ValueError, AttributeError) as e:
+                    traceback.print_exc()
+                    raise ValueError(
+                        f"Invalid format for globalPosition: {val}. Details: {e}"
+                    )
+
+            virtual_objs_df["globalPosition"] = virtual_objs_df["globalPosition"].apply(
+                parse_position
+            )
+
+        if "rotation" in virtual_objs_df.columns:
+
+            def parse_rotation(val: str) -> list[float]:
+                try:
+                    val = val.strip()
+                    if val.startswith("(") and val.endswith(")"):
+                        val = val[1:-1]
+                    return [
+                        float(angle.strip())
+                        for angle in val.split(",")
+                        if angle.strip()
+                    ]
+                except (ValueError, AttributeError) as e:
+                    traceback.print_exc()
+                    raise ValueError(
+                        f"Invalid format for rotation: {val}. Details: {e}"
+                    )
+
+            virtual_objs_df["rotation"] = virtual_objs_df["rotation"].apply(
+                parse_rotation
+            )
+
+        if "color" in virtual_objs_df.columns:
+            virtual_objs_df["color"] = [
+                np.uint8(np.array(parse_tuple_or_list(item)[:3]) * 255).tolist()
+                for item in virtual_objs_df["color"]
             ]
-        except ValueError as e:
-            print(f"Error processing column '{col}': {e}")
-            traceback.print_exc()
-            raise
+
+    except (ValueError, AttributeError) as e:
+        traceback.print_exc()
+        raise ValueError(
+            f"Error processing columns in virtual objects CSV. Details: {e}"
+        )
+
     return virtual_objs_df
 
 
@@ -367,7 +422,9 @@ def read_dfs(
 
     except FileNotFoundError as e:
         traceback.print_exc()
-        raise FileNotFoundError(f"One or more files not found in path: {data_path} - {e}")
+        raise FileNotFoundError(
+            f"One or more files not found in path: {data_path} - {e}"
+        )
     except KeyError:
         traceback.print_exc()
         raise KeyError("The DataFrame must contain a 'photoID' column.")
@@ -586,3 +643,84 @@ def draw_right_angle_arrow(
                 alpha=alpha,
                 linestyle=linestyle,
             )
+
+
+def world_to_map(
+    x: float, y: float, origin: list, resolution: float, image_height: int
+) -> tuple:
+    """
+    Converts world coordinates to map pixel coordinates.
+
+    :param x: World X coordinate (ROS convention)
+    :type x: float
+    :param y: World Y coordinate (ROS convention)
+    :type y: float
+    :param origin: Map origin [x, y, theta] from YAML
+    :type origin: list
+    :param resolution: Map resolution in meters per pixel
+    :type resolution: float
+    :param image_height: Height of the map image in pixels
+    :type image_height: int
+    :return: Tuple of pixel coordinates (pixel_x, pixel_y)
+    :rtype: tuple
+    """
+    pixel_x = int((x - origin[0]) / resolution)
+    pixel_y = int(image_height - ((y - origin[1]) / resolution))
+    return pixel_x, pixel_y
+
+
+def unity_to_ros_coordinates(
+    unity_pos: list, unity_rot: list, experiment: str
+) -> tuple:
+    """
+    Converts Unity coordinate system to ROS coordinate system.
+
+    :param unity_pos: Unity position [x, y, z]
+    :type unity_pos: list
+    :param unity_rot: Unity rotation [roll, pitch, yaw] in degrees
+    :type unity_rot: list
+    :param experiment: Experiment type name
+    :type experiment: str
+    :return: Tuple of (ros_x, ros_y, ros_z, ros_yaw)
+    :rtype: tuple
+    """
+    ros_x = float(unity_pos[2])
+    ros_y = float(-unity_pos[0])
+    ros_z = float(unity_pos[1])
+
+    unity_yaw_deg = unity_rot[1]
+    ros_yaw = -unity_yaw_deg
+
+    if "Custom" in experiment or "Manual" in experiment:
+        ros_yaw += 180.0
+
+    return ros_x, ros_y, ros_z, ros_yaw
+
+
+def load_pkl_gz_result(result_path: str) -> dict:
+    """
+    Loads the result file from a compressed pickle.
+
+    :param result_path: Path to the compressed pickle result file
+    :type result_path: str
+    :raises RuntimeError: If loading the result file fails
+    :return: Dictionary containing the loaded results
+    :rtype: dict
+    """
+    try:
+        potential_path = os.path.realpath(result_path)
+        if potential_path != result_path:
+            result_path = potential_path
+
+        with gzip.open(result_path, "rb") as f:
+            results = pickle.load(f)
+
+        if not isinstance(results, dict):
+            raise ValueError(
+                "Results should be a dictionary! other types are not supported!"
+            )
+
+        return results
+    except (OSError, IOError, ValueError) as e:
+        traceback.print_exc()
+        raise RuntimeError(f"Failed to load result file: {e}") from e

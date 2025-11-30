@@ -135,7 +135,7 @@ class SemanticMemoryEngine:
         :type config: SystemConfig
         """
         self.config = config
-        self.collection_name = f"House_{config.house_id:02d}"
+        self.collection_name = f"House_{config.house_id:02d}_{config.prefix}"
         self.embedder = self._get_embedder(config.prefix)
         self.vector_db: Optional[Qdrant] = None
 

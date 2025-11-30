@@ -42,6 +42,23 @@ class MapNavigator(threading.Thread):
         self._lock = threading.Lock()
         self._running = True
         self._should_exit = False
+        self._change_room_callback = None
+
+    def set_change_room_callback(self, callback: Any) -> None:
+        """
+        Sets the callback function to be called when changing rooms.
+
+        :param callback: Function to call on room change.
+        :type callback: Any
+        """
+        self._change_room_callback = callback
+
+    def _change_room_signal(self) -> None:
+        """
+        Changes the current room and invokes the callback if set.
+        """
+        if self._change_room_callback:
+            self._change_room_callback(self._user_pos)
 
     def _world_to_map_coordinates(
         self, world_coords: Tuple[float, float, float]
@@ -167,6 +184,7 @@ class MapNavigator(threading.Thread):
                 new_pos = self._map_to_world_coordinates((x, y))
                 with self._lock:
                     self._user_pos = new_pos
+                    self._change_room_signal()
 
     def move_to_coordinate(self, world_coords: Tuple[float, float, float]) -> None:
         """

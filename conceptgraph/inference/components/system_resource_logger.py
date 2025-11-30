@@ -232,9 +232,7 @@ class SystemResourceLogger:
 
     def _cleanup(self) -> None:
         """
-        Stop the resource logging and perform cleanup.
-
-        """
+        Stop the resource logging and perform cleanup."""
         if not self.running:
             print("SystemResourceLogger is not running.")
             return

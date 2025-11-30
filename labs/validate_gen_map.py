@@ -3,59 +3,7 @@ import yaml
 import cv2
 import os
 
-from utils import read_dfs
-
-
-def world_to_map(
-    x: float, y: float, origin: list, resolution: float, image_height: int
-) -> tuple:
-    """
-    Converts world coordinates to map pixel coordinates.
-
-    :param x: World X coordinate (ROS convention)
-    :type x: float
-    :param y: World Y coordinate (ROS convention)
-    :type y: float
-    :param origin: Map origin [x, y, theta] from YAML
-    :type origin: list
-    :param resolution: Map resolution in meters per pixel
-    :type resolution: float
-    :param image_height: Height of the map image in pixels
-    :type image_height: int
-    :return: Tuple of pixel coordinates (pixel_x, pixel_y)
-    :rtype: tuple
-    """
-    pixel_x = int((x - origin[0]) / resolution)
-    pixel_y = int(image_height - ((y - origin[1]) / resolution))
-    return pixel_x, pixel_y
-
-
-def unity_to_ros_coordinates(
-    unity_pos: list, unity_rot: list, experiment: str
-) -> tuple:
-    """
-    Converts Unity coordinate system to ROS coordinate system.
-
-    :param unity_pos: Unity position [x, y, z]
-    :type unity_pos: list
-    :param unity_rot: Unity rotation [roll, pitch, yaw] in degrees
-    :type unity_rot: list
-    :param experiment: Experiment type name
-    :type experiment: str
-    :return: Tuple of (ros_x, ros_y, ros_z, ros_yaw)
-    :rtype: tuple
-    """
-    ros_x = float(unity_pos[2])
-    ros_y = float(-unity_pos[0])
-    ros_z = float(unity_pos[1])
-
-    unity_yaw_deg = unity_rot[1]
-    ros_yaw = -unity_yaw_deg
-
-    if "Custom" in experiment or "Manual" in experiment:
-        ros_yaw += 180.0
-
-    return ros_x, ros_y, ros_z, ros_yaw
+from utils import read_dfs, unity_to_ros_coordinates, world_to_map
 
 
 if __name__ == "__main__":

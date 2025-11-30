@@ -113,7 +113,11 @@ class SAMSegmenterStrategy(ISegmenter):
         return masks
 
     def segment(
-        self, image_path: str, image_np: np.ndarray, boxes: torch.Tensor, classes: list[str]
+        self,
+        image_path: str,
+        image_np: np.ndarray,
+        boxes: torch.Tensor,
+        classes: list[str],
     ) -> torch.Tensor:
         """
         Perform segmentation on an image given bounding boxes.

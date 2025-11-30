@@ -176,7 +176,7 @@ def pointquaternion_to_homogeneous(
             output_shape, dtype=torch.float, device=pointquaternions.device
         )
 
-    q_norm = (0.5 * (q ** 2).sum(-1)[..., None]) ** 0.5
+    q_norm = (0.5 * (q**2).sum(-1)[..., None]) ** 0.5
     q /= (
         torch.max(q_norm, torch.tensor(eps))
         if torch.is_tensor(q_norm)
