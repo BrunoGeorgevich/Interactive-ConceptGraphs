@@ -727,7 +727,6 @@ if __name__ == "__main__":
         "ceiling",
         "door",
         "decoration",
-        "brush"
     ]
     TO_REPLACE_OBJECT_CLASSES: dict[str, str] = {
         "standard": "shelf or cabinet or standard",
