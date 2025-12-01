@@ -47,11 +47,10 @@ def _process_object_to_doc(obj_key: str, obj: dict) -> Optional[AgnoDocument]:
     except json.decoder.JSONDecodeError:
         pass
 
-    if not object_tag.strip() or not object_caption.strip():
-        return None
+    # if not object_tag.strip() or not object_caption.strip():
+    #     return None
 
     room_context = f" Located in {obj.get('room_name', 'an unknown area')}."
-    text_to_embed = f"{object_tag}: {object_caption}{room_context}"
 
     metadata = {}
     exclude_keys = {
@@ -92,6 +91,8 @@ def _process_object_to_doc(obj_key: str, obj: dict) -> Optional[AgnoDocument]:
 
     if positions is not None:
         metadata["centroid"] = np.mean(positions, axis=0).tolist()
+
+    text_to_embed = f"{object_tag}: {object_caption}{room_context}. Centroid at {metadata.get('centroid', 'unknown coordinates')}."
 
     class_id_values = obj.get("class_id", [])
     if isinstance(class_id_values, (list, tuple)) and class_id_values:
@@ -281,7 +282,7 @@ class SemanticMemoryEngine:
         self,
         queries: List[str],
         rerank_query: Optional[str] = None,
-        top_k: int = 10,
+        top_k: int = 30,
         confidence_threshold: float = 0.0,
         rerank_top_k: int = 10,
     ) -> List[Tuple[str, dict, float]]:
