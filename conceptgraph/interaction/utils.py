@@ -26,6 +26,7 @@ def log_debug_interaction(
     system_prompt: str = "",
     user_input: str = "",
     content: str = "",
+    rag_docs: list[dict] = [],
     mode: str = "a",
 ) -> None:
     """
@@ -41,6 +42,8 @@ def log_debug_interaction(
     :type user_input: str
     :param content: Model response or output.
     :type content: str
+    :param rag_docs: List of retrieved documents for RAG context.
+    :type rag_docs: list[dict]
     :param mode: File opening mode.
     :type mode: str
     :return: None
@@ -60,6 +63,13 @@ def log_debug_interaction(
             if user_input:
                 f.write("\n--- USER INPUT / DYNAMIC CONTENT ---\n")
                 f.write(f"{user_input}\n")
+            if rag_docs:
+                f.write("\n--- RAG CONTEXT DOCUMENTS ---\n")
+                for i, doc in enumerate(rag_docs):
+                    f.write(f"Document {i + 1}:\n")
+                    for key, value in doc.items():
+                        f.write(f"{key}: {value}\n")
+                    f.write("\n")
             if content:
                 f.write("\n--- MODEL RESPONSE / OUTPUT ---\n")
                 f.write(f"{content}\n")

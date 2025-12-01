@@ -151,7 +151,7 @@ class SmartWheelchairSystem:
                 )
 
                 user_input = Prompt.ask(
-                    f"\n[cyan][Pos: {display_pose[0]:.2f}, {display_pose[1]:.2f}] "
+                    f"\n[cyan][Pos: {display_pose[0]:.2f}, {display_pose[1]:.2f}, {display_pose[2]:.2f}] "
                     f"Room: {display_room}[/cyan] Query (or 'q' to quit): "
                 )
 
@@ -309,6 +309,13 @@ class SmartWheelchairSystem:
 
                     self.active_rag_context = rag_docs
 
+        log_debug_interaction(
+            self.config.debug_output_path,
+            "RAG",
+            rag_docs=rag_docs,
+            mode="a",
+        )
+
         should_run_bot = state not in [
             "END_CONVERSATION",
             "UNCLEAR",
@@ -424,7 +431,7 @@ if __name__ == "__main__":
     config = SystemConfig(
         house_id=1,
         dataset_base_path=DATASET_BASE_PATH,
-        prefix="offline",
+        prefix="online",
         qdrant_url="http://localhost:6333",
         force_recreate_table=False,
         local_data_dir="data",
