@@ -139,7 +139,7 @@ INTENTION_INTERPRETATION_PROMPT = dedent(
            - Inputs that cannot be resolved even with context.
 
         6. **TAKE_ME_TO_ROOM**:
-           - User wants to be taken to a specific room.
+           - The user wants to be taken to a specific room. This is different from the user wanting an object in a room. This action should only occur when the user explicitly asks to go to a room.
            - **Action:** Confirm the room's existence and return with the following structure:
              ```
             "state": "TAKE_ME_TO_ROOM",
