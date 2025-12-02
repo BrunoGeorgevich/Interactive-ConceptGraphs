@@ -93,21 +93,35 @@ class SmartWheelchairSystem:
                 self.spatial_manager.inject_objects_and_build_graph(raw_objects)
             )
 
-            self.memory_engine.ensure_collection_ready(enriched_objects)
+            self.memory_engine.ensure_collection_ready(
+                self.memory_engine.vector_db, enriched_objects
+            )
+            self.memory_engine.ensure_collection_ready(
+                self.memory_engine.additional_knowledge_db
+            )
         else:
 
             pass
 
+    def clear_active_memory(self) -> None:
+        """
+        Clears the active RAG context memory.
+
+        """
+        self.active_rag_context = []
+        self.last_bot_message = ""
+        self.chat_history = []
+
     def start_interactive_session(
         self,
-        initial_pose: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+        initial_pose: tuple[float, float, float] = (0.0, 0.0, 0.0),
         verbose: bool = True,
     ) -> None:
         """
         Starts the interactive console loop with map visualization.
 
         :param initial_pose: Initial user position.
-        :type initial_pose: Tuple[float, float, float]
+        :type initial_pose: tuple[float, float, float]
         :param verbose: Whether to print progress to the console.
         :type verbose: bool
         """
@@ -159,9 +173,6 @@ class SmartWheelchairSystem:
                     self.visualizer.stop()
                     break
 
-                # CRITICAL FIX: Re-fetch the position AFTER the user hits enter.
-                # This ensures that if they clicked the map while the prompt was open,
-                # we use the NEW position for the logic.
                 actual_pose = self.visualizer.user_pos
 
                 if user_input.lower().startswith("move"):
@@ -177,7 +188,6 @@ class SmartWheelchairSystem:
                         self.console.print("[yellow]Invalid movement format.[/yellow]")
                         continue
 
-                # Use actual_pose here, not display_pose
                 request = InteractionRequest(
                     query=user_input, user_pose=actual_pose, timestamp=time.time()
                 )
@@ -193,6 +203,27 @@ class SmartWheelchairSystem:
         if self.visualizer:
             self.visualizer.stop()
             self.visualizer.join()
+
+    def process_query(
+        self,
+        query: str,
+        user_pose: tuple[float, float, float] = (0.0, 0.0, 0.0),
+    ) -> InteractionResponse:
+        """
+        Processes a single query without interactive console or visualization.
+
+        :param query: The user query to process.
+        :type query: str
+        :param user_pose: The current user position coordinates.
+        :type user_pose: tuple[float, float, float]
+        :return: The structured interaction response.
+        :rtype: InteractionResponse
+        """
+        request = InteractionRequest(
+            query=query, user_pose=user_pose, timestamp=time.time()
+        )
+
+        return self.process_interaction(request, verbose=False)
 
     def process_interaction(
         self, request: InteractionRequest, verbose: bool = False
@@ -213,11 +244,15 @@ class SmartWheelchairSystem:
         scene_tree = self.spatial_manager.scene_manager.get_text_representation(
             request.user_pose
         )
+        history_str = "\n".join(
+            [f"User: {h['user']}\nBot: {h['bot']}" for h in self.chat_history]
+        )
 
         intention_input = (
             f"<CURRENT_ROOM>{room_name}</CURRENT_ROOM>\n"
             f"<SCENE_GRAPH_SUMMARY>\n{scene_tree}\n</SCENE_GRAPH_SUMMARY>\n\n"
             f"<LAST_BOT_MESSAGE>{self.last_bot_message}</LAST_BOT_MESSAGE>\n\n"
+            f"<CHAT_HISTORY>\n{history_str}\n</CHAT_HISTORY>\n\n"
             f"<USER_QUERY>{request.query}</USER_QUERY>"
         )
 
@@ -275,6 +310,14 @@ class SmartWheelchairSystem:
                     self.console.print(
                         f"[bold green]Navigating to room:[/bold green] {navigated_room}"
                     )
+        elif state == "ADDITIONAL_INFORMATION":
+            final_text = intent_data.get("direct_response", "")
+            self.memory_engine.add_additional_information(
+                intent_data.get("additional_knowledge", []),
+            )
+
+        elif state == "ADD_INFO_DESAMBIGUATION":
+            final_text = intent_data.get("direct_response", "")
 
         elif state not in ["END_CONVERSATION", "UNCLEAR", "SCENE_GRAPH_QUERY"]:
 
@@ -319,6 +362,8 @@ class SmartWheelchairSystem:
         should_run_bot = state not in [
             "END_CONVERSATION",
             "UNCLEAR",
+            "ADDITIONAL_INFORMATION",
+            "ADD_INFO_DESAMBIGUATION",
             "SCENE_GRAPH_QUERY",
             "TAKE_ME_TO_ROOM",
         ]
@@ -358,48 +403,70 @@ class SmartWheelchairSystem:
             bot_raw_response = self.agent_manager.generate_bot_response(bot_input)
             if verbose:
                 self.console.print(
-                    f"[green][BOT] Response:[/green]\n{bot_raw_response}"
+                    f"[green][BOT] Response:[/green]\n{bot_raw_response['content']}\nReasoning: {bot_raw_response['reasoning']}"
                 )
             log_debug_interaction(
                 self.config.debug_output_path, "BOT", content=bot_raw_response, mode="a"
             )
 
-            final_text = bot_raw_response
-            if "<message>" in bot_raw_response:
+            final_text = bot_raw_response["content"]
+            if "<message>" in bot_raw_response["content"]:
                 try:
                     final_text = (
-                        bot_raw_response.split("<message>")[1]
+                        bot_raw_response["content"]
+                        .split("<message>")[1]
                         .split("</message>")[0]
                         .strip()
                     )
-                except IndexError:
-                    pass
+                except (IndexError, ValueError, KeyError):
+                    traceback.print_exc()
 
-            if "<target_coordinates>" in bot_raw_response:
+            elif "<answer>" in bot_raw_response["content"]:
+                try:
+                    final_text = (
+                        bot_raw_response["content"]
+                        .split("<answer>")[1]
+                        .split("</answer>")[0]
+                        .strip()
+                    )
+                except (IndexError, ValueError, KeyError):
+                    traceback.print_exc()
+
+            if "<target_coordinates>" in bot_raw_response["content"]:
                 try:
                     coords_str = (
-                        bot_raw_response.split("<target_coordinates>")[1]
+                        bot_raw_response["content"]
+                        .split("<target_coordinates>")[1]
                         .split("</target_coordinates>")[0]
                         .strip()
                     )
                     target_coords = tuple(
                         [float(x.strip()) for x in coords_str.split(",")]
                     )
+                except (IndexError, ValueError, KeyError):
+                    traceback.print_exc()
 
-                    if "<object_tag>" in bot_raw_response:
-                        selected_object_tag = (
-                            bot_raw_response.split("<object_tag>")[1]
-                            .split("</object_tag>")[0]
-                            .strip()
-                        )
-                    if "<room_name>" in bot_raw_response:
-                        navigated_room = (
-                            bot_raw_response.split("<room_name>")[1]
-                            .split("</room_name>")[0]
-                            .strip()
-                        )
-                except Exception:
-                    pass
+            if "<object_tag>" in bot_raw_response.get("content", ""):
+                try:
+                    selected_object_tag = (
+                        bot_raw_response["content"]
+                        .split("<object_tag>")[1]
+                        .split("</object_tag>")[0]
+                        .strip()
+                    )
+                except (IndexError, KeyError):
+                    traceback.print_exc()
+
+            if "<room_name>" in bot_raw_response["content"]:
+                try:
+                    navigated_room = (
+                        bot_raw_response["content"]
+                        .split("<room_name>")[1]
+                        .split("</room_name>")[0]
+                        .strip()
+                    )
+                except (IndexError, KeyError):
+                    traceback.print_exc()
 
         self.last_bot_message = final_text or ""
         self.chat_history.append({"user": request.query, "bot": final_text or ""})

@@ -1,3 +1,4 @@
+import uuid
 from flashrank import Ranker, RerankRequest
 from typing import List, Optional, Tuple
 from joblib import Parallel, delayed
@@ -15,6 +16,27 @@ from qdrant_client import QdrantClient
 
 from conceptgraph.interaction.schemas import SystemConfig
 from conceptgraph.interaction.utils import VectorDbError
+
+
+def _process_info_to_doc(info: dict) -> Optional[AgnoDocument]:
+    info_type = info.get("type", "")
+    description = info.get("description", None)
+    class_name = info.get("class_name", None)
+    room_name = info.get("room_name", None)
+
+    text_to_embed = f"{info_type.capitalize()} -> "
+
+    if class_name:
+        text_to_embed += f"{class_name} :"
+    if description:
+        text_to_embed += f" {description}"
+    if room_name and room_name.strip().lower() != "unknown":
+        text_to_embed += f" Located in {room_name}"
+
+    info_id = info.get("id", uuid.uuid4())
+    info["id"] = str(info_id)
+
+    return AgnoDocument(content=text_to_embed, meta_data=info, id=str(info_id))
 
 
 def _process_object_to_doc(obj_key: str, obj: dict) -> Optional[AgnoDocument]:
@@ -137,12 +159,20 @@ class SemanticMemoryEngine:
         """
         self.config = config
         self.collection_name = f"House_{config.house_id:02d}_{config.prefix}"
+        self.ad_collection_name = f"House_{config.house_id:02d}_{config.prefix}_AD"
         self.embedder = self._get_embedder(config.prefix)
         self.vector_db: Optional[Qdrant] = None
 
         try:
             self.vector_db = Qdrant(
                 collection=self.collection_name,
+                url=config.qdrant_url,
+                embedder=self.embedder,
+                distance="cosine",
+                search_type=SearchType.hybrid,
+            )
+            self.additional_knowledge_db = Qdrant(
+                collection=self.ad_collection_name,
                 url=config.qdrant_url,
                 embedder=self.embedder,
                 distance="cosine",
@@ -176,45 +206,58 @@ class SemanticMemoryEngine:
                 dimensions=4096,
             )
 
-    def ensure_collection_ready(self, objects: List[dict]) -> None:
+    def ensure_collection_ready(
+        self, vector_db: Qdrant, objects: List[dict] = []
+    ) -> None:
         """
         Ensures the collection is populated. If empty or force_recreate is True, repopulates it.
 
+        :param vector_db: Qdrant vector database instance.
+        :type vector_db: Qdrant
         :param objects: List of enriched object dictionaries.
         :type objects: List[dict]
         :raises VectorDbError: If population fails.
         """
         if self.config.force_recreate_table:
-            self._delete_collection()
+            self._delete_collection(vector_db.collection)
 
-        if not self._check_collection_valid():
-            self._delete_collection()
-            self.vector_db.create()
-            self._populate_from_objects(objects)
+        if not self._check_collection_valid(vector_db.collection):
+            self._delete_collection(vector_db.collection)
+            vector_db.create()
+            if len(objects) > 0:
+                self._populate_from_objects(objects)
 
-    def _delete_collection(self) -> None:
-        """Deletes the current collection."""
+    def _delete_collection(self, collection_name: str) -> None:
+        """Deletes the current collection.
+
+        :param collection_name: Name of the collection to delete.
+        :type collection_name: str
+        """
         try:
             client = QdrantClient(url=self.config.qdrant_url)
-            if client.collection_exists(self.collection_name):
-                client.delete_collection(self.collection_name)
+            if client.collection_exists(collection_name):
+                client.delete_collection(collection_name)
         except Exception as e:
             raise VectorDbError(f"Failed to delete collection: {e}") from e
 
-    def _check_collection_valid(self) -> bool:
-        """Checks if collection exists and has correct dimension."""
+    def _check_collection_valid(self, collection_name: str) -> bool:
+        """Checks if collection exists and has correct dimension.
+
+        :param collection_name: Name of the collection.
+        :type collection_name: str
+        :return: True if valid, False otherwise.
+        :rtype: bool
+        """
         try:
             client = QdrantClient(url=self.config.qdrant_url)
-            if not client.collection_exists(self.collection_name):
+            if not client.collection_exists(collection_name):
                 return False
 
-            count_res = client.count(self.collection_name, exact=True)
+            count_res = client.count(collection_name, exact=True)
             if count_res.count == 0:
                 return False
 
-            vector_config = client.get_collection(
-                self.collection_name
-            ).config.params.vectors
+            vector_config = client.get_collection(collection_name).config.params.vectors
 
             size = (
                 vector_config.size
@@ -278,12 +321,38 @@ class SemanticMemoryEngine:
             traceback.print_exc()
             return documents[:top_k]
 
+    def add_additional_information(
+        self,
+        additional_info: List[dict],
+    ) -> None:
+        """
+        Adds additional information to the additional knowledge database.
+
+        :param additional_info: List of additional information dictionaries.
+        :type additional_info: List[dict]
+        :raises VectorDbError: If insertion fails.
+        """
+        results = Parallel(n_jobs=-1, backend="threading")(
+            delayed(_process_info_to_doc)(info) for info in additional_info
+        )
+        docs_to_insert = [d for d in results if d is not None]
+
+        if not docs_to_insert:
+            raise VectorDbError(
+                "No valid documents created from additional information."
+            )
+
+        Parallel(n_jobs=-1, backend="threading")(
+            delayed(_insert_single_doc)(self.additional_knowledge_db, doc)
+            for doc in docs_to_insert
+        )
+
     def query_relevant_chunks(
         self,
         queries: List[str],
         rerank_query: Optional[str] = None,
         top_k: int = 30,
-        confidence_threshold: float = 0.0,
+        confidence_threshold: float = 0.1,
         rerank_top_k: int = 10,
     ) -> List[Tuple[str, dict, float]]:
         """
@@ -303,7 +372,7 @@ class SemanticMemoryEngine:
         :rtype: List[Tuple[str, dict, float]]
         """
 
-        def _retrieve_single(q: str, top_k: int) -> list:
+        def _retrieve_single(vector_db: Qdrant, q: str, top_k: int) -> list:
             """
             Retrieves search results for a single query using the configured search type.
 
@@ -317,18 +386,18 @@ class SemanticMemoryEngine:
             """
             try:
                 filters = None
-                if self.vector_db.search_type == SearchType.vector:
-                    results = self.vector_db._run_vector_search_sync(q, top_k, filters)
-                elif self.vector_db.search_type == SearchType.keyword:
-                    results = self.vector_db._run_keyword_search_sync(q, top_k, filters)
-                elif self.vector_db.search_type == SearchType.hybrid:
-                    results = self.vector_db._run_hybrid_search_sync(q, top_k, filters)
+                if vector_db.search_type == SearchType.vector:
+                    results = vector_db._run_vector_search_sync(q, top_k, filters)
+                elif vector_db.search_type == SearchType.keyword:
+                    results = vector_db._run_keyword_search_sync(q, top_k, filters)
+                elif vector_db.search_type == SearchType.hybrid:
+                    results = vector_db._run_hybrid_search_sync(q, top_k, filters)
                 else:
                     raise ValueError(
-                        f"Unsupported search type: {self.vector_db.search_type}"
+                        f"Unsupported search type: {vector_db.search_type}"
                     )
 
-                search_results = self.vector_db._build_search_results(results, q)
+                search_results = vector_db._build_search_results(results, q)
                 for sr, r in zip(search_results, results):
                     sr.reranking_score = r.score
                 return search_results
@@ -337,7 +406,9 @@ class SemanticMemoryEngine:
                 raise ValueError(f"Failed to retrieve search results: {e}") from e
 
         results_batches = Parallel(n_jobs=-1, backend="threading")(
-            delayed(_retrieve_single)(q, top_k) for q in queries
+            delayed(_retrieve_single)(db, q, top_k)
+            for q in queries
+            for db in [self.vector_db, self.additional_knowledge_db]
         )
 
         flat_results = [doc for batch in results_batches for doc in batch]
@@ -346,11 +417,21 @@ class SemanticMemoryEngine:
         for doc in flat_results:
             doc_id = doc.meta_data.get("id")
             score = getattr(doc, "reranking_score", None)
-            if doc_id and score:
-                if (
-                    doc_id not in unique_docs
-                    or score > unique_docs[doc_id].reranking_score
-                ):
+            doc_type = doc.meta_data.get("type", None)
+            if doc_id and (score or doc_type):
+                if doc_id not in unique_docs:
+                    if doc_type:
+                        doc.reranking_score = 1.0
+                        unique_docs[doc_id] = doc
+                    elif (
+                        score
+                        and doc_id in unique_docs
+                        and score > unique_docs[doc_id].reranking_score
+                    ):
+                        unique_docs[doc_id] = doc
+                else:
+                    if doc_type:
+                        doc.reranking_score = 1.0
                     unique_docs[doc_id] = doc
 
         results = list(unique_docs.values())

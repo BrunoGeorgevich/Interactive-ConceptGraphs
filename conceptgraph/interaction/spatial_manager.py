@@ -141,6 +141,7 @@ class SceneGraphManager:
                 output += f"Class: {node.name} | "
                 output += f"Description: {node.caption} | "
                 output += f"Distance: {dist_str} | "
+                output += f"Center: {node.centroid} "
                 output += "</OBJECT> "
             output += "</ROOM>\n"
 
