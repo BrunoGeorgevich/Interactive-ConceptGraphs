@@ -69,6 +69,7 @@ Generate {num_questions} "Explicit Retrieval" samples. These are direct commands
 5. **Robot Capabilities:** The robot can only respond to questions about its surroundings, escort users to locations, and guide them to objects.
 6. **No Ambiguity:** Ensure the query is clear and unambiguous, avoiding vague terms that could refer to multiple objects.
 7. **Remove IDs:** Do not include object and rooms IDs (_ID after the name) in the queries and responses.
+8. **Single Object Guarantee:** Ensure that the query can be resolved to a single object in the context, either directly or through specified constraints. Do not create queries that could refer to multiple objects without further clarification.
 </RULES>
 </TASK_DEFINITION>
 
@@ -97,6 +98,7 @@ Generate {num_questions} "Implicit Query" samples based on affordances. These ar
 4. **No Direct Naming:** Do not mention the object name in the query.
 5. **Anti-ambiguity Context:** You can provide context, like 'I'm in the kitchen' or 'The nearest one', to avoid multiple valid targets.
 6. **Remove IDs:** Do not include object and rooms IDs (_ID after the name) in the queries and responses.
+7. **Single Object Guarantee:** Ensure that the query can be resolved to a single object in the context, either directly or through specified constraints. Do not create queries that could refer to multiple objects without further clarification.
 </RULES>
 </TASK_DEFINITION>
 
@@ -122,6 +124,7 @@ Generate {num_questions} "Negative Constraint" samples. These are queries for ob
 1. **Plausible Absence:** Focus on common household items that simply happen to be missing from this specific room/house list (e.g., searching for a 'Dishwasher' in a context that lists only a 'Fridge' and 'Oven').
 2. **No Fabrication:** Do not invent fictional or highly unusual objects; stick to everyday items that could reasonably be expected in a household setting.
 3. **Real Positioning:** Ensure the absent object is one that would logically fit within the environment described by the context (e.g., don't ask for a 'Boat' in a living room context).
+4. **Single Object Guarantee:** Ensure that the query can be resolved to a single object in the context, either directly or through specified constraints. Do not create queries that could refer to multiple objects without further clarification.
 </RULES>
 </TASK_DEFINITION>
 
@@ -151,6 +154,7 @@ Rules:
 5. **Robot Limitations:** The robot is only able to respond to questions about its surroundings, escort users to locations, and guide them to objects. The robot is not able to bring nothing.
 6. **Grounded in Context:** Ensure all objects and rooms mentioned are part of the provided context.
 7. **Context Enrichment:** You may add brief context to the initial query to enhance realism (e.g., "I'm in the kitchen", "The nearest one", "Any chair will do").
+8. **Single Object Guarantee:** At the end of the interaction, ensure that the user's choice resolves to a single object in the context, either directly or through specified constraints. Do not create scenarios that could refer to multiple objects without further clarification.
 </TASK_DEFINITION>
 
 <JSON_SCHEMA>
@@ -177,4 +181,56 @@ Rules:
 }
 </JSON_SCHEMA>
 """
+)
+
+SEMANTIC_JUDGE_PROMPT = dedent(
+    """
+<ROLE>
+    You are an expert judge evaluating the performance of a semantic navigation robot. Your task is to compare the "obtained response" against the "expected response" based on the User's Intent.
+</ROLE>
+
+<INPUT_DATA>
+    Check the "is_follow_up" flag.
+    Fields: "is_follow_up", "query", "expected_answer", "obtained_response", "messages", "obtained_messages".
+</INPUT_DATA>
+
+<ID_HANDLING_RULE>
+    **CRITICAL:** Strip all numerical suffixes/IDs (e.g., "bathroom_1" -> "Bathroom"). Compare only semantic Classes.
+</ID_HANDLING_RULE>
+
+<EVALUATION_LOGIC>
+    Analyze the input based on the 'is_follow_up' flag.
+
+    ### CASE 1: Single Turn (is_follow_up = False)
+    Compare 'obtained_response' with 'expected_answer' considering the 'query':
+    1. **Intent Fulfillment:** Does the obtained object/action satisfy the user's underlying need stated in the query? (e.g., "Brushing teeth" requires a Toothbrush OR a Sink).
+    2. **Functional Equivalence:** Even if the Object Class differs, is the obtained object a valid proxy for the task?
+    3. **Location Viability:** Is the room type appropriate for the task, even if it's not the specific instance requested?
+
+    ### CASE 2: Multi-Turn (is_follow_up = True)
+    Compare flow and resolution. Did the robot resolve the ambiguity effectively?
+</EVALUATION_LOGIC>
+
+<SCORING_CRITERIA>
+    Output one of the following verdicts:
+
+    **True** (Strict Semantic Match):
+    - The target Object Class AND Room Type match the expectation exactly (ignoring IDs).
+    - The intent is perfectly captured.
+
+    **Partial** (Functional Success / Valid Alternative):
+    - **Functional Proxy:** The robot targets a different object class that logically supports the user's intent (e.g., User wants to "brush teeth", Robot goes to "Sink" instead of "Toothbrush". This is PARTIAL, not False).
+    - **Location Alternative:** The robot finds a valid object/room for the task, even if it differs from the specific location expected (e.g., "Bathroom 2" instead of "Bathroom 1"), provided the task can be done there.
+    - **Vagueness:** The robot identifies the correct object but omits the room name.
+
+    **False** (Failure):
+    - **Functional Mismatch:** The robot targets an object that has NO utility for the user's query (e.g., User wants to "brush teeth", Robot goes to "Bed").
+    - **Hallucination:** Claims to find things that don't exist.
+    - **Inaction:** Fails to guide or respond helpfully.
+</SCORING_CRITERIA>
+
+<OUTPUT_FORMAT>
+    Output ONLY one single word: True, Partial, or False.
+</OUTPUT_FORMAT>
+    """
 )

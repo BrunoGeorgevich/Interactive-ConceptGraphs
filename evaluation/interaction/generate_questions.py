@@ -8,6 +8,7 @@ import json
 import sys
 import os
 
+
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 
@@ -180,6 +181,7 @@ def process_question_type(
     max_tokens: int,
     objects_to_remove: list,
     objects_to_replace: dict,
+    force_rewrite: bool = False,
 ) -> dict:
     """
     Processes a single question type for a given home.
@@ -206,15 +208,17 @@ def process_question_type(
     :type objects_to_remove: list
     :param objects_to_replace: Dictionary mapping object types to replacements.
     :type objects_to_replace: dict
+    :param force_rewrite: Whether to force rewriting existing files.
+    :type force_rewrite: bool
     :return: Dictionary with status, home, question_type, and sample count.
     :rtype: dict
     """
     home_name = os.path.basename(home)
-    output_dir = os.path.join("output", home_name)
+    output_dir = os.path.join(home, "evaluation_questions")
     os.makedirs(output_dir, exist_ok=True)
     output_file = os.path.join(output_dir, f"{question_type}_questions.json")
 
-    if os.path.exists(output_file):
+    if os.path.exists(output_file) and not force_rewrite:
         return {
             "status": "skipped",
             "home": home_name,
@@ -223,9 +227,7 @@ def process_question_type(
         }
 
     try:
-        virtual_objects = parse_virtual_object(
-            os.path.join(home, "Wandering", "VirtualObjects.csv")
-        )
+        virtual_objects = parse_virtual_object(os.path.join(home, "VirtualObjects.csv"))
 
         virtual_objects = virtual_objects[
             ~virtual_objects["type"].astype(str).str.lower().isin(objects_to_remove)
@@ -279,7 +281,9 @@ def process_question_type(
 
 if __name__ == "__main__":
     load_dotenv()
-    DATA_FOLDER: str = os.path.join("D:", "Documentos", "Datasets", "Robot@VirtualHome")
+    DATA_FOLDER: str = os.path.join(
+        "D:", "Documentos", "Datasets", "Robot@VirtualHomeLarge"
+    )
     QUESTIONS_PROMPT_DICT: dict[str, tuple] = {
         "basic": (BASIC_QUESTION_PROMPT, 30),
         "indirect": (INDIRECT_QUESTION_PROMPT, 30),
@@ -305,6 +309,7 @@ if __name__ == "__main__":
         "Drying": "Towel Drying Rack",
         "Burner": "Stove or Cooktop",
     }
+    FORCE_REWRITE: bool = True
 
     openai_client = OpenAI(
         api_key=os.environ.get("OPENROUTER_API_KEY", ""),
@@ -339,6 +344,7 @@ if __name__ == "__main__":
                 OPENROUTER_MAX_TOKENS,
                 OBJECTS_TO_REMOVE,
                 OBJECTS_TO_REPLACE,
+                FORCE_REWRITE,
             ): (home, question_type)
             for home, question_type, task_prompt, num_questions in tasks
         }
