@@ -295,7 +295,7 @@ if __name__ == "__main__":
     OPENROUTER_TOP_P: float = 0.1
     OPENROUTER_MAX_TOKENS: int = 16000
     OPENROUTER_TIMEOUT: float = 60.0
-    MAX_WORKERS: int = 8
+    MAX_WORKERS: int = 100
     OBJECTS_TO_REMOVE: list[str] = [
         "wall",
         "floor",

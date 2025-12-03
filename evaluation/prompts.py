@@ -46,6 +46,13 @@ The environment contains the following objects (format: - Object Type at Room):
 {task}
 </TASK>
 
+<QUESTION_RULES>
+ - Is totally prohibited to ask for objects that are not in the provided context, except when generating "Negative Constraint" samples.
+ - It is mandatory to always ensure that the generated query can be resolved to a single object in the context, either directly or through specified constraints. Do not create queries that could refer to multiple objects without further clarification.
+ - The robot always go to the object or location when asked, never bring the object to the user or any other action.
+ - Do not generate "Where questions" or "Yes/No questions".
+</QUESTION_RULES>
+
 <OUTPUT_FORMAT>
 You must output a JSON object containing a list of samples.
 - The output must be valid JSON.
@@ -70,6 +77,8 @@ Generate {num_questions} "Explicit Retrieval" samples. These are direct commands
 6. **No Ambiguity:** Ensure the query is clear and unambiguous, avoiding vague terms that could refer to multiple objects.
 7. **Remove IDs:** Do not include object and rooms IDs (_ID after the name) in the queries and responses.
 8. **Single Object Guarantee:** Ensure that the query can be resolved to a single object in the context, either directly or through specified constraints. Do not create queries that could refer to multiple objects without further clarification.
+9. **IDs Prohibition:** Considering that the ground truth and processing was performed in different mapping, the object and rooms IDs are different. Because of that, do not include object and rooms IDs (_ID after the name) in the queries and responses. Also, do not rely on IDs to differentiate objects or rooms in the query. It is TOTALLY PROHIBITED to use IDs in the queries and responses.
+10. **Room or Object Specification:** Do not specify which room or object with a number (as with the ID or in full), for instance "bedroom 2" or "bed_3". Always use only the class or room name (e.g., "bedroom" or "bed").
 </RULES>
 </TASK_DEFINITION>
 
@@ -99,6 +108,8 @@ Generate {num_questions} "Implicit Query" samples based on affordances. These ar
 5. **Anti-ambiguity Context:** You can provide context, like 'I'm in the kitchen' or 'The nearest one', to avoid multiple valid targets.
 6. **Remove IDs:** Do not include object and rooms IDs (_ID after the name) in the queries and responses.
 7. **Single Object Guarantee:** Ensure that the query can be resolved to a single object in the context, either directly or through specified constraints. Do not create queries that could refer to multiple objects without further clarification.
+8. **IDs Prohibition:** Considering that the ground truth and processing was performed in different mapping, the object and rooms IDs are different. Because of that, do not include object and rooms IDs (_ID after the name) in the queries and responses. Also, do not rely on IDs to differentiate objects or rooms in the query. It is TOTALLY PROHIBITED to use IDs in the queries and responses.
+9. **Room or Object Specification:** Do not specify which room or object with a number (as with the ID or in full), for instance "bedroom 2" or "bed_3". Always use only the class or room name (e.g., "bedroom" or "bed").
 </RULES>
 </TASK_DEFINITION>
 
@@ -121,10 +132,12 @@ ADVERSARIAL_QUESTION_PROMPT = dedent(
 Generate {num_questions} "Negative Constraint" samples. These are queries for object classes that are NOT present in the provided context list.
 
 <RULES>
-1. **Plausible Absence:** Focus on common household items that simply happen to be missing from this specific room/house list (e.g., searching for a 'Dishwasher' in a context that lists only a 'Fridge' and 'Oven').
+1. **Plausible Absence:** Focus on common household items that simply happen to be missing from this specific room/house list (e.g., searching for a 'Dishwasher' in a context that lists only a 'Fridge' and 'Oven'). Do not use objects with names different from existing ones if they are essentially the same (e.g., do not ask for 'Sofa' if 'Couch' is already present). Instead, use objects that are guaranteed not to be in the current context.
 2. **No Fabrication:** Do not invent fictional or highly unusual objects; stick to everyday items that could reasonably be expected in a household setting.
 3. **Real Positioning:** Ensure the absent object is one that would logically fit within the environment described by the context (e.g., don't ask for a 'Boat' in a living room context).
 4. **Single Object Guarantee:** Ensure that the query can be resolved to a single object in the context, either directly or through specified constraints. Do not create queries that could refer to multiple objects without further clarification.
+5. **IDs Prohibition:** Considering that the ground truth and processing was performed in different mapping, the object and rooms IDs are different. Because of that, do not include object and rooms IDs (_ID after the name) in the queries and responses. Also, do not rely on IDs to differentiate objects or rooms in the query. It is TOTALLY PROHIBITED to use IDs in the queries and responses.
+6. **Room or Object Specification:** Do not specify which room or object with a number (as with the ID or in full), for instance "bedroom 2" or "bed_3". Always use only the class or room name (e.g., "bedroom" or "bed").
 </RULES>
 </TASK_DEFINITION>
 
@@ -155,6 +168,9 @@ Rules:
 6. **Grounded in Context:** Ensure all objects and rooms mentioned are part of the provided context.
 7. **Context Enrichment:** You may add brief context to the initial query to enhance realism (e.g., "I'm in the kitchen", "The nearest one", "Any chair will do").
 8. **Single Object Guarantee:** At the end of the interaction, ensure that the user's choice resolves to a single object in the context, either directly or through specified constraints. Do not create scenarios that could refer to multiple objects without further clarification.
+9. **IDs Mismatching:** Considering that the ground truth and processing was performed in different mapping, the object and rooms IDs are different. Because of that, do not include object and rooms IDs (_ID after the name) in the queries and responses. Also, do not rely on IDs to differentiate objects or rooms in the disambiguation process.
+10. **IDs Prohibition:** Considering that the ground truth and processing was performed in different mapping, the object and rooms IDs are different. Because of that, do not include object and rooms IDs (_ID after the name) in the queries and responses. Also, do not rely on IDs to differentiate objects or rooms in the query. It is TOTALLY PROHIBITED to use IDs in the queries and responses.
+11. **Room or Object Specification:** Do not specify which room or object with a number (as with the ID or in full), for instance "bedroom 2" or "bed_3". Always use only the class or room name (e.g., "bedroom" or "bed").
 </TASK_DEFINITION>
 
 <JSON_SCHEMA>
@@ -203,30 +219,43 @@ SEMANTIC_JUDGE_PROMPT = dedent(
 
     ### CASE 1: Single Turn (is_follow_up = False)
     Compare 'obtained_response' with 'expected_answer' considering the 'query':
-    1. **Intent Fulfillment:** Does the obtained object/action satisfy the user's underlying need stated in the query? (e.g., "Brushing teeth" requires a Toothbrush OR a Sink).
-    2. **Functional Equivalence:** Even if the Object Class differs, is the obtained object a valid proxy for the task?
-    3. **Location Viability:** Is the room type appropriate for the task, even if it's not the specific instance requested?
+    1. **Intent Fulfillment:** Does the obtained object/action satisfy the user's underlying need stated in the query?
+    2. **Negative Constraint Matching (CRITICAL):** If the 'expected_answer' states the object is MISSING, and the 'obtained_response' ALSO states it is missing, this is a **True** match. Additional offers or suggestions (e.g., "Would you like something else?") do NOT degrade the score.
+    3. **Action Equivalence:** Treat navigation verbs as synonymous (e.g., "Moving" == "Guiding").
+    4. **Object Synonymy:** Treat standard English synonyms as the SAME Object Class (e.g., "Couch" == "Sofa").
+    5. **Functional Equivalence:** If classes differ and are not synonyms, is it a valid proxy?
+    6. **Ambiguity Check:** If the response is a question/list, does it correctly identify the target class present in the room?
 
     ### CASE 2: Multi-Turn (is_follow_up = True)
-    Compare flow and resolution. Did the robot resolve the ambiguity effectively?
+    Compare the conversational flow. Focus on whether the interaction is moving FORWARD:
+    1. **Scope Narrowing:** Compare the robot's last question in 'obtained_messages' with its previous question. Did the robot incorporate the user's new constraint? If yes, this is **Partial** (Progressive Refinement).
+    2. **Resolution Success:** Did the robot eventually identify the correct target?
+    3. **Fallback Handling:** Did the robot offer a valid alternative if the specific target was missing?
+
 </EVALUATION_LOGIC>
 
 <SCORING_CRITERIA>
     Output one of the following verdicts:
 
-    **True** (Strict Semantic Match):
-    - The target Object Class AND Room Type match the expectation exactly (ignoring IDs).
-    - The intent is perfectly captured.
+    **True** (Strict Semantic Match / Action Equivalent / Correct Negative):
+    - The target Object Class AND Room Type match the expectation exactly.
+    - **Correct Negative:** The robot correctly identifies that the requested object is NOT in the area (matching the expected negative). Suggestions for other objects or general offers of help (e.g., "Would you like a coffee maker instead?") are acceptable and remain **True**.
+    - The intent is captured and the action (or correct refusal) is executed.
+    - If the target object is in a different room (e.g., Bathroom 1) and the robot correctly identifies the room name (e.g., Bathroom 2), the response is still considered True. For example, if the expected answer is "Taking you to the bed in Bedroom 1" and the obtained answer is "There is no bed in Bedroom 1, taking you to the bed in Bedroom 2", this should be considered True because the only difference is the room name, which can vary between the expected and obtained answers.
+    - Hall, Hallway and Transitioning in our evaluation sceneraio must be considered the same, and by this reason, if the expected answer is "Taking you to the Hall" and the obtained answer is "Taking you to the Hallway" or "Transitioning", this should be considered True.
 
-    **Partial** (Functional Success / Valid Alternative):
-    - **Functional Proxy:** The robot targets a different object class that logically supports the user's intent (e.g., User wants to "brush teeth", Robot goes to "Sink" instead of "Toothbrush". This is PARTIAL, not False).
-    - **Location Alternative:** The robot finds a valid object/room for the task, even if it differs from the specific location expected (e.g., "Bathroom 2" instead of "Bathroom 1"), provided the task can be done there.
+    **Partial** (Functional Success / Valid Alternative / Progressive Refinement):
+    - **Functional Proxy:** The robot targets a **different** object class that logically supports the user's intent (when the target actually exists).
+    - **Location Alternative / Fallback:** The robot offers a valid alternative of the same class in a different location (when the target exists elsewhere).
+    - **Progressive Refinement:** The robot asks a follow-up question that is **more specific** than the previous one by applying the user's constraint (Multi-turn).
     - **Vagueness:** The robot identifies the correct object but omits the room name.
+    - **Ambiguity Handling:** The robot correctly identifies the target Object Class and stops to ask for clarification.
 
     **False** (Failure):
-    - **Functional Mismatch:** The robot targets an object that has NO utility for the user's query (e.g., User wants to "brush teeth", Robot goes to "Bed").
-    - **Hallucination:** Claims to find things that don't exist.
-    - **Inaction:** Fails to guide or respond helpfully.
+    - **Functional Mismatch:** The robot targets an object that has NO utility for the user's query.
+    - **False Positive:** The robot claims to find an object that the expected answer says is missing (Hallucination).
+    - **Bad Negative:** The robot claims an object is missing when the expected answer says it exists.
+    - **Stagnant Loop:** The robot asks the exact same question without incorporating new constraints.
 </SCORING_CRITERIA>
 
 <OUTPUT_FORMAT>

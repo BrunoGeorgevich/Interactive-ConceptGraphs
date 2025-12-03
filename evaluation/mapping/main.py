@@ -1,5 +1,4 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from agno.models.openrouter import OpenRouter
 from scipy.spatial import cKDTree
 from dotenv import load_dotenv
 from agno.agent import Agent
@@ -177,6 +176,12 @@ def match_virtual_to_processed(
         found_match: bool = False
         majority_threshold: int = (min_votes // 2) + 1
 
+        virtual_type_processed = to_replace_object_classes.get(
+            virtual_obj.get("type").lower(), virtual_obj.get("type")
+        )
+
+        virtual_obj_coordinates = virtual_obj.get("globalPosition", [0, 0, 0])
+
         if processed_indices:
             for proc_idx in processed_indices:
                 with lock:
@@ -189,10 +194,6 @@ def match_virtual_to_processed(
                     caption = raw_caption.split("}")[-2].split('"')[-2]
                 except IndexError:
                     caption = raw_caption
-
-                virtual_type_processed = to_replace_object_classes.get(
-                    virtual_obj.get("type").lower(), virtual_obj.get("type")
-                )
 
                 prompt_message: str = (
                     f"\n<PROCESSED_OBJECT> Class: {processed_obj.get('class_name', 'Unknown')}, "
@@ -274,6 +275,7 @@ def match_virtual_to_processed(
                             tp.append((virtual_obj, processed_obj))
                             object_votes.append(
                                 {
+                                    "virtual_idx": virt_idx,
                                     "virtual_type": virtual_obj.get("type", "Unknown"),
                                     "processed_class": processed_obj.get(
                                         "class_name", "Unknown"
@@ -281,6 +283,9 @@ def match_virtual_to_processed(
                                     "true_votes": current_true_votes,
                                     "false_votes": current_false_votes,
                                     "matched": True,
+                                    "x_coordinate": virtual_obj_coordinates[0],
+                                    "y_coordinate": virtual_obj_coordinates[1],
+                                    "z_coordinate": virtual_obj_coordinates[2],
                                 }
                             )
                             found_match = True
@@ -292,11 +297,15 @@ def match_virtual_to_processed(
                 fn.append(virtual_obj)
                 object_votes.append(
                     {
+                        "virtual_idx": virt_idx,
                         "virtual_type": virtual_obj.get("type", "Unknown"),
                         "processed_class": "None",
                         "true_votes": 0,
                         "false_votes": 0,
                         "matched": False,
+                        "x_coordinate": virtual_obj_coordinates[0],
+                        "y_coordinate": virtual_obj_coordinates[1],
+                        "z_coordinate": virtual_obj_coordinates[2],
                     }
                 )
 
@@ -504,7 +513,7 @@ def evaluate_home(
 
     print_progress_bar(0, total_virtual_objects)
 
-    max_workers = 10
+    max_workers = 100
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = []
@@ -567,11 +576,15 @@ def evaluate_home(
     try:
         with open(paths["objects_csv"], "w", newline="", encoding="utf-8") as csvfile:
             fieldnames = [
+                "virtual_idx",
                 "virtual_type",
                 "processed_class",
                 "true_votes",
                 "false_votes",
                 "matched",
+                "x_coordinate",
+                "y_coordinate",
+                "z_coordinate",
             ]
             writer = csv.DictWriter(
                 csvfile, fieldnames=fieldnames, delimiter=";", quoting=csv.QUOTE_ALL
