@@ -23,6 +23,7 @@ def _process_info_to_doc(info: dict) -> Optional[AgnoDocument]:
     description = info.get("description", None)
     class_name = info.get("class_name", None)
     room_name = info.get("room_name", None)
+    coordinates = info.get("coordinates", None)
 
     text_to_embed = f"{info_type.capitalize()} -> "
 
@@ -32,6 +33,8 @@ def _process_info_to_doc(info: dict) -> Optional[AgnoDocument]:
         text_to_embed += f" {description}"
     if room_name and room_name.strip().lower() != "unknown":
         text_to_embed += f" Located in {room_name}"
+    if coordinates and isinstance(coordinates, (list, tuple)) and len(coordinates) == 3:
+        text_to_embed += f" at coordinates {coordinates}"
 
     info_id = info.get("id", uuid.uuid4())
     info["id"] = str(info_id)
@@ -338,14 +341,14 @@ class SemanticMemoryEngine:
         docs_to_insert = [d for d in results if d is not None]
 
         if not docs_to_insert:
-            raise VectorDbError(
+            print(
                 "No valid documents created from additional information."
             )
-
-        Parallel(n_jobs=-1, backend="threading")(
-            delayed(_insert_single_doc)(self.additional_knowledge_db, doc)
-            for doc in docs_to_insert
-        )
+        else:
+            Parallel(n_jobs=-1, backend="threading")(
+                delayed(_insert_single_doc)(self.additional_knowledge_db, doc)
+                for doc in docs_to_insert
+            )
 
     def query_relevant_chunks(
         self,
@@ -405,11 +408,16 @@ class SemanticMemoryEngine:
                 traceback.print_exc()
                 raise ValueError(f"Failed to retrieve search results: {e}") from e
 
-        results_batches = Parallel(n_jobs=-1, backend="threading")(
-            delayed(_retrieve_single)(db, q, top_k)
-            for q in queries
-            for db in [self.vector_db, self.additional_knowledge_db]
-        )
+        if self.config.use_additional_knowledge:
+            results_batches = Parallel(n_jobs=-1, backend="threading")(
+                delayed(_retrieve_single)(db, q, top_k)
+                for q in queries
+                for db in [self.vector_db, self.additional_knowledge_db]
+            )
+        else:
+            results_batches = Parallel(n_jobs=-1, backend="threading")(
+                delayed(_retrieve_single)(self.vector_db, q, top_k) for q in queries
+            )
 
         flat_results = [doc for batch in results_batches for doc in batch]
 
@@ -419,9 +427,8 @@ class SemanticMemoryEngine:
             score = getattr(doc, "reranking_score", None)
             doc_type = doc.meta_data.get("type", None)
             if doc_id and (score or doc_type):
-                if doc_id not in unique_docs:
+                if doc_id in unique_docs:
                     if doc_type:
-                        doc.reranking_score = 1.0
                         unique_docs[doc_id] = doc
                     elif (
                         score
@@ -430,8 +437,6 @@ class SemanticMemoryEngine:
                     ):
                         unique_docs[doc_id] = doc
                 else:
-                    if doc_type:
-                        doc.reranking_score = 1.0
                     unique_docs[doc_id] = doc
 
         results = list(unique_docs.values())

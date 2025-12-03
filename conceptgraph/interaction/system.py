@@ -1,4 +1,5 @@
 from typing import Optional, List, Dict, Tuple
+import numpy as np
 import pickle
 import time
 import math
@@ -16,7 +17,10 @@ from conceptgraph.interaction.schemas import (
     InteractionRequest,
     InteractionResponse,
 )
-from conceptgraph.interaction.spatial_manager import SpatialContextManager
+from conceptgraph.interaction.spatial_manager import (
+    SpatialContextManager,
+    SceneGraphManager,
+)
 from conceptgraph.interaction.memory_engine import SemanticMemoryEngine
 from conceptgraph.interaction.agent_manager import AgentOrchestrator
 from conceptgraph.interaction.utils import log_debug_interaction
@@ -69,6 +73,54 @@ class SmartWheelchairSystem:
             end="",
         )
 
+    def additional_object_converter(self, add_obj: dict) -> dict:
+        """
+        Converts an additional knowledge object from Qdrant format to the enriched object format.
+
+        :param add_obj: Dictionary containing the 'meta_data' field from Qdrant Record payload.
+        :type add_obj: dict
+        :raises KeyError: If required keys are missing in the input dictionary.
+        :raises TypeError: If input is not a dictionary or coordinates are not a list.
+        :return: Dictionary in the enriched object format compatible with the system.
+        :rtype: dict
+        """
+
+        try:
+            if not isinstance(add_obj, dict):
+                raise TypeError(
+                    "Input must be a dictionary representing Qdrant meta_data."
+                )
+
+            meta = add_obj
+            required_keys = [
+                "type",
+                "class_name",
+                "description",
+                "room_name",
+                "coordinates",
+                "id",
+            ]
+            for key in required_keys:
+                if key not in meta:
+                    raise KeyError(f"Missing required key '{key}' in meta_data.")
+
+            coordinates = meta.get("coordinates", [0.0, 0.0, 0.0])
+            if not isinstance(coordinates, list) or len(coordinates) != 3:
+                raise TypeError("Coordinates must be a list of three float values.")
+
+            enriched_obj: dict = {
+                "id": meta.get("id", ""),
+                "class_name": meta.get("class_name", ""),
+                "consolidated_caption": meta.get("description", ""),
+                "room_name": meta.get("room_name", ""),
+                "pcd_np": np.array([coordinates]),
+            }
+            return enriched_obj
+
+        except (KeyError, TypeError) as err:
+            traceback.print_exc()
+            raise RuntimeError(f"Error converting additional object: {err}")
+
     def _initialize_memory(self) -> None:
         """
         Loads object data and ensures Qdrant is populated.
@@ -99,6 +151,32 @@ class SmartWheelchairSystem:
             self.memory_engine.ensure_collection_ready(
                 self.memory_engine.additional_knowledge_db
             )
+
+            if self.config.use_additional_knowledge:
+                additional_knowledge_elements = (
+                    self.memory_engine.additional_knowledge_db.client.scroll(
+                        self.memory_engine.additional_knowledge_db.collection,
+                        limit=9999999999,
+                    )[0]
+                )
+                additional_knowledge_objects = list(
+                    filter(
+                        lambda x: x.payload["meta_data"]["type"] == "object",
+                        additional_knowledge_elements,
+                    )
+                )
+
+                additional_knowledge_objects = list(
+                    map(lambda x: x.payload["meta_data"], additional_knowledge_objects)
+                )
+
+                additional_knowledge_objects = list(
+                    map(self.additional_object_converter, additional_knowledge_objects)
+                )
+
+                enriched_objects.extend(additional_knowledge_objects)
+
+            self.spatial_manager.scene_manager = SceneGraphManager(enriched_objects)
         else:
 
             pass
@@ -245,7 +323,7 @@ class SmartWheelchairSystem:
             request.user_pose
         )
         history_str = "\n".join(
-            [f"User: {h['user']}\nBot: {h['bot']}" for h in self.chat_history]
+            [f"State: {h['state']}\nUser: {h['user']}\nBot: {h['bot']}" for h in self.chat_history]
         )
 
         intention_input = (
@@ -370,7 +448,7 @@ class SmartWheelchairSystem:
 
         if should_run_bot:
             history_str = "\n".join(
-                [f"User: {h['user']}\nBot: {h['bot']}" for h in self.chat_history]
+                [f"State: {h['state']}\nUser: {h['user']}\nBot: {h['bot']}" for h in self.chat_history]
             )
             rag_context_str = json.dumps(rag_docs, indent=2, ensure_ascii=False)
 
@@ -469,7 +547,7 @@ class SmartWheelchairSystem:
                     traceback.print_exc()
 
         self.last_bot_message = final_text or ""
-        self.chat_history.append({"user": request.query, "bot": final_text or ""})
+        self.chat_history.append({"state": state, "user": request.query, "bot": final_text or ""})
         if len(self.chat_history) > 5:
             self.chat_history.pop(0)
 
@@ -502,6 +580,7 @@ if __name__ == "__main__":
         qdrant_url="http://localhost:6333",
         force_recreate_table=False,
         local_data_dir="data",
+        use_additional_knowledge=True,
         debug_input_path=os.path.join("data", "input_debug.txt"),
         debug_output_path=os.path.join("data", "output_debug.txt"),
     )

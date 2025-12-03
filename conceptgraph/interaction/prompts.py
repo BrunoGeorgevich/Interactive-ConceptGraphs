@@ -111,16 +111,16 @@ INTENTION_INTERPRETATION_PROMPT = dedent(
         2. <SCENE_GRAPH_SUMMARY>: A list showing nearby rooms, organized hierarchically, including their centers and IDs, and nearby objects, including their class, description, and distance.
         3. <GLOBAL_OBJECT_INDEX>: A complete list of all object classes available in the house.
         4. <LAST_BOT_MESSAGE>: The previous system output.
-        5. <CHAT_HISTORY>: The previous messages from user and assistant.
+        5. <CHAT_HISTORY>: The previous messages from user and assistant (including the 'state' of those turns).
         6. <USER_QUERY>: The current user input.
     </CONTEXT>
 
     <STATE_DEFINITIONS>
         Classify the <USER_QUERY>, taking into account the <CHAT_HISTORY> and <LAST_BOT_MESSAGE>, into exactly one of the following 8 states.
         
-        **CRITICAL PRIORITY RULE:** If the user is answering a question posed by the Bot in <LAST_BOT_MESSAGE>, you must determine strictly *what type of task* the question belongs to.
-        - If the question was about **Adding/Clarifying Knowledge**, the state is **ADDITIONAL_INFORMATION**.
-        - If the question was about **Selecting a Navigation Target**, the state is **CONTINUE_REQUEST**.
+        **CRITICAL PRIORITY RULE (Disambiguation Logic):** If the user is answering a question posed by the Bot in <LAST_BOT_MESSAGE>, you must determine the context based on the **previous state** in <CHAT_HISTORY>:
+        - **CASE A (Navigation/Action):** If the previous state was **NEW_REQUEST** or **TAKE_ME_TO_ROOM** and the Bot asked for clarification (e.g., "Which one?"), the current state MUST be **CONTINUE_REQUEST**.
+        - **CASE B (Knowledge/Teaching):** If the previous state was **ADD_INFO_DESAMBIGUATION** or the Bot explicitly asked for knowledge details, the current state MUST be **ADDITIONAL_INFORMATION**.
 
         ---
 
@@ -137,9 +137,10 @@ INTENTION_INTERPRETATION_PROMPT = dedent(
            - **Action:** Provide the answer in `direct_response` based strictly on <SCENE_GRAPH_SUMMARY>.
 
         3. **CONTINUE_REQUEST** (Refining Navigation/Action):
-           - User is selecting from a previously offered list of **Action Targets** (e.g., "The first one", "The one in the bedroom").
-           - **STRICT PROHIBITION:** - You MUST NOT trigger this state if the previous Bot Message was asking for clarification about *New Information* (e.g., "Which room should I add the bed to?"). In that case, use **ADDITIONAL_INFORMATION**.
-             - MUST ALWAYS be preceded by a NEW_REQUEST or TAKE_ME_TO_ROOM context.
+           - **Scenario A (Direct Selection):** User is selecting from a previously offered list of **Action Targets** (e.g., "The first one", "The one in the bedroom").
+           - **Scenario B (Disambiguation Response):** The user is answering a Bot's question regarding a previous NEW_REQUEST (e.g., Bot: "I found two cups. Which one?" -> User: "The red one"). 
+           - **Action:** You must generate a specific `rag_queries` list for the selected item to trigger the navigation.
+           - **STRICT PROHIBITION:** You MUST NOT trigger this state if the context implies teaching the bot new facts (Use ADDITIONAL_INFORMATION for that).
 
         4. **END_CONVERSATION**:
            - Explicit termination ("Bye", "Exit", "Tchau").
@@ -166,6 +167,7 @@ INTENTION_INTERPRETATION_PROMPT = dedent(
              * **Shared State/Verb:** If the resolved item was part of a sentence sharing a specific state or action (e.g., "The table and the bed **broke**"), ensure the description reflects that state (e.g., "The bed in bedroom 3 **is broken**"). Do not generate generic descriptions like "bed referenced". The description must capture the actual event or preference.
            
            - **COORDINATE INHERITANCE (HIERARCHICAL):** For ALL knowledge types, determine coordinates using this strict hierarchy:
+             OBS: ONLY USE COORDINATE INHERITANCE IF THE KNOWLEDGE TO BE ADDED DOES NOT HAVE AN EXPLICIT COORDINATE SET; OTHERWISE, KEEP THE PROVIDED COORDINATES.
              1. **Exact Object Match:** If the entry refers to a specific object class within a specific room, check <SCENE_GRAPH_SUMMARY> for an existing object of that class in that room. If found, use its `Center`.
              2. **Room Center Fallback:** If the specific object class is NOT found in that room, but the **Room ID** exists in <SCENE_GRAPH_SUMMARY>, use the Room's `center` coordinates.
              3. **Global Fallback:** Use `[-1, -1, -1]` ONLY if neither the object nor the room exists in the local scene graph.
@@ -180,7 +182,7 @@ INTENTION_INTERPRETATION_PROMPT = dedent(
              * If User resolves ALL ambiguities -> **ADDITIONAL_INFORMATION**.
              * If User resolves SOME but not ALL -> **ADD_INFO_DESAMBIGUATION**.
              * If User answers with a selection number (e.g., "1") referring to the options provided -> **ADDITIONAL_INFORMATION**.
-             * **NEVER** transition to CONTINUE_REQUEST.
+             * **NEVER** transition to CONTINUE_REQUEST from this state.
 
     </STATE_DEFINITIONS>
 
@@ -200,6 +202,12 @@ INTENTION_INTERPRETATION_PROMPT = dedent(
 
         ### IF STATE == "SCENE_GRAPH_QUERY":
         - `direct_response`: Natural language answer based on <SCENE_GRAPH_SUMMARY> in the user's language.
+
+        ### IF STATE == "CONTINUE_REQUEST":
+        - `rag_queries`: [ "Specific selected object class + specific room ID" ] (Construct a precise query to isolate the target).
+        - `rerank_query`: "Specific description of the selected target".
+        - `direct_response`: Confirm navigation to the selected target in user's language.
+        - `additional_knowledge`: [] (MUST be empty).
 
         ### IF STATE == "UNCLEAR":
         - `direct_response`: State what was not understood and list 2-3 valid nearby objects or rooms to help the user (in user's language).

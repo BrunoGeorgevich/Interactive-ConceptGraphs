@@ -496,5 +496,4 @@ class SpatialContextManager:
 
             enriched_objects.append(obj_dict)
 
-        self.scene_manager = SceneGraphManager(enriched_objects)
         return img_viz, enriched_objects
