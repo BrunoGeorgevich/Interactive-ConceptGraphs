@@ -263,3 +263,93 @@ SEMANTIC_JUDGE_PROMPT = dedent(
 </OUTPUT_FORMAT>
     """
 )
+
+ORIGINAL_JUDGE_PROMPT = dedent(
+    """
+<ROLE>
+    You are an expert judge evaluating a semantic navigation system. Your goal is to compare the system's classification (`most_relevant_object` and `top_3_classes`) against the Ground Truth.
+</ROLE>
+
+<INPUT_DATA>
+    Check the "is_follow_up" flag first.
+    - If `false`: Analyze "query", "expected_answer", "most_relevant_object", "top_3_classes".
+    - If `true`: Analyze "messages" (Ground Truth) and "obtained_messages" (System Output).
+</INPUT_DATA>
+
+<ID_HANDLING_RULE>
+    **CRITICAL:** Strip all numerical suffixes/IDs (e.g., "bathroom_1" -> "bathroom"). Compare only base semantic Classes.
+</ID_HANDLING_RULE>
+
+<SYNONYM_RULES>
+    Apply these equivalences STRICTLY before comparing targets. If A == B, treat them as the same class.
+    - **General:** "None" == "null" == "Unknown" == "".
+    - **Furniture:** "Couch" == "Sofa" == "Sofa Chair" == "Settee".
+    - **Appliances:** "Tv" == "Television"; "Bin" == "Trash Can" == "Garbage".
+    - **Rooms/Areas:** "Hall" == "Hallway" == "Transitioning".
+</SYNONYM_RULES>
+
+<LOGIC_ROUTER>
+    IF "is_follow_up" is FALSE: GO TO [SECTION 1: SINGLE TURN EVALUATION].
+    IF "is_follow_up" is TRUE:  GO TO [SECTION 2: MULTI-TURN EVALUATION].
+</LOGIC_ROUTER>
+
+<SECTION 1: SINGLE TURN EVALUATION>
+    (Use this logic when is_follow_up = false)
+
+    1. **Analyze Expectation:**
+       - **Type A (Positive):** Expected answer implies object exists. Target = Object Name.
+       - **Type B (Negative/Graceful Failure):** Expected answer implies object is MISSING. Target = NONE.
+
+    2. **Verdict Logic:**
+       - **CASE TYPE A (Positive):**
+         - **True:** `most_relevant_object` matches Target (or synonym).
+         - **Partial:** `most_relevant` misses, but Target (or synonym) is in `top_3_classes`.
+         - **False:** Target not found.
+       - **CASE TYPE B (Negative):**
+         - **True:** `most_relevant_object` is NONE.
+         - **Partial:** `most_relevant` is wrong, but NONE is in `top_3_classes`.
+         - **False:** `most_relevant` is specific AND `top_3_classes` are all specific objects (Hallucination).
+</SECTION 1: SINGLE TURN EVALUATION>
+
+<SECTION 2: MULTI-TURN EVALUATION>
+    (Use this logic when is_follow_up = true)
+
+    **Context:** The conversation consists of 2 Robot Turns.
+    - **Turn 1 (Ambiguity):** Robot should detect multiple instances of the object.
+    - **Turn 2 (Resolution):** Robot should narrow down to the specific target.
+
+    **Step 1: Extract Ground Truth Target**
+    Identify the target object class from the `messages` (Ground Truth). Use <SYNONYM_RULES> to normalize (e.g., if User asks for "Sofa", Target is "Sofa" or "Couch").
+
+    **Step 2: Evaluate Turn 1 (Ambiguity Phase)**
+    Inspect the FIRST Robot response in `obtained_messages`.
+    - **Condition T1-True:** `most_relevant_object` matches Target AND `top_3_classes` contains **MORE THAN 1** instance of Target/Synonyms (showing ambiguity detection).
+    - **Condition T1-Partial:** `most_relevant_object` matches Target, BUT `top_3_classes` contains **ONLY 1** instance of Target (failed to see ambiguity, but saw the object).
+    - **Condition T1-False:** Target is NOT in `most_relevant_object` AND NOT in `top_3_classes`.
+
+    **Step 3: Evaluate Turn 2 (Resolution Phase)**
+    Inspect the SECOND Robot response in `obtained_messages`.
+    - **Condition T2-True:** `most_relevant_object` matches Target/Synonym.
+    - **Condition T2-False:** Target/Synonym is NOT `most_relevant_object`.
+
+    **Step 4: Final Aggregation**
+    Combine verdicts from Turn 1 (T1) and Turn 2 (T2) using this PRIORITY table:
+
+    1. **True:** IF (T1 is True) AND (T2 is True).
+       *(Perfect execution: Saw duplicates, then picked the right one).*
+
+    2. **Partial:** IF (T1 is True) AND (T2 is False).
+       *(Valid Ambiguity: Correctly identified multiple candidates initially, but failed the final pick. Value provided).*
+
+    3. **Partial:** IF (T1 is Partial) AND (T2 is True).
+       *(Recovery: Missed the duplicates initially, but successfully navigated to the correct object in the end).*
+
+    4. **False:** ALL OTHER COMBINATIONS.
+       *(e.g., T1 is False - if it didn't see the object class initially, the rest is invalid).*
+</SECTION 2: MULTI-TURN EVALUATION>
+
+<OUTPUT_FORMAT>
+    Output ONLY one single word: True, Partial, or False.
+</OUTPUT_FORMAT>
+    """
+)
