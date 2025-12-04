@@ -1,10 +1,10 @@
-import uuid
 from flashrank import Ranker, RerankRequest
 from typing import List, Optional, Tuple
 from joblib import Parallel, delayed
 from functools import lru_cache
 import numpy as np
 import traceback
+import uuid
 import json
 import os
 
