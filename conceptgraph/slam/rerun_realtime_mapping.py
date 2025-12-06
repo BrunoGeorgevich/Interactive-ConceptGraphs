@@ -251,7 +251,7 @@ def run_mapping_process(
     # # Initialize OpenAI client for VLM (Vision-Language Model) captions/edges
     if not new_inference_system:
         openai_client = get_vlm_openai_like_client(
-            model="openai/gpt-4o-mini",
+            model="openai/gpt-4o",
             api_key=os.getenv("OPENROUTER_API_KEY"),
             base_url=os.getenv("OPENROUTER_API_BASE_URL"),
         )
