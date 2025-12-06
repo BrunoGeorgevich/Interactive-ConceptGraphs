@@ -1,0 +1,374 @@
+import matplotlib
+
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import pandas as pd
+import os
+
+
+def apply_plot_style() -> None:
+    """
+    Applies a consistent style to matplotlib plots for improved readability.
+
+    :return: None
+    :rtype: None
+    """
+    plt.style.use("seaborn-v0_8-whitegrid")
+    mpl.rcParams["font.family"] = "sans-serif"
+    mpl.rcParams["font.size"] = 14
+    mpl.rcParams["axes.titlesize"] = 20
+    mpl.rcParams["axes.labelsize"] = 16
+    mpl.rcParams["xtick.labelsize"] = 14
+    mpl.rcParams["ytick.labelsize"] = 14
+    mpl.rcParams["legend.fontsize"] = 14
+    mpl.rcParams["axes.spines.top"] = False
+    mpl.rcParams["axes.spines.right"] = False
+    mpl.rcParams["figure.dpi"] = 150
+    mpl.rcParams["savefig.dpi"] = 300
+
+
+COLORS = ["#3498db", "#e74c3c", "#2ecc71", "#9b59b6", "#f39c12", "#1abc9c"]
+
+
+def load_process_and_detect_cutoff(
+    csv_path: str, max_seconds: int = 300, smoothing_window: int = 15
+) -> tuple[pd.DataFrame | None, float, float | None]:
+    """
+    Loads a CSV file, processes resource usage metrics, and detects network cutoff events.
+
+    :param csv_path: Path to the CSV file containing resource logs.
+    :type csv_path: str
+    :param max_seconds: Maximum time in seconds to include in the output DataFrame.
+    :type max_seconds: int
+    :param smoothing_window: Window size for rolling mean smoothing.
+    :type smoothing_window: int
+    :raises ValueError: If the CSV file is malformed or missing required columns.
+    :return: Tuple containing processed DataFrame, last real elapsed time, and cutoff time.
+    :rtype: tuple[pd.DataFrame | None, float, float | None]
+    """
+    if not os.path.exists(csv_path):
+        return None, 0.0, None
+
+    try:
+        df = pd.read_csv(csv_path, sep=";")
+        if df.empty or "timestamp" not in df.columns:
+            return None, 0.0, None
+
+        df["timestamp"] = pd.to_datetime(
+            df["timestamp"], format="mixed", errors="coerce"
+        )
+        df = df.dropna(subset=["timestamp"]).sort_values("timestamp")
+
+        if df.empty:
+            return None, 0.0, None
+
+        start_time = df["timestamp"].iloc[0]
+        df["elapsed_seconds"] = (df["timestamp"] - start_time).dt.total_seconds()
+
+        metric_cols = [
+            "ram_percent",
+            "gpu0_percent",
+            "gpu0_mem_percent",
+            "net_sent_mbps",
+            "net_recv_mbps",
+        ]
+        cols_present = [c for c in metric_cols if c in df.columns]
+        df = df[["elapsed_seconds"] + cols_present].copy()
+
+        cutoff_time = None
+        net_cols = ["net_sent_mbps", "net_recv_mbps"]
+        present_net_cols = [c for c in net_cols if c in df.columns]
+
+        if present_net_cols:
+            mask_negative = (df[present_net_cols] < 0).any(axis=1)
+            if mask_negative.any():
+                cutoff_time = df.loc[mask_negative.idxmax(), "elapsed_seconds"]
+
+        for col in present_net_cols:
+            df[col] = df[col].apply(lambda x: max(0.0, x))
+
+        if smoothing_window > 1:
+            for col in cols_present:
+                df[col] = df[col].rolling(window=smoothing_window, min_periods=1).mean()
+
+        df = df[df["elapsed_seconds"] <= max_seconds]
+        if df.empty:
+            return None, 0.0, None
+
+        last_real_time = df["elapsed_seconds"].iloc[-1]
+
+        if round(last_real_time) < max_seconds:
+            epsilon = 0.1
+            pad_rows = [
+                {"elapsed_seconds": last_real_time + epsilon},
+                {"elapsed_seconds": max_seconds},
+            ]
+            for row in pad_rows:
+                for col in cols_present:
+                    row[col] = 0.0
+            df = pd.concat([df, pd.DataFrame(pad_rows)], ignore_index=True)
+
+        return df, last_real_time, cutoff_time
+
+    except (pd.errors.ParserError, pd.errors.EmptyDataError, KeyError, ValueError) as e:
+        import traceback
+
+        traceback.print_exc()
+        raise ValueError(f"Failed to process CSV file '{csv_path}': {e}")
+
+
+def plot_strategies_comparison(
+    outputs_dir: str,
+    prefixes: list,
+    home_id: int,
+    output_path: str,
+    max_seconds: int = 300,
+    smoothing_window: int = 20,
+) -> None:
+    """
+    Plots a grid comparing resource usage metrics for different strategies.
+
+    :param outputs_dir: Directory containing experiment outputs.
+    :type outputs_dir: str
+    :param prefixes: List of experiment prefixes to compare.
+    :type prefixes: list
+    :param home_id: Identifier for the home being analyzed.
+    :type home_id: int
+    :param output_path: Path to save the generated plot.
+    :type output_path: str
+    :param max_seconds: Maximum time in seconds for the x-axis.
+    :type max_seconds: int
+    :param smoothing_window: Window size for rolling mean smoothing.
+    :type smoothing_window: int
+    :raises ValueError: If resource logs cannot be loaded or processed.
+    :return: None
+    :rtype: None
+    """
+    print(f"Gerando grid final para Casa {home_id}...")
+    apply_plot_style()
+
+    metrics_config = [
+        {
+            "col": "ram_percent",
+            "title": "RAM\n(%)",
+            "color": COLORS[4],
+            "ylim": (-2, 102),
+        },
+        {
+            "col": "gpu0_percent",
+            "title": "GPU\n(%)",
+            "color": COLORS[2],
+            "ylim": (-2, 102),
+        },
+        {
+            "col": "gpu0_mem_percent",
+            "title": "GPU Mem\n(%)",
+            "color": COLORS[1],
+            "ylim": (-2, 102),
+        },
+        {
+            "col": "net_sent_mbps",
+            "title": "Net Sent\n(Mbps)",
+            "color": COLORS[3],
+            "ylim": (-0.01, 3),
+        },
+        {
+            "col": "net_recv_mbps",
+            "title": "Net Recv\n(Mbps)",
+            "color": COLORS[5],
+            "ylim": (-0.001, 0.2),
+        },
+    ]
+
+    n_rows = len(metrics_config)
+    n_cols = len(prefixes)
+
+    fig_width = 6.5 * n_cols
+    fig_height = 1.5 * n_rows
+
+    fig, axes = plt.subplots(
+        n_rows,
+        n_cols,
+        figsize=(fig_width, fig_height),
+        sharex=True,
+        sharey="row",
+        constrained_layout=True,
+    )
+
+    if n_cols == 1:
+        axes = axes.reshape(-1, 1)
+    if n_rows == 1:
+        axes = axes.reshape(1, -1)
+
+    manager_dir = "manager"
+    resource_log_name = "resource_log.csv"
+
+    for col_idx, prefix in enumerate(prefixes):
+        exp_folder = f"{prefix}_house_{home_id}_det"
+        exp_path = os.path.join(
+            outputs_dir, f"Home{home_id:02d}", "Wandering", "exps", exp_folder
+        )
+        csv_path = os.path.join(exp_path, manager_dir, resource_log_name)
+
+        try:
+            df, real_duration, cutoff_time = load_process_and_detect_cutoff(
+                csv_path, max_seconds, smoothing_window
+            )
+        except ValueError:
+            import traceback
+
+            traceback.print_exc()
+            df, real_duration, cutoff_time = None, 0.0, None
+
+        for row_idx, config in enumerate(metrics_config):
+            ax = axes[row_idx, col_idx]
+            metric_col = config["col"]
+
+            if row_idx == 0:
+                clean_title = prefix.replace("lost_connection_", "").capitalize()
+                ax.set_title(clean_title, fontweight="bold", pad=20, fontsize=30)
+
+            if df is not None and metric_col in df.columns:
+                ax.plot(
+                    df["elapsed_seconds"],
+                    df[metric_col],
+                    color=config["color"],
+                    linewidth=2,
+                )
+
+                if round(real_duration) < max_seconds:
+                    ax.axvspan(real_duration, max_seconds, facecolor="red", alpha=0.08)
+                    ax.axvspan(
+                        real_duration,
+                        max_seconds,
+                        facecolor="none",
+                        edgecolor="red",
+                        hatch="///",
+                        alpha=0.3,
+                        linewidth=0,
+                    )
+                    ax.text(
+                        (real_duration + max_seconds) / 2,
+                        (
+                            config["ylim"][1]
+                            if config["ylim"][1]
+                            else df[metric_col].max()
+                        )
+                        * 0.5,
+                        "ERROR",
+                        ha="center",
+                        va="center",
+                        color="red",
+                        fontsize=22,
+                        fontweight="bold",
+                        alpha=0.5,
+                    )
+
+                if cutoff_time is not None and cutoff_time <= max_seconds:
+                    ax.axvline(
+                        x=cutoff_time,
+                        color="black",
+                        linestyle="--",
+                        linewidth=4,
+                        alpha=0.8,
+                    )
+                    if row_idx == 0:
+                        y_pos = (
+                            config["ylim"][1]
+                            if config["ylim"][1]
+                            else df[metric_col].max()
+                        )
+                        ax.text(
+                            cutoff_time,
+                            y_pos * 0.95,
+                            "Network Cutoff  ",
+                            ha="right",
+                            va="top",
+                            color="black",
+                            fontweight="bold",
+                            fontsize=22,
+                        )
+            else:
+                if row_idx == int(n_rows / 2):
+                    ax.text(
+                        0.5,
+                        0.5,
+                        "N/A",
+                        ha="center",
+                        va="center",
+                        transform=ax.transAxes,
+                        color="gray",
+                    )
+
+            ax.set_xlim(0, max_seconds)
+            ax.spines["bottom"].set_visible(True)
+            ax.spines["left"].set_visible(True)
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+            ax.set_xticks([0, 40, 80, 120, 160, 200, 240, 280])
+            ax.tick_params(axis="both", which="major", labelsize=22)
+            ax.tick_params(axis="both", which="minor", labelsize=20)
+            if config["ylim"][1] is not None:
+                ax.set_ylim(config["ylim"][0], config["ylim"][1])
+            else:
+                ax.set_ylim(bottom=config["ylim"][0])
+            ax.grid(axis="y", alpha=0)
+            ax.grid(axis="x", alpha=0)
+
+            if col_idx == 0:
+                ax.set_ylabel(
+                    config["title"],
+                    fontweight="bold",
+                    rotation=0,
+                    ha="center",
+                    va="center",
+                    fontsize=24,
+                )
+                ax.yaxis.set_label_coords(-0.25, 0.5)
+
+    fig.supxlabel("Time (s)", fontsize=25, fontweight="bold", y=-0.05)
+
+    plt.savefig(output_path, facecolor="white", bbox_inches="tight")
+    plt.close(fig)
+    print(f"Salvo em: {output_path}")
+
+
+def main() -> None:
+    """
+    Main entry point for generating and saving the resource usage comparison plot.
+
+    :return: None
+    :rtype: None
+    """
+    DATABASE_PATH = os.path.join(
+        "D:\\", "Documentos", "Datasets", "Robot@VirtualHomeLarge"
+    )
+    OUTPUTS_DIR = os.path.join(DATABASE_PATH, "outputs")
+    PLOTS_DIR = os.path.join(DATABASE_PATH, "evaluation_results", "plots")
+    os.makedirs(PLOTS_DIR, exist_ok=True)
+
+    PREFIXES = [
+        "lost_connection_improved",
+        "lost_connection_original",
+        "lost_connection_offline",
+        "lost_connection_online",
+    ]
+    HOME_ID = 1
+
+    OUTPUT_FILENAME = "lost_connection_experiment.png"
+    OUTPUT_PATH = os.path.join(PLOTS_DIR, OUTPUT_FILENAME)
+
+    plot_strategies_comparison(
+        OUTPUTS_DIR,
+        PREFIXES,
+        HOME_ID,
+        OUTPUT_PATH,
+        max_seconds=280,
+        smoothing_window=60,
+    )
+
+
+if __name__ == "__main__":
+    main()

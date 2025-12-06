@@ -175,7 +175,7 @@ def plot_metrics_boxplot(
                 patch_artist=True,
                 labels=processing_types,
                 showfliers=False,
-                widths=0.8
+                widths=0.8,
             )
 
             for patch, color in zip(bp["boxes"], colors[: len(processing_types)]):
@@ -285,20 +285,11 @@ def plot_tp_fn_fp_grouped_bar(
             df[df["processing_type"] == pt]["fp"].mean() for pt in processing_types
         ]
 
-        _, ax = plt.subplots(figsize=(9, 7))
+        _, ax = plt.subplots(figsize=(9, 5))
 
         y = range(len(processing_types))
-        height = 0.25
+        height = 0.3
 
-        bars_tp = ax.barh(
-            [i - height for i in y],
-            tp_means,
-            height,
-            label="True Positives",
-            color="#b6d7a8",
-            edgecolor="black",
-            linewidth=0.0,
-        )
         bars_fp = ax.barh(
             [i + height for i in y],
             fp_means,
@@ -308,8 +299,18 @@ def plot_tp_fn_fp_grouped_bar(
             edgecolor="black",
             linewidth=0.0,
         )
-        bars_fn = ax.barh(
+
+        bars_tp = ax.barh(
             y,
+            tp_means,
+            height,
+            label="True Positives",
+            color="#b6d7a8",
+            edgecolor="black",
+            linewidth=0.0,
+        )
+        bars_fn = ax.barh(
+            [i - height for i in y],
             fn_means,
             height,
             label="False Negatives",
@@ -339,7 +340,7 @@ def plot_tp_fn_fp_grouped_bar(
         ax.set_yticklabels(processing_types, fontsize=16)
         ax.legend(
             loc="lower center",
-            bbox_to_anchor=(0.5, -0.15),
+            bbox_to_anchor=(0.5, -0.2),
             frameon=True,
             fontsize=14,
             ncol=3,
