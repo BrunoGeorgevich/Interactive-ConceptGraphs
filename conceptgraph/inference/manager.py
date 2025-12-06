@@ -196,9 +196,7 @@ class AdaptiveInferenceManager:
             }
 
             if self.configuration == "offline":
-                temp = preferred_factories
                 preferred_factories = fallback_factories
-                fallback_factories = temp
             elif self.configuration == "improved":
                 preferred_factories: dict = {
                     "det": lambda: YOLODetectorStrategy(
