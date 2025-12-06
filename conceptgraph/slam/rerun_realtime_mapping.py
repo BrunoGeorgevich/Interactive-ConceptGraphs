@@ -14,7 +14,6 @@ import numpy as np
 import traceback
 import pickle
 import shutil
-import pprint
 import torch
 import hydra
 import uuid
@@ -127,7 +126,7 @@ torch.set_grad_enabled(False)
 #     config_name="rerun_realtime_mapping",
 # )
 def run_mapping_process(
-    cfg: DictConfig, selected_house: int | None = None, preffix: str | None = None
+    cfg: DictConfig, selected_house: int | None = None, preffix: str | None = None, folder_preffix: str | None = None
 ) -> None:
     load_dotenv()
 
@@ -135,8 +134,8 @@ def run_mapping_process(
         cfg.selected_house = selected_house
     if preffix is not None:
         cfg.preffix = preffix
-        cfg.detections_exp_suffix = f"{preffix}_house_{cfg.selected_house}_det"
-        cfg.exp_suffix = f"{preffix}_house_{cfg.selected_house}_map"
+        cfg.detections_exp_suffix = f"{folder_preffix}{preffix}_house_{cfg.selected_house}_det"
+        cfg.exp_suffix = f"{folder_preffix}{preffix}_house_{cfg.selected_house}_map"
 
     cfg.scene_id = f"Home{cfg.selected_house:02d}/Wandering"
     new_inference_system = cfg.preffix != "original"
@@ -1060,7 +1059,7 @@ def clean_and_check_progress() -> dict[str, list[int]]:
                     print(
                         f"[FAIL] House {house_id}: Folder found without .pkl.gz (Interrupted)."
                     )
-                    print(f"   -> Deleting folders for restart...")
+                    print("   -> Deleting folders for restart...")
 
                     try:
                         shutil.rmtree(full_map_path)
