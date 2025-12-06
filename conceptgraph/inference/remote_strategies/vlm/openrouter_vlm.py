@@ -6,7 +6,10 @@ import logging
 import json
 import re
 
+from pyparsing import C
+
 from conceptgraph.utils.vlm import extract_list_of_tuples, vlm_extract_object_captions
+from conceptgraph.inference.cost_estimator import CostEstimator
 from conceptgraph.inference.interfaces import IVLM
 
 
@@ -106,6 +109,7 @@ class OpenrouterVLM(IVLM):
                 model=OpenRouter(id=self.model_id, api_key=self.api_key),
                 markdown=True,
             ).run(prompt, images=[AgnoImage(filepath=annotated_image_path)])
+            CostEstimator().register_execution("relation_extraction", response)
             relations = extract_list_of_tuples(response.content)
             return relations
         except (AttributeError, ValueError, RuntimeError) as e:
@@ -131,6 +135,7 @@ class OpenrouterVLM(IVLM):
                 model=OpenRouter(id=self.model_id, api_key=self.api_key),
                 markdown=True,
             ).run(prompt, images=[AgnoImage(filepath=annotated_image_path)])
+            CostEstimator().register_execution("captioning", response)
             captions = vlm_extract_object_captions(response.content)
             return captions
         except (AttributeError, ValueError, RuntimeError) as e:
@@ -227,6 +232,7 @@ class OpenrouterVLM(IVLM):
                         self.__prompts["class_env"],
                         images=[AgnoImage(filepath=image_path)],
                     )
+                    CostEstimator().register_execution("environment_classification", response)
                     json_match = re.search(
                         r"```json\s*(\{.*?\})\s*```", response.content, re.DOTALL
                     )

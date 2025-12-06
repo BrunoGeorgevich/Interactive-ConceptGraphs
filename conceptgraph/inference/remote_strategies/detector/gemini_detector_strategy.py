@@ -1,5 +1,5 @@
-from agno.agent import Agent, RunResponse
 from agno.models.openrouter import OpenRouter
+from agno.agent import Agent, RunResponse
 from agno.media import Image as AgnoImage
 from supervision import Detections
 import numpy as np
@@ -8,6 +8,7 @@ import logging
 import json
 
 
+from conceptgraph.inference.cost_estimator import CostEstimator
 from conceptgraph.inference.interfaces import IObjectDetector
 
 REMOTE_DETECTION_PROMPT = """Analyze this image and detect all instances of the following objects: {classes_str}.
@@ -149,6 +150,7 @@ class GeminiDetectorStrategy(IObjectDetector):
         response: RunResponse = self.agent.run(
             prompt, images=[AgnoImage(filepath=image_path)]
         )
+        CostEstimator().register_execution("detection", response)
         return response.content
 
     def _parse_json(self, response: str) -> list[dict]:

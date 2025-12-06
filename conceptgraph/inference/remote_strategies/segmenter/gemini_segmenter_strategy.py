@@ -1,6 +1,6 @@
+from google.genai.errors import ServerError
 from google.genai.types import HttpOptions
 from google.genai import types
-from google.genai.errors import ServerError
 from google import genai
 from PIL import Image
 import numpy as np
@@ -12,6 +12,7 @@ import json
 import io
 import os
 
+from conceptgraph.inference.cost_estimator import CostEstimator
 from conceptgraph.inference.interfaces import ISegmenter
 
 
@@ -158,6 +159,7 @@ class GeminiSegmenterStrategy(ISegmenter):
             response = self.client.models.generate_content(
                 model=self.model_id, contents=[prompt, im], config=config
             )
+            CostEstimator().register_execution("segmentation", response)
             items = json.loads(parse_json(response.text))
             return items
         except (

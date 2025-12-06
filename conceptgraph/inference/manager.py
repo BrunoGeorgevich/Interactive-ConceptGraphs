@@ -214,6 +214,21 @@ class AdaptiveInferenceManager:
                         api_key=self.openrouter_api_key,
                     ),
                 }
+            elif self.configuration == "original":
+                preferred_factories: dict = {
+                    "det": lambda: YOLODetectorStrategy(
+                        checkpoint_path="yolov8l-world.pt",
+                        device=self.device,
+                    ),
+                    "seg": lambda: SAMSegmenterStrategy(
+                        checkpoint_path="sam_l.pt",
+                        device=self.device,
+                    ),
+                    "vlm": lambda: OpenrouterVLM(
+                        model_id="openai/gpt-4o",
+                        api_key=self.openrouter_api_key,
+                    ),
+                }
 
             switcher: StrategySwitcher = StrategySwitcher(
                 preferred_factories,
