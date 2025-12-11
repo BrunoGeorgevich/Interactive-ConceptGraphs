@@ -135,7 +135,7 @@ def generate_bar_chart(df_stats: pd.DataFrame, output_path: str) -> None:
             label=prefix,
             capsize=4,
             color=COLORS[i % len(COLORS)],
-            alpha=0.7
+            alpha=0.7,
         )
 
     ax.set_ylabel("Average Usage (%)", fontweight="bold")
@@ -147,8 +147,14 @@ def generate_bar_chart(df_stats: pd.DataFrame, output_path: str) -> None:
     ax.grid(axis="y", alpha=0.5)
     ax.grid(axis="x", alpha=0)
     ax.legend(
-        loc="upper center", bbox_to_anchor=(0.5, -0.05), ncol=len(prefixes), frameon=True
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.05),
+        ncol=len(prefixes),
+        frameon=True,
     )
+
+    for text in ax.get_legend().get_texts():
+        text.set_text(text.get_text().capitalize())
 
     plt.tight_layout()
     try:
@@ -203,7 +209,8 @@ def main() -> None:
     df_stats.to_csv(csv_path, index=False, sep=";")
     print(f"Statistics CSV saved at: {csv_path}")
 
-    plot_path = os.path.join(PLOTS_DIR, "system_resources_comparison.png")
+    # plot_path = os.path.join(PLOTS_DIR, "system_resources_comparison.png")
+    plot_path = os.path.join(PLOTS_DIR, "system_resources_comparison.pdf")
     generate_bar_chart(df_stats, plot_path)
 
 

@@ -191,7 +191,7 @@ def plot_metrics_boxplot(
                     mpl.patches.Patch(
                         facecolor=colors[i],
                         edgecolor="black",
-                        label=processing_types[i],
+                        label=processing_types[i].title(),
                         alpha=0.7,
                     )
                     for i in range(len(processing_types))
@@ -236,7 +236,8 @@ def plot_metrics_boxplot(
             ncol=4,
         )
         fig.subplots_adjust(wspace=0.15, right=0.97)
-        save_path = os.path.join(output_dir, "metrics_boxplot.png")
+        # save_path = os.path.join(output_dir, "metrics_boxplot.png")
+        save_path = os.path.join(output_dir, "metrics_boxplot.pdf")
         plt.savefig(save_path, facecolor="white")
         plt.close()
         print(f"Saved: {save_path}")
@@ -327,29 +328,30 @@ def plot_tp_fn_fp_grouped_bar(
                     xy=(width_val + 1, bar.get_y() + bar.get_height() / 2),
                     va="center",
                     ha="left",
-                    fontsize=15,
+                    fontsize=17,
                     fontweight="bold",
                 )
 
-        ax.set_ylabel("", fontweight="bold", fontsize=16)
-        ax.set_xlabel("Average Count", fontweight="bold", fontsize=16)
+        ax.set_ylabel("", fontweight="bold", fontsize=18)
+        ax.set_xlabel("Average Count", fontweight="bold", fontsize=22)
         ax.set_xticks([])
         ax.set_xticklabels([])
         ax.spines["bottom"].set_visible(False)
         ax.set_yticks(y)
-        ax.set_yticklabels(processing_types, fontsize=16)
+        ax.set_yticklabels([p.title() for p in processing_types], fontsize=18)
         ax.legend(
             loc="lower center",
-            bbox_to_anchor=(0.5, -0.2),
+            bbox_to_anchor=(0.5, -0.28),
             frameon=True,
-            fontsize=14,
+            fontsize=18,
             ncol=3,
         )
         ax.grid(axis="x", alpha=0)
         ax.grid(axis="y", alpha=0)
 
         plt.tight_layout()
-        save_path = os.path.join(output_dir, "tp_fn_fp_grouped_bar.png")
+        # save_path = os.path.join(output_dir, "tp_fn_fp_grouped_bar.png")
+        save_path = os.path.join(output_dir, "tp_fn_fp_grouped_bar.pdf")
         plt.savefig(save_path, bbox_inches="tight", facecolor="white")
         plt.close()
         print(f"Saved: {save_path}")

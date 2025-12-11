@@ -357,7 +357,8 @@ def main() -> None:
     ]
     HOME_ID = 1
 
-    OUTPUT_FILENAME = "lost_connection_experiment.png"
+    # OUTPUT_FILENAME = "lost_connection_experiment.png"
+    OUTPUT_FILENAME = "lost_connection_experiment.pdf"
     OUTPUT_PATH = os.path.join(PLOTS_DIR, OUTPUT_FILENAME)
 
     plot_strategies_comparison(

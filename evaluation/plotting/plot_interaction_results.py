@@ -31,9 +31,9 @@ def load_and_preprocess_data(
         df_imp = pd.read_csv(path_improved, delimiter=";")
         df_orig = pd.read_csv(path_original, delimiter=",")
 
-        df_ak["Strategy"] = "Improved + Knowledge"
-        df_imp["Strategy"] = "Improved"
-        df_orig["Strategy"] = "Original"
+        df_ak["Strategy"] = "Ours + Knowledge"
+        df_imp["Strategy"] = "Ours"
+        df_orig["Strategy"] = "ConceptGraphs"
 
         df_combined = pd.concat([df_orig, df_imp, df_ak], ignore_index=True)
 
@@ -143,13 +143,14 @@ def get_palette(plot_attributes: dict) -> list | dict:
 
 def save_plot(fig: plt.Figure, name: str, output_dir: str) -> None:
     """Helper to save the plot and close the figure."""
-    path = os.path.join(output_dir, f"{name}.png")
+    # path = os.path.join(output_dir, f"{name}.png")
+    path = os.path.join(output_dir, f"{name}.pdf")
     fig.savefig(path, bbox_inches="tight")
     plt.close(fig)
     print(f"Saved: {path}")
 
 
-def wrap_label(label: str, width: int = 10) -> str:
+def wrap_label(label: str, width: int = 14) -> str:
     """
     Wraps the label text to the specified width.
 
@@ -256,7 +257,7 @@ def plot_02_type_success_grouped_bar(
         ax.set_ylim(0, 1)
         ax.set_yticklabels([f"{y:.1f}" for y in ax.get_yticks()], fontsize=16)
         ax.set_xticklabels(
-            [wrap_label(lbl.get_text(), width=12) for lbl in ax.get_xticklabels()],
+            [wrap_label(lbl.get_text(), width=14) for lbl in ax.get_xticklabels()],
             fontsize=16,
         )
         ax.set_xlabel("Question Type", fontsize=18, fontweight="bold")
@@ -307,8 +308,8 @@ def plot_03_response_quality_stacked(
 
         grouped_pct = grouped.div(grouped.sum(axis=1), axis=0) * 100
 
-        strategy_order = ["Original"] + [
-            s for s in grouped_pct.index if s != "Original"
+        strategy_order = ["ConceptGraphs"] + [
+            s for s in grouped_pct.index if s != "ConceptGraphs"
         ]
         grouped_pct = grouped_pct.loc[strategy_order]
 
@@ -331,7 +332,7 @@ def plot_03_response_quality_stacked(
         ax.spines["left"].set_visible(False)
         ax.spines["bottom"].set_visible(True)
         ax.set_xticklabels(
-            [wrap_label(lbl.get_text(), width=12) for lbl in ax.get_xticklabels()],
+            [wrap_label(lbl.get_text(), width=14) for lbl in ax.get_xticklabels()],
             fontsize=18,
             rotation=0,
         )
@@ -464,7 +465,7 @@ def plot_05_radar_success_by_type(df: pd.DataFrame, attrs: dict, out_dir: str) -
         data = df[(df["Question Type"] != "Overall") & (df["Metric"] == "Success Rate")]
         pivot = data.groupby(["Strategy", "Question Type"])["Value"].mean().unstack()
 
-        strategy_order = ["Original"] + [s for s in pivot.index if s != "Original"]
+        strategy_order = ["ConceptGraphs"] + [s for s in pivot.index if s != "ConceptGraphs"]
         pivot = pivot.loc[strategy_order]
 
         categories = list(pivot.columns)
@@ -473,9 +474,9 @@ def plot_05_radar_success_by_type(df: pd.DataFrame, attrs: dict, out_dir: str) -
         wrapped_categories = []
         for cat in categories:
             if cat == "Graceful Failure":
-                wrapped = wrap_label(cat, 12) + "\n\n"
+                wrapped = wrap_label(cat, 14) + "\n\n"
             else:
-                wrapped = wrap_label(cat, 12)
+                wrapped = wrap_label(cat, 14)
             wrapped_categories.append(wrapped)
 
         angles = [n / float(N) * 2 * math.pi for n in range(N)]
@@ -567,10 +568,10 @@ def plot_06_heatmap_home_vs_strategy(
         data = df[(df["Question Type"] == "Overall") & (df["Metric"] == "Success Rate")]
         pivot = data.pivot(index="home_id", columns="Strategy", values="Value")
 
-        strategy_order = ["Original"] + [s for s in pivot.columns if s != "Original"]
+        strategy_order = ["ConceptGraphs"] + [s for s in pivot.columns if s != "ConceptGraphs"]
         pivot = pivot[strategy_order]
 
-        def wrap_text(text: str, width: int = 10) -> str:
+        def wrap_text(text: str, width: int = 14) -> str:
             """
             Wraps the input text to the specified width.
 
@@ -583,8 +584,8 @@ def plot_06_heatmap_home_vs_strategy(
             """
             return "\n".join(textwrap.wrap(str(text), width=width))
 
-        wrapped_columns = [wrap_text(col, 10) for col in pivot.columns]
-        wrapped_index = [wrap_text(idx, 10) for idx in pivot.index]
+        wrapped_columns = [wrap_text(col, 14) for col in pivot.columns]
+        wrapped_index = [wrap_text(idx, 14) for idx in pivot.index]
 
         ax = sns.heatmap(
             pivot,
@@ -658,7 +659,7 @@ if __name__ == "__main__":
     }
 
     PLOT_FUNCTIONS = {
-        "overall_success_bar": plot_01_overall_success_bar,
+        # "overall_success_bar": plot_01_overall_success_bar,
         "type_success_grouped": plot_02_type_success_grouped_bar,
         "response_quality_stacked": plot_03_response_quality_stacked,
         "overall_success_box": plot_04_overall_success_boxplot,
