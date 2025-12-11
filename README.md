@@ -44,13 +44,15 @@ You can find the collected dataset in the following folder: [Drive](https://driv
 
 ## Usage
 
-### 0. Set Paths
+### 0. Set Paths and Change .env
 Before executing the script, modify the data path. Some scripts require the data path to be changed prior to execution. Failure to do so will result in an error similar to this:
 ```bash
     base_dataset_path = THIS PATH MUST POINT TO THE OUTPUT FOLDER OF THE MAPPING PROCESS
                              ^^^^
 SyntaxError: invalid syntax
 ```
+
+You need to set up your API keys in the `.env.example` file. First, rename `.env.example` to `.env`, and then add the keys.
 
 ### 1. Environment Mapping with ConceptGraphs
 
