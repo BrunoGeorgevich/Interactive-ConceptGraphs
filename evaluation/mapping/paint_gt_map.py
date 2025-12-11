@@ -222,9 +222,7 @@ def main_class_map(
     :rtype: None
     """
     try:
-        database_path = os.path.join(
-            "D:", "Documentos", "Datasets", "Robot@VirtualHomeLarge"
-        )
+        database_path = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
         output_dir = os.path.join(database_path, "evaluation_results")
         os.makedirs(output_dir, exist_ok=True)
 

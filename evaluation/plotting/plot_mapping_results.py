@@ -395,9 +395,7 @@ if __name__ == "__main__":
     """
     Main entry point for generating evaluation result plots.
     """
-    DATABASE_PATH: str = os.path.join(
-        "D:", "Documentos", "Datasets", "Robot@VirtualHomeLarge"
-    )
+    DATABASE_PATH: str = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
     SUMMARY_CSV_PATH: str = os.path.join(
         DATABASE_PATH, "evaluation_results", "summary_all_homes.csv"
     )

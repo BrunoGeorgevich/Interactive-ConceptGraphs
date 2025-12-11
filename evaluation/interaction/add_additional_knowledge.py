@@ -18,7 +18,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 from conceptgraph.interaction.schemas import SystemConfig
 from conceptgraph.interaction.system import SmartWheelchairSystem
-from labs.utils import read_virtual_objects, unity_to_ros_coordinates
+from labs.utils import unity_to_ros_coordinates
 
 try:
     from conceptgraph.interaction.watershed_segmenter import (
@@ -583,7 +583,9 @@ def generate_knowledge_entry(
     """
     return {
         "type": "object",
-        "class_name": virtual_type.lower().replace("kitchenfurniture", "kitchen furniture"),
+        "class_name": virtual_type.lower().replace(
+            "kitchenfurniture", "kitchen furniture"
+        ),
         "description": f"Unmapped {virtual_type} object from virtual environment evaluation",
         "room_name": room_name,
         "coordinates": list(coordinates),
@@ -1384,9 +1386,7 @@ def run_false_negative_analysis(
 
 if __name__ == "__main__":
     load_dotenv()
-    DATABASE_PATH: str = os.path.join(
-        "D:", "Documentos", "Datasets", "Robot@VirtualHomeLarge"
-    )
+    DATABASE_PATH: str = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
     EVALUATION_OUTPUT_DIR: str = os.path.join(DATABASE_PATH, "evaluation_results")
     RESULTS_OUTPUT_DIR: str = os.path.join(
         DATABASE_PATH, "additional_knowledge_results"

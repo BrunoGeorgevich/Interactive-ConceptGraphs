@@ -281,9 +281,7 @@ def process_question_type(
 
 if __name__ == "__main__":
     load_dotenv()
-    DATA_FOLDER: str = os.path.join(
-        "D:", "Documentos", "Datasets", "Robot@VirtualHomeLarge"
-    )
+    DATA_FOLDER: str = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
     QUESTIONS_PROMPT_DICT: dict[str, tuple] = {
         "basic": (BASIC_QUESTION_PROMPT, 30),
         "indirect": (INDIRECT_QUESTION_PROMPT, 30),

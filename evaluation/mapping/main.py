@@ -729,9 +729,7 @@ if __name__ == "__main__":
     """
     Main entry point for running the evaluation script.
     """
-    DATABASE_PATH: str = os.path.join(
-        "D:", "Documentos", "Datasets", "Robot@VirtualHomeLarge"
-    )
+    DATABASE_PATH: str = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
     PROCESSING_TYPES: list[str] = ["original", "improved", "offline", "online"]
     HOME_IDS: list[int] = list(range(1, 31))
     TO_REMOVE_OBJECT_CLASSES: list[str] = [

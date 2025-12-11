@@ -89,7 +89,7 @@ def worker_process(
 
 if __name__ == "__main__":
     load_dotenv()
-    DATASET_PATH = "D:\\Documentos\\Datasets\\Robot@VirtualHomeLarge\\outputs\\"
+    DATASET_PATH = THIS PATH MUST POINT TO THE OUTPUT FOLDER OF THE MAPPING EXPERIMENTS
     houses = {
         "online": [1],
         "improved": [1],

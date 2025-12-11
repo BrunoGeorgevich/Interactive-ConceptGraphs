@@ -1,5 +1,4 @@
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from multiprocessing import cpu_count
 from dotenv import load_dotenv
 from openai import OpenAI
 from glob import glob
@@ -861,9 +860,7 @@ def run_parallel_interaction_evaluation(
 
 if __name__ == "__main__":
     load_dotenv()
-    DATASET_BASE_PATH: str = os.path.join(
-        "D:", "Documentos", "Datasets", "Robot@VirtualHomeLarge"
-    )
+    DATASET_BASE_PATH: str = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
 
     # Configurações da API
     OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
@@ -897,33 +894,3 @@ if __name__ == "__main__":
         max_workers=MAX_WORKERS,
         use_additional_knowledge=USE_ADDITIONAL_KNOWLEDGE,
     )
-
-# if __name__ == "__main__":
-#     load_dotenv()
-#     DATASET_BASE_PATH: str = os.path.join(
-#         "D:", "Documentos", "Datasets", "Robot@VirtualHomeLarge"
-#     )
-#     OUTPUT_BASE_DIR: str = os.path.join(DATASET_BASE_PATH, "interaction_eval_results")
-#     OPENROUTER_MODEL_ID: str = "openai/gpt-oss-120b"
-#     OPENROUTER_TEMPERATURE: float = 0.0
-#     OPENROUTER_TOP_P: float = 0.1
-#     OPENROUTER_MAX_TOKENS: int = 64000
-#     OPENROUTER_TIMEOUT: float = 60.0
-#     HOME_IDS: list = list(range(1, 31))
-
-#     openai_client = OpenAI(
-#         api_key=os.environ.get("OPENROUTER_API_KEY", ""),
-#         base_url="https://openrouter.ai/api/v1",
-#         timeout=OPENROUTER_TIMEOUT,
-#     )
-
-#     run_full_interaction_evaluation(
-#         dataset_base_path=DATASET_BASE_PATH,
-#         output_base_dir=OUTPUT_BASE_DIR,
-#         home_ids=HOME_IDS,
-#         openai_client=openai_client,
-#         model_id=OPENROUTER_MODEL_ID,
-#         temperature=OPENROUTER_TEMPERATURE,
-#         top_p=OPENROUTER_TOP_P,
-#         max_tokens=OPENROUTER_MAX_TOKENS,
-#     )

@@ -84,7 +84,7 @@ def save_watershed_image(
 if __name__ == "__main__":
     HOUSE_ID = 1
     PREFIX = "online"
-    BASE_PATH = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
+    BASE_PATH = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
     OUTPUT_FILENAME = "watershed_segmented.png"
 
     save_watershed_image(

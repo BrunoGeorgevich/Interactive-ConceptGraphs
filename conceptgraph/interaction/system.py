@@ -571,7 +571,7 @@ if __name__ == "__main__":
 
     load_dotenv()
 
-    DATASET_BASE_PATH = "D:\\Documentos\\Datasets\\Robot@VirtualHomeLarge"
+    DATASET_BASE_PATH = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
 
     config = SystemConfig(
         house_id=1,

@@ -623,9 +623,7 @@ def plot_06_heatmap_home_vs_strategy(
 
 if __name__ == "__main__":
 
-    DATABASE_PATH = os.path.join(
-        "D:", "Documentos", "Datasets", "Robot@VirtualHomeLarge"
-    )
+    DATABASE_PATH = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
 
     PATH_AK = os.path.join(
         DATABASE_PATH,

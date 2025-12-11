@@ -172,9 +172,7 @@ def main() -> None:
     """
     Main function to process system resource logs, aggregate statistics, and generate plots.
     """
-    DATABASE_PATH = os.path.join(
-        "D:\\", "Documentos", "Datasets", "Robot@VirtualHomeLarge"
-    )
+    DATABASE_PATH = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
     OUTPUTS_DIR = os.path.join(DATABASE_PATH, "outputs")
     PLOTS_DIR = os.path.join(DATABASE_PATH, "evaluation_results", "plots")
     os.makedirs(PLOTS_DIR, exist_ok=True)

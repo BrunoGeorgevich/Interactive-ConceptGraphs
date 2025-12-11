@@ -1027,9 +1027,7 @@ def clean_and_check_progress() -> dict[str, list[int]]:
         "improved": list(range(1, 31)),
     }
 
-    base_dataset_path = (
-        r"C:\Users\lab\Documents\Datasets\Robot@VirtualHomeLarge\outputs"
-    )
+    base_dataset_path = THIS PATH MUST POINT TO THE OUTPUT FOLDER OF THE MAPPING PROCESS
 
     pending_tasks: dict[str, list[int]] = {k: [] for k in houses}
 
@@ -1131,7 +1129,7 @@ if __name__ == "__main__":
                             f.write(str(e))
                             f.write("\n\n" + ("-" * 50) + "\n")
                         if preffix == "offline":
-                            dataset_path = "C:\\Users\\lab\\Documents\\Datasets\\Robot@VirtualHomeLarge\\outputs\\Home{selected_house:02d}\\Wandering\\exps"
+                            dataset_path = THIS PATH MUST POINT TO THE EXPS OUTPUT FOLDER OF A MAPPED HOUSE
                             det_path = os.path.join(
                                 dataset_path, f"{preffix}_house_{selected_house}_det"
                             )
