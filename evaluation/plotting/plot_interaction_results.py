@@ -200,7 +200,7 @@ def plot_01_overall_success_bar(df: pd.DataFrame, attrs: dict, out_dir: str) -> 
         ax.set_xticklabels(wrapped_labels, fontsize=15)
 
         ax.set_title("Overall Success Rate Comparison", fontweight="bold", pad=15)
-        ax.set_ylabel("Success Rate", fontsize=16, fontweight="bold")
+        # ax.set_ylabel("Success Rate", fontsize=16, fontweight="bold")
         ax.set_xlabel("")
         ax.set_ylim(0, 1)
         ax.spines["top"].set_visible(False)
@@ -233,7 +233,7 @@ def plot_02_type_success_grouped_bar(
     """
     try:
         apply_plot_style(attrs)
-        plt.figure(figsize=(8, 8))
+        plt.figure(figsize=(8, 5))
 
         data = df[(df["Question Type"] != "Overall") & (df["Metric"] == "Success Rate")]
 
@@ -251,16 +251,16 @@ def plot_02_type_success_grouped_bar(
             "Success Rate by Question Type",
             fontweight="bold",
             pad=25,
-            fontdict={"fontsize": 24},
+            fontdict={"fontsize": 18},
         )
-        ax.set_ylabel("Success Rate", fontsize=20, fontweight="bold")
+        ax.set_ylabel("", fontsize=20, fontweight="bold")
         ax.set_ylim(0, 1)
         ax.set_yticklabels([f"{y:.1f}" for y in ax.get_yticks()], fontsize=16)
         ax.set_xticklabels(
             [wrap_label(lbl.get_text(), width=14) for lbl in ax.get_xticklabels()],
             fontsize=16,
         )
-        ax.set_xlabel("Question Type", fontsize=18, fontweight="bold")
+        ax.set_xlabel("", fontsize=18, fontweight="bold")
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
@@ -268,7 +268,7 @@ def plot_02_type_success_grouped_bar(
 
         ax.legend(
             loc="lower center",
-            bbox_to_anchor=(0.46, -0.25),
+            bbox_to_anchor=(0.46, -0.3),
             frameon=True,
             ncol=len(data["Strategy"].unique()),
             fontsize=16,
@@ -299,8 +299,6 @@ def plot_03_response_quality_stacked(
     :rtype: None
     """
     try:
-        apply_plot_style(attrs)
-
         metrics = ["True Count", "Partial Count", "False Count"]
         data = df[(df["Question Type"] == "Overall") & (df["Metric"].isin(metrics))]
 
@@ -320,9 +318,9 @@ def plot_03_response_quality_stacked(
         ]
 
         ax = grouped_pct[["False Count", "Partial Count", "True Count"]].plot(
-            kind="bar", stacked=True, color=colors, figsize=(10, 7), width=0.7
+            kind="bar", stacked=True, color=colors, figsize=(8, 5), width=0.7
         )
-        plt.title("Response Quality Overall", fontweight="bold", fontsize=20)
+        plt.title("Response Quality Overall", fontweight="bold", fontsize=16)
         ax.grid(False)
         ax.set_yticklabels([])
         ax.set_ylabel("")
@@ -333,13 +331,13 @@ def plot_03_response_quality_stacked(
         ax.spines["bottom"].set_visible(True)
         ax.set_xticklabels(
             [wrap_label(lbl.get_text(), width=14) for lbl in ax.get_xticklabels()],
-            fontsize=18,
+            fontsize=14,
             rotation=0,
         )
         plt.legend(
             ["False", "Partial", "True"],
             loc="lower center",
-            bbox_to_anchor=(0.5, -0.25),
+            bbox_to_anchor=(0.5, -0.3),
             frameon=True,
             ncol=3,
             fontsize=16,
@@ -352,7 +350,7 @@ def plot_03_response_quality_stacked(
                 label_type="center",
                 color="black",
                 fontweight="bold",
-                fontsize=18,
+                fontsize=14,
             )
 
         save_plot(plt.gcf(), "03_response_quality_stacked", out_dir)
@@ -415,8 +413,10 @@ def plot_04_overall_success_boxplot(
         ax.spines["bottom"].set_visible(False)
         ax.spines["left"].set_visible(False)
 
-        ax.set_title("Distribution of Success Rates", fontweight="bold", pad=10, fontsize=14)
-        ax.set_ylabel("Success Rate")
+        ax.set_title(
+            "Distribution of Success Rates", fontweight="bold", pad=10, fontsize=14
+        )
+        ax.set_ylabel("")
 
         handles, labels = ax.get_legend_handles_labels()
         if not handles or not labels:
@@ -430,7 +430,7 @@ def plot_04_overall_success_boxplot(
             handles,
             labels,
             loc="lower center",
-            bbox_to_anchor=(0.47, -0.2),
+            bbox_to_anchor=(0.47, -0.17),
             frameon=True,
             ncol=len(labels),
             fontsize=10,
@@ -465,7 +465,9 @@ def plot_05_radar_success_by_type(df: pd.DataFrame, attrs: dict, out_dir: str) -
         data = df[(df["Question Type"] != "Overall") & (df["Metric"] == "Success Rate")]
         pivot = data.groupby(["Strategy", "Question Type"])["Value"].mean().unstack()
 
-        strategy_order = ["ConceptGraphs"] + [s for s in pivot.index if s != "ConceptGraphs"]
+        strategy_order = ["ConceptGraphs"] + [
+            s for s in pivot.index if s != "ConceptGraphs"
+        ]
         pivot = pivot.loc[strategy_order]
 
         categories = list(pivot.columns)
@@ -568,7 +570,9 @@ def plot_06_heatmap_home_vs_strategy(
         data = df[(df["Question Type"] == "Overall") & (df["Metric"] == "Success Rate")]
         pivot = data.pivot(index="home_id", columns="Strategy", values="Value")
 
-        strategy_order = ["ConceptGraphs"] + [s for s in pivot.columns if s != "ConceptGraphs"]
+        strategy_order = ["ConceptGraphs"] + [
+            s for s in pivot.columns if s != "ConceptGraphs"
+        ]
         pivot = pivot[strategy_order]
 
         def wrap_text(text: str, width: int = 14) -> str:
@@ -592,7 +596,7 @@ def plot_06_heatmap_home_vs_strategy(
             annot=True,
             cmap="Purples",
             fmt=".2f",
-            cbar_kws={"label": "Success Rate", "ticks": [0.4, 0.6, 0.8, 1.0]},
+            cbar_kws={"ticks": [0.4, 0.6, 0.8, 1.0]},
             annot_kws={"size": 20},
             vmin=0.4,
             vmax=1.0,
@@ -607,8 +611,8 @@ def plot_06_heatmap_home_vs_strategy(
         ax.set_xticklabels(wrapped_columns, rotation=0, fontsize=16)
         ax.set_yticklabels(wrapped_index, rotation=0, fontsize=14)
 
-        ax.set_title("Success Rate per Home", fontweight="bold", fontsize=32, pad=20)
-        ax.set_ylabel("Home ID", fontsize=28, fontweight="bold")
+        ax.set_title("Success Rate per Home", fontweight="bold", fontsize=22, pad=20)
+        ax.set_ylabel("", fontsize=28, fontweight="bold")
         ax.set_xlabel("", fontsize=20)
         ax.tick_params(axis="y", labelsize=14)
         ax.tick_params(axis="x", labelsize=20)

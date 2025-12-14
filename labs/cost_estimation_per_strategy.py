@@ -146,7 +146,7 @@ def process_image(img_path: str) -> None:
 if __name__ == "__main__":
     load_dotenv()
 
-    DATASET_BASE_PATH = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
+    DATASET_BASE_PATH = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
     STRIDE_SIZE = 20
     NUM_OF_SAMPLES = 30
 

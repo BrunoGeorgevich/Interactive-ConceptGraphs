@@ -7,8 +7,8 @@ from utils import read_dfs, unity_to_ros_coordinates, world_to_map
 
 
 if __name__ == "__main__":
-    DATA_FOLDER: str = "D:\\Documentos\\Datasets\\Robot@VirtualHomeLarge"
-    HOME: str = "Home05"
+    DATA_FOLDER: str = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
+    HOME: str = "Home01"
     EXPERIMENT: str = "Wandering"
 
     image_path: str = os.path.join(DATA_FOLDER, HOME, "generated_map.png")

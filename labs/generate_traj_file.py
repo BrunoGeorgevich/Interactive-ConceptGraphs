@@ -63,7 +63,7 @@ def translation_rotation_to_matrix(
 
 
 def main():
-    DATA_FOLDER = os.path.join("D:", "Documentos", "Datasets", "Robot@VirtualHomeLarge")
+    DATA_FOLDER = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
 
     for home_number in range(1, 31):
         home_name = f"Home{home_number:02d}"
