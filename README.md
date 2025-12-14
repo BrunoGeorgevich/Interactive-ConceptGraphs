@@ -7,8 +7,9 @@ This repository contains the code for the Interactive ConceptGraphs project.
 [**ArXiv**]() |
 [**Video**]() -->
 
-![Splash Figure](./assets/abstract_overview.png)
-![Splash Figure](./assets/05_radar_success_by_type.png)
+<img src="./assets/abstract_overview.png" alt="Splash Figure" width="985">
+<img src="./assets/05_radar_success_by_type.png" alt="Splash Figure" width="400">
+
 
 ## Article Summary
 
@@ -61,9 +62,9 @@ The framework was validated on the Robot@VirtualHome dataset (30 simulated homes
 
 ## Results Overview
 
-<img src="./assets/tp_fn_fp_grouped_bar.png" alt="Interaction Sequence" style="max-width:500px;">
-<img src="./assets/system_resources_comparison.png" alt="Interaction Sequence" style="max-width:480px;">
-<img src="./assets/metrics_boxplot.png" alt="Interaction Sequence" style="max-width:985px;">
+<img src="./assets/tp_fn_fp_grouped_bar.png" alt="Interaction Sequence" width="500">
+<img src="./assets/system_resources_comparison.png" alt="Interaction Sequence" width="480">
+<img src="./assets/metrics_boxplot.png" alt="Interaction Sequence" width="985">
 
 - **Mapping Performance**:  
     - *Precision* improved from ~0.28 (Original) to ~0.68 (Online), with an 86% reduction in false positives.
@@ -71,17 +72,17 @@ The framework was validated on the Robot@VirtualHome dataset (30 simulated homes
     - *Operational Cost* dropped by up to 84% with hybrid/local profiles.
 
 
-<img src="./assets/02_type_success_grouped_bar.png" alt="Interaction Sequence" style="max-width:500px;">
-<img src="./assets/03_response_quality_stacked.png" alt="Interaction Sequence" style="max-width:480px;">
-<img src="./assets/04_overall_success_boxplot.png" alt="Interaction Sequence" style="max-width:500px;">
-<img src="./assets/06_heatmap_home_vs_strategy.png" alt="Interaction Sequence" style="max-width:480px;">
+<img src="./assets/02_type_success_grouped_bar.png" alt="Interaction Sequence" width="500">
+<img src="./assets/03_response_quality_stacked.png" alt="Interaction Sequence" width="480">
+<img src="./assets/04_overall_success_boxplot.png" alt="Interaction Sequence" width="500">
+<img src="./assets/06_heatmap_home_vs_strategy.png" alt="Interaction Sequence" width="480">
 
 - **Interaction System**:  
     - *Success rate* increased from ~0.48 (ConceptGraphs) to ~0.81 (Ours + Knowledge).
     - *Robustness*: The system gracefully handled ambiguous, indirect, and follow-up queries, and admitted ignorance for non-existent objects.
     - *Knowledge Injection*: Users could add missing objects via natural language, further improving interaction outcomes.
 
-<img src="./assets/lost_connection_experiment.png" alt="Interaction Sequence" style="max-width:985px;">
+<img src="./assets/lost_connection_experiment.png" alt="Interaction Sequence" width="985">
 
 - **System Robustness**:  
     - The hybrid inference mechanism ensured uninterrupted operation during network failures by switching to local models, unlike the original system which failed on disconnection.
