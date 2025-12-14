@@ -7,7 +7,94 @@ This repository contains the code for the Interactive ConceptGraphs project.
 [**ArXiv**]() |
 [**Video**]() -->
 
-![Splash Figure](./assets/splash-final.png)
+![Splash Figure](./assets/abstract_overview.png)
+![Splash Figure](./assets/05_radar_success_by_type.png)
+
+## Article Summary
+
+**Interactive ConceptGraphs** introduces a robust, adaptable framework for semantic mapping and human-in-the-loop (HITL) interaction in robotics. Building on the ConceptGraphs foundation, this work addresses key challenges in semantic mapping—such as high false-positive rates, lack of spatial context, and operational fragility due to reliance on cloud-based models—by integrating several novel components:
+
+- **False-positive filtering routines**: Heuristic-based filters significantly reduce erroneous object detections, improving map precision.
+- **Semantic room segmentation**: A watershed-based algorithm, combined with semantic data, segments environments into functional regions (e.g., kitchen, living room), providing spatial context for detected objects.
+- **Adaptable hybrid inference mechanism**: The system dynamically switches between local and cloud-based models, ensuring robust operation even under network instability and reducing operational costs.
+- **HITL RAG-based agentic interaction system**: A Retrieval-Augmented Generation (RAG) approach enables complex natural language queries and allows users to add knowledge at runtime, leveraging a vector database for efficient semantic retrieval.
+
+The framework was validated on the Robot@VirtualHome dataset (30 simulated homes), demonstrating an 86% reduction in false positives (precision increased from ~0.28 to ~0.68), improved interaction success rates (from ~0.48 to ~0.81), and significant operational cost savings (up to 84%). The system also proved resilient to network failures, maintaining functionality via local fallback models.
+
+---
+
+## Framework Diagrams
+
+### 1. Overall System Architecture
+
+*The architecture processes RGB-D and trajectory data through semantic mapping and spatial mapping pipelines. Semantic and room-segmented maps are integrated into the HITL RAG-based interaction system, enabling context-aware responses to user queries.*
+
+---
+
+### 2. Room Segmentation Routine
+
+![Room Segmentation Routine](./assets/watershed.png)
+
+*Room segmentation involves generating a 2D occupancy grid, applying a watershed algorithm for geometric segmentation, and assigning semantic labels (e.g., "kitchen", "bedroom") to each region based on agent trajectory data.*
+
+---
+
+### 3. Semantic Mapping Pipeline and HITL RAG-based Interaction System
+
+![HITL RAG-based Interaction System](./assets/individual_diagrams.png)
+
+*The extended ConceptGraphs pipeline initializes models, processes data with a hybrid inference mechanism, applies filtering and merging, and refines the semantic map. New contributions (in green) include adaptable inference, environment/room classification, and advanced filtering.*
+
+*The interaction system features two main flows: system initialization and user interaction. User queries are processed by LLM agents, with new knowledge integrated into the vector database and scene graph.*
+
+---
+
+#### Interaction and Memory Initialization Sequences
+
+![Interaction Sequence](./assets/sequences.png)
+
+*User queries, combined with robot position, are classified and routed to appropriate agents for response or knowledge insertion.*
+
+*The system checks and prepares the vector database, ensuring all detected objects are embedded and indexed for efficient retrieval.*
+
+---
+
+## Results Overview
+
+<img src="./assets/tp_fn_fp_grouped_bar.png" alt="Interaction Sequence" style="max-width:500px;">
+<img src="./assets/system_resources_comparison.png" alt="Interaction Sequence" style="max-width:480px;">
+<img src="./assets/metrics_boxplot.png" alt="Interaction Sequence" style="max-width:985px;">
+
+- **Mapping Performance**:  
+    - *Precision* improved from ~0.28 (Original) to ~0.68 (Online), with an 86% reduction in false positives.
+    - *Recall* decreased slightly due to stricter filtering, but overall F1-score improved.
+    - *Operational Cost* dropped by up to 84% with hybrid/local profiles.
+
+
+<img src="./assets/02_type_success_grouped_bar.png" alt="Interaction Sequence" style="max-width:500px;">
+<img src="./assets/03_response_quality_stacked.png" alt="Interaction Sequence" style="max-width:480px;">
+<img src="./assets/04_overall_success_boxplot.png" alt="Interaction Sequence" style="max-width:500px;">
+<img src="./assets/06_heatmap_home_vs_strategy.png" alt="Interaction Sequence" style="max-width:480px;">
+
+- **Interaction System**:  
+    - *Success rate* increased from ~0.48 (ConceptGraphs) to ~0.81 (Ours + Knowledge).
+    - *Robustness*: The system gracefully handled ambiguous, indirect, and follow-up queries, and admitted ignorance for non-existent objects.
+    - *Knowledge Injection*: Users could add missing objects via natural language, further improving interaction outcomes.
+
+<img src="./assets/lost_connection_experiment.png" alt="Interaction Sequence" style="max-width:985px;">
+
+- **System Robustness**:  
+    - The hybrid inference mechanism ensured uninterrupted operation during network failures by switching to local models, unlike the original system which failed on disconnection.
+
+---
+
+## Key Contributions
+
+- **Room-aware semantic mapping** with robust filtering and segmentation.
+- **Hybrid inference** for operational resilience and cost efficiency.
+- **Advanced HITL interaction** via RAG and vector databases, supporting complex queries and runtime knowledge addition.
+- **Comprehensive validation** on a large-scale simulated home dataset, demonstrating significant improvements in mapping accuracy, interaction quality, and system robustness.
+
 
 ## Installation
 
