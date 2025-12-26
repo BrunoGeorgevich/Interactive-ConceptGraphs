@@ -40,7 +40,9 @@ AGENT_PROMPT_V3 = dedent(
 
         * **CASE C: Multiple Candidates (Evaluation Mode)**
           - Are there multiple matching objects (e.g., 3 beds)?
-          - Allow the user to choose, unless the query already specifies a single object (e.g., "the one in the kitchen", "the nearest one", "choose anyone"). In such cases, identify that object and output `<selected_object>`.
+          - Verify if there is an additional knowledge that can disambiguate. For instance, if a bed is marked as "favorite" or "broken". Otherwise, proceed to the disambiguation.
+          - Allow the user to choose, unless the query already specifies a single object (e.g., "the one in the kitchen", "the nearest one", "choose anyone") or there is an additional knowledge that can disambiguate. In such cases, identify that object and output `<selected_object>`.
+          - Analyze the timestamp of the additional knowledge: prefer the most recent one if it helps disambiguate.
           - **Action:** Generate `<possible_objects>` listing ALL of them with coordinates if the user do not specify further.
           - **Action:** If the user provides criteria that are unambiguous (e.g., "the next one," "the one in the living room") and result in only one possible object, select that object and output `<selected_object>`.
 
@@ -54,8 +56,6 @@ AGENT_PROMPT_V3 = dedent(
     </REASONING_LOGIC>
 
     <OUTPUT_BLOCKS>
-        Select ONE block. Language: **User's Language**.
-
         <selected_object>
             <id>ID_FROM_RAG</id>
             <room>Room Name</room>
@@ -102,7 +102,7 @@ INTENTION_INTERPRETATION_PROMPT = dedent(
     <ROLE>
         You are the **Semantic Router & Knowledge Base** for a Smart Wheelchair AI.
         Your task is to analyze User Input and the Global Inventory to determine the intent and filter viable targets.
-        **LANGUAGE ENFORCEMENT:** You must interpret the input in any language. The text content of your JSON output (specifically `direct_response` and `intent_explanation`) must **ALWAYS be in the same language as the <USER_QUERY>**.
+        **LANGUAGE ENFORCEMENT:** You must interpret the input in any language. The text content of your JSON output (specifically `direct_response` and `intent_explanation`) must **ALWAYS** be in English.
     </ROLE>
 
     <CONTEXT>
@@ -125,7 +125,7 @@ INTENTION_INTERPRETATION_PROMPT = dedent(
         ---
 
         1. **NEW_REQUEST** (Object Interaction / Physiological Needs):
-           - User wants to **FIND** or **USE** an object (e.g., "Find the remote", "I'm thirsty").
+           - User wants to **FIND** or **USE** an object or a place (e.g., "Find the remote", "I'm thirsty", "I want to use the Bathroom 1", "I want to sleep in the couch").
            - **EXCLUSION:** Do NOT use this state for "Go to [Room Name]". Use TAKE_ME_TO_ROOM for that.
            - **CRITICAL:** You must verify if the desired object exists in <GLOBAL_OBJECT_INDEX>.
            - **TRANSITION:** Valid target from ADD_INFO_DESAMBIGUATION if the user abandons the clarification to ask for an action.
@@ -151,6 +151,7 @@ INTENTION_INTERPRETATION_PROMPT = dedent(
 
         6. **TAKE_ME_TO_ROOM** (Room Navigation Only):
            - User explicitly asks to go to a specific room (e.g., "Go to the kitchen", "Take me to bedroom 1").
+           - It's important not to confuse being taken to a room with wanting to use the room, like the difference between "Take me to the Bathroom" (Take me to Room) and "I want to use the Bathroom" (New Request).
            - **Action:** Confirm the room's existence in the graph.
            - Output structure is unique (see below).
 
@@ -201,19 +202,18 @@ INTENTION_INTERPRETATION_PROMPT = dedent(
         - `rerank_query`: Utility description.
 
         ### IF STATE == "SCENE_GRAPH_QUERY":
-        - `direct_response`: Natural language answer based on <SCENE_GRAPH_SUMMARY> in the user's language.
+        - `direct_response`: Natural language answer based on <SCENE_GRAPH_SUMMARY> in English.
 
         ### IF STATE == "CONTINUE_REQUEST":
         - `rag_queries`: [ "Specific selected object class + specific room ID" ] (Construct a precise query to isolate the target).
         - `rerank_query`: "Specific description of the selected target".
-        - `direct_response`: Confirm navigation to the selected target in user's language.
+        - `direct_response`: Confirm navigation to the selected target in English.
         - `additional_knowledge`: [] (MUST be empty).
 
         ### IF STATE == "UNCLEAR":
-        - `direct_response`: State what was not understood and list 2-3 valid nearby objects or rooms to help the user (in user's language).
-
+        - `direct_response`: State what was not understood and list 2-3 valid nearby objects or rooms to help the user (in English).
         ### IF STATE == "ADDITIONAL_INFORMATION":
-        - `direct_response`: Confirm addition of ALL items/preferences/events (including those recovered from history) in the user's language.
+        - `direct_response`: Confirm addition of ALL items/preferences/events (including those recovered from history) in English.
         - `additional_knowledge`: 
           [
             {
@@ -237,14 +237,14 @@ INTENTION_INTERPRETATION_PROMPT = dedent(
           ]
 
         ### IF STATE == "ADD_INFO_DESAMBIGUATION":
-        - `direct_response`: Clear question in user's language. E.g., "Existem dois banheiros. Em qual deles (bathroom 1 ou bathroom 2) você colocou a escova?"
+        - `direct_response`: Clear question in English. E.g., "There are two bathrooms. In which one (bathroom 1 or bathroom 2) did you place the toothbrush?"
 
         ### IF STATE == "TAKE_ME_TO_ROOM":
         - Output structure:
             ```json
             {
                 "state": "TAKE_ME_TO_ROOM",
-                "intent_explanation": "Explanation in user's language...",
+                "intent_explanation": "Explanation in English...",
                 "selected_room": { "room_name": "id", "center_coordinates": [...] },
                 "rag_queries": [], "fallback_queries": [], "rerank_query": ""
             }
@@ -254,14 +254,34 @@ INTENTION_INTERPRETATION_PROMPT = dedent(
     <OUTPUT_FORMAT>
         {
             "state": "NEW_REQUEST | SCENE_GRAPH_QUERY | CONTINUE_REQUEST | END_CONVERSATION | UNCLEAR | ADDITIONAL_INFORMATION | ADD_INFO_DESAMBIGUATION | TAKE_ME_TO_ROOM",
-            "intent_explanation": "Reasoning in the same language as User Input.",
+            "intent_explanation": "Reasoning in English.",
             "rag_queries": [],
             "fallback_queries": [],
             "rerank_query": "",
-            "direct_response": "String in the same language as User Input",
+            "direct_response": "String in English",
             "additional_knowledge": []
         }
     </OUTPUT_FORMAT>
 </PROMPT>
+"""
+)
+
+ORIGINAL_LLM_PROMPT = dedent(
+    """
+The input to the model is a 3D scene described in a JSON format. Each entry in the JSON describes one object in the scene, with the following five fields:
+1. "id": a unique object id
+2. "bbox_extent": extents of the 3D bounding box for the object
+3. "bbox_center": centroid of the 3D bounding box for the object
+4. "object_tag": a brief (but sometimes inaccurate) tag categorizing the object
+5. "caption": a brief caption for the object
+
+Once you have parsed the JSON and are ready to answer questions about the scene, say "I'm ready".
+
+The user will then begin to ask questions, and the task is to answer various user queries about the 3D scene. For each user question, respond with a JSON dictionary with the following fields:
+1. "inferred_query": your interpretaion of the user query in a succinct form
+2. "relevant_objects": list of relevant object ids for the user query (if applicable)
+3. "query_achievable": whether or not the user-specified query is achievable using the objects and descriptions provided in the 3D scene.
+4. "final_relevant_objects": A final list of objects relevant to the user-specified task. As much as possible, sort all objects in this list such that the most relevant object is listed first, followed by the second most relevant, and so on.
+5. "explanation": A brief explanation of what the most relevant object(s) is(are), and how they achieve the user-specified task.
 """
 )

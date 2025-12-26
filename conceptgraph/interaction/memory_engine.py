@@ -2,6 +2,7 @@ from flashrank import Ranker, RerankRequest
 from typing import List, Optional, Tuple
 from joblib import Parallel, delayed
 from functools import lru_cache
+from datetime import datetime
 import numpy as np
 import traceback
 import uuid
@@ -38,6 +39,9 @@ def _process_info_to_doc(info: dict) -> Optional[AgnoDocument]:
 
     info_id = info.get("id", uuid.uuid4())
     info["id"] = str(info_id)
+    info["timestamp"] = info.get(
+        "timestamp", datetime.now().strftime("%H:%M:%S - %d of %B of %Y")
+    )
 
     return AgnoDocument(content=text_to_embed, meta_data=info, id=str(info_id))
 
@@ -341,9 +345,7 @@ class SemanticMemoryEngine:
         docs_to_insert = [d for d in results if d is not None]
 
         if not docs_to_insert:
-            print(
-                "No valid documents created from additional information."
-            )
+            print("No valid documents created from additional information.")
         else:
             Parallel(n_jobs=-1, backend="threading")(
                 delayed(_insert_single_doc)(self.additional_knowledge_db, doc)
