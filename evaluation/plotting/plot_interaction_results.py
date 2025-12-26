@@ -9,7 +9,7 @@ import os
 
 
 def load_and_preprocess_data(
-    path_ak: str, path_improved: str, path_original: str
+    path_ak: str, path_improved: str, path_clip_original: str, path_llm_original: str
 ) -> pd.DataFrame:
     """
     Loads data from the three specified CSV files, normalizes the format,
@@ -19,8 +19,10 @@ def load_and_preprocess_data(
     :type path_ak: str
     :param path_improved: Path to the Improved CSV.
     :type path_improved: str
-    :param path_original: Path to the Original CSV.
-    :type path_original: str
+    :param path_clip_original: Path to the Original CSV.
+    :type path_clip_original: str
+    :param path_llm_original: Path to the Original LLM CSV.
+    :type path_llm_original: str
     :return: A combined DataFrame with a 'Strategy' column.
     :rtype: pd.DataFrame
     :raises FileNotFoundError: If any of the files are not found.
@@ -29,13 +31,17 @@ def load_and_preprocess_data(
     try:
         df_ak = pd.read_csv(path_ak, delimiter=";")
         df_imp = pd.read_csv(path_improved, delimiter=";")
-        df_orig = pd.read_csv(path_original, delimiter=",")
+        df_clip_orig = pd.read_csv(path_clip_original, delimiter=",")
+        df_llm_orig = pd.read_csv(path_llm_original, delimiter=",")
 
-        df_ak["Strategy"] = "Ours + Knowledge"
-        df_imp["Strategy"] = "Ours"
-        df_orig["Strategy"] = "ConceptGraphs"
+        df_ak["Strategy"] = "HIPaMS + Knowledge"
+        df_imp["Strategy"] = "HIPaMS"
+        df_clip_orig["Strategy"] = "ConceptGraphs (CLIP)"
+        df_llm_orig["Strategy"] = "ConceptGraphs (LLM)"
 
-        df_combined = pd.concat([df_orig, df_imp, df_ak], ignore_index=True)
+        df_combined = pd.concat(
+            [df_clip_orig, df_llm_orig, df_imp, df_ak], ignore_index=True
+        )
 
         return df_combined
     except Exception as e:
@@ -64,7 +70,7 @@ def prepare_long_format(df: pd.DataFrame) -> pd.DataFrame:
 
     types_map = {
         "adversarial": "Graceful Failure",
-        "basic": "Basic",
+        "basic": "Direct",
         "follow_up": "Follow-up",
         "indirect": "Indirect",
         "overall": "Overall",
@@ -268,10 +274,10 @@ def plot_02_type_success_grouped_bar(
 
         ax.legend(
             loc="lower center",
-            bbox_to_anchor=(0.46, -0.3),
+            bbox_to_anchor=(0.46, -0.37),
             frameon=True,
-            ncol=len(data["Strategy"].unique()),
-            fontsize=16,
+            ncol=len(data["Strategy"].unique()) // 2,
+            fontsize=15,
         )
 
         save_plot(plt.gcf(), "02_type_success_grouped_bar", out_dir)
@@ -306,10 +312,10 @@ def plot_03_response_quality_stacked(
 
         grouped_pct = grouped.div(grouped.sum(axis=1), axis=0) * 100
 
-        strategy_order = ["ConceptGraphs"] + [
-            s for s in grouped_pct.index if s != "ConceptGraphs"
-        ]
-        grouped_pct = grouped_pct.loc[strategy_order]
+        # strategy_order = ["ConceptGraphs"] + [
+        #     s for s in grouped_pct.index if s != "ConceptGraphs"
+        # ]
+        # grouped_pct = grouped_pct.loc[strategy_order]
 
         colors = [
             "#ea9999",
@@ -430,9 +436,9 @@ def plot_04_overall_success_boxplot(
             handles,
             labels,
             loc="lower center",
-            bbox_to_anchor=(0.47, -0.17),
+            bbox_to_anchor=(0.47, -0.23),
             frameon=True,
-            ncol=len(labels),
+            ncol=len(data["Strategy"].unique()) // 2,
             fontsize=10,
         )
 
@@ -465,10 +471,10 @@ def plot_05_radar_success_by_type(df: pd.DataFrame, attrs: dict, out_dir: str) -
         data = df[(df["Question Type"] != "Overall") & (df["Metric"] == "Success Rate")]
         pivot = data.groupby(["Strategy", "Question Type"])["Value"].mean().unstack()
 
-        strategy_order = ["ConceptGraphs"] + [
-            s for s in pivot.index if s != "ConceptGraphs"
-        ]
-        pivot = pivot.loc[strategy_order]
+        # strategy_order = ["ConceptGraphs"] + [
+        #     s for s in pivot.index if s != "ConceptGraphs"
+        # ]
+        # pivot = pivot.loc[strategy_order]
 
         categories = list(pivot.columns)
         N = len(categories)
@@ -533,9 +539,9 @@ def plot_05_radar_success_by_type(df: pd.DataFrame, attrs: dict, out_dir: str) -
         plt.ylim(0, 1)
         plt.legend(
             loc="lower center",
-            bbox_to_anchor=(0.5, -0.18),
+            bbox_to_anchor=(0.5, -0.25),
             frameon=True,
-            ncol=len(pivot.index),
+            ncol=len(data["Strategy"].unique()) // 2,
             fontsize=18,
         )
 
@@ -570,10 +576,10 @@ def plot_06_heatmap_home_vs_strategy(
         data = df[(df["Question Type"] == "Overall") & (df["Metric"] == "Success Rate")]
         pivot = data.pivot(index="home_id", columns="Strategy", values="Value")
 
-        strategy_order = ["ConceptGraphs"] + [
-            s for s in pivot.columns if s != "ConceptGraphs"
-        ]
-        pivot = pivot[strategy_order]
+        # strategy_order = ["ConceptGraphs"] + [
+        #     s for s in pivot.columns if s != "ConceptGraphs"
+        # ]
+        # pivot = pivot[strategy_order]
 
         def wrap_text(text: str, width: int = 14) -> str:
             """
@@ -608,14 +614,12 @@ def plot_06_heatmap_home_vs_strategy(
             colorbar.set_ylim(0.4, 1.0)
             colorbar.tick_params(labelsize=20)
 
-        ax.set_xticklabels(wrapped_columns, rotation=0, fontsize=16)
+        ax.set_xticklabels(wrapped_columns, rotation=0, fontsize=14)
         ax.set_yticklabels(wrapped_index, rotation=0, fontsize=14)
 
         ax.set_title("Success Rate per Home", fontweight="bold", fontsize=22, pad=20)
         ax.set_ylabel("", fontsize=28, fontweight="bold")
         ax.set_xlabel("", fontsize=20)
-        ax.tick_params(axis="y", labelsize=14)
-        ax.tick_params(axis="x", labelsize=20)
         ax.figure.axes[-1].yaxis.label.set_size(28)
         ax.figure.axes[-1].yaxis.label.set_weight("bold")
 
@@ -627,7 +631,8 @@ def plot_06_heatmap_home_vs_strategy(
 
 if __name__ == "__main__":
 
-    DATABASE_PATH = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
+    # DATABASE_PATH = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
+    DATABASE_PATH = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
 
     PATH_AK = os.path.join(
         DATABASE_PATH,
@@ -637,9 +642,14 @@ if __name__ == "__main__":
     PATH_IMP = os.path.join(
         DATABASE_PATH, "interaction_eval_results", "summary_interaction_eval.csv"
     )
-    PATH_ORIG = os.path.join(
+    PATH_CLIP_ORIG = os.path.join(
         DATABASE_PATH,
-        "original_interaction_eval_results",
+        "original_clip_interaction_eval_results",
+        "summary_original_interaction_eval.csv",
+    )
+    PATH_LLM_ORIG = os.path.join(
+        DATABASE_PATH,
+        "original_llm_interaction_eval_results",
         "summary_original_interaction_eval.csv",
     )
 
@@ -654,8 +664,9 @@ if __name__ == "__main__":
         "label_size": 13,
         "dpi": 300,
         "palette": [
-            "#07ca98",
             "#ef563c",
+            "#f5b700",
+            "#07ca98",
             "#6671fa",
         ],
     }
@@ -673,7 +684,9 @@ if __name__ == "__main__":
         os.makedirs(OUTPUT_DIR, exist_ok=True)
 
         print("Loading and preprocessing data...")
-        df_wide = load_and_preprocess_data(PATH_AK, PATH_IMP, PATH_ORIG)
+        df_wide = load_and_preprocess_data(
+            PATH_AK, PATH_IMP, PATH_CLIP_ORIG, PATH_LLM_ORIG
+        )
         df_long = prepare_long_format(df_wide)
         print(f"Data loaded: {len(df_long)} records.")
 

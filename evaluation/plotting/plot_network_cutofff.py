@@ -18,11 +18,11 @@ def apply_plot_style() -> None:
     plt.style.use("seaborn-v0_8-whitegrid")
     mpl.rcParams["font.family"] = "sans-serif"
     mpl.rcParams["font.size"] = 14
-    mpl.rcParams["axes.titlesize"] = 20
-    mpl.rcParams["axes.labelsize"] = 16
-    mpl.rcParams["xtick.labelsize"] = 14
-    mpl.rcParams["ytick.labelsize"] = 14
-    mpl.rcParams["legend.fontsize"] = 14
+    mpl.rcParams["axes.titlesize"] = 16
+    mpl.rcParams["axes.labelsize"] = 14
+    mpl.rcParams["xtick.labelsize"] = 12
+    mpl.rcParams["ytick.labelsize"] = 12
+    mpl.rcParams["legend.fontsize"] = 12
     mpl.rcParams["axes.spines.top"] = False
     mpl.rcParams["axes.spines.right"] = False
     mpl.rcParams["figure.dpi"] = 150
@@ -123,89 +123,44 @@ def plot_strategies_comparison(
     outputs_dir: str,
     prefixes: list,
     home_id: int,
-    output_path: str,
+    output_dir: str,
+    base_filename: str,
     max_seconds: int = 300,
     smoothing_window: int = 20,
 ) -> None:
     """
-    Plots a grid comparing resource usage metrics for different strategies.
+    Plots a 2x2 grid comparing resource usage metrics for different strategies.
+    Generates one figure file per metric type.
 
     :param outputs_dir: Directory containing experiment outputs.
     :type outputs_dir: str
-    :param prefixes: List of experiment prefixes to compare.
+    :param prefixes: List of experiment prefixes to compare (Must be exactly 4 for 2x2 grid).
     :type prefixes: list
     :param home_id: Identifier for the home being analyzed.
     :type home_id: int
-    :param output_path: Path to save the generated plot.
-    :type output_path: str
+    :param output_dir: Directory to save the generated plots.
+    :type output_dir: str
+    :param base_filename: Base name for the output files (without extension).
+    :type base_filename: str
     :param max_seconds: Maximum time in seconds for the x-axis.
     :type max_seconds: int
     :param smoothing_window: Window size for rolling mean smoothing.
     :type smoothing_window: int
-    :raises ValueError: If resource logs cannot be loaded or processed.
     :return: None
     :rtype: None
     """
-    print(f"Gerando grid final para Casa {home_id}...")
+    print(f"Gerando grids 2x2 para Casa {home_id}...")
     apply_plot_style()
 
-    metrics_config = [
-        {
-            "col": "ram_percent",
-            "title": "RAM\n(%)",
-            "color": COLORS[4],
-            "ylim": (-2, 102),
-        },
-        {
-            "col": "gpu0_percent",
-            "title": "GPU\n(%)",
-            "color": COLORS[2],
-            "ylim": (-2, 102),
-        },
-        {
-            "col": "gpu0_mem_percent",
-            "title": "GPU Mem\n(%)",
-            "color": COLORS[1],
-            "ylim": (-2, 102),
-        },
-        {
-            "col": "net_sent_mbps",
-            "title": "Net Sent\n(Mbps)",
-            "color": COLORS[3],
-            "ylim": (-0.01, 3),
-        },
-        {
-            "col": "net_recv_mbps",
-            "title": "Net Recv\n(Mbps)",
-            "color": COLORS[5],
-            "ylim": (-0.001, 0.2),
-        },
-    ]
+    if len(prefixes) != 4:
+        print("Warning: This layout is optimized for exactly 4 prefixes (2x2 grid).")
 
-    n_rows = len(metrics_config)
-    n_cols = len(prefixes)
-
-    fig_width = 6.5 * n_cols
-    fig_height = 1.5 * n_rows
-
-    fig, axes = plt.subplots(
-        n_rows,
-        n_cols,
-        figsize=(fig_width, fig_height),
-        sharex=True,
-        sharey="row",
-        constrained_layout=True,
-    )
-
-    if n_cols == 1:
-        axes = axes.reshape(-1, 1)
-    if n_rows == 1:
-        axes = axes.reshape(1, -1)
-
+    # 1. Load all data first to avoid reloading for every metric plot
+    data_map = {}
     manager_dir = "manager"
     resource_log_name = "resource_log.csv"
 
-    for col_idx, prefix in enumerate(prefixes):
+    for prefix in prefixes:
         exp_folder = f"{prefix}_house_{home_id}_det"
         exp_path = os.path.join(
             outputs_dir, f"Home{home_id:02d}", "Wandering", "exps", exp_folder
@@ -216,28 +171,91 @@ def plot_strategies_comparison(
             df, real_duration, cutoff_time = load_process_and_detect_cutoff(
                 csv_path, max_seconds, smoothing_window
             )
+            data_map[prefix] = {
+                "df": df,
+                "real_duration": real_duration,
+                "cutoff_time": cutoff_time,
+            }
         except ValueError:
             import traceback
 
             traceback.print_exc()
-            df, real_duration, cutoff_time = None, 0.0, None
+            data_map[prefix] = None
 
-        for row_idx, config in enumerate(metrics_config):
-            ax = axes[row_idx, col_idx]
-            metric_col = config["col"]
+    metrics_config = [
+        {
+            "col": "ram_percent",
+            "title": "RAM (%)",
+            "color": COLORS[4],
+            "ylim": (-2, 102),
+        },
+        {
+            "col": "gpu0_percent",
+            "title": "GPU (%)",
+            "color": COLORS[2],
+            "ylim": (-2, 102),
+        },
+        {
+            "col": "gpu0_mem_percent",
+            "title": "GPU Mem (%)",
+            "color": COLORS[1],
+            "ylim": (-2, 102),
+        },
+        {
+            "col": "net_sent_mbps",
+            "title": "Net Sent (Mbps)",
+            "color": COLORS[3],
+            "ylim": (-0.01, 3),
+        },
+        {
+            "col": "net_recv_mbps",
+            "title": "Net Recv (Mbps)",
+            "color": COLORS[5],
+            "ylim": (-0.001, 0.2),
+        },
+    ]
 
-            if row_idx == 0:
-                clean_title = prefix.replace("lost_connection_", "").capitalize()
-                ax.set_title(clean_title, fontweight="bold", pad=20, fontsize=30)
+    # 2. Create one figure per metric (Strategy 2x2 grid)
+    for config in metrics_config:
+        metric_col = config["col"]
+        metric_title = config["title"]
+        print(f"  - Plotando métrica: {metric_title}...")
 
-            if df is not None and metric_col in df.columns:
+        fig, axes = plt.subplots(
+            2,
+            2,
+            figsize=(12, 8),
+            sharex=True,
+            sharey=True,
+            constrained_layout=True,
+        )
+        axes_flat = axes.flatten()
+
+        for idx, prefix in enumerate(prefixes):
+            if idx >= len(axes_flat):
+                break
+
+            ax = axes_flat[idx]
+            data = data_map.get(prefix)
+
+            # Strategy Title
+            clean_title = prefix.replace("lost_connection_", "").capitalize()
+            ax.set_title(clean_title, fontweight="bold", fontsize=14)
+
+            if data and data["df"] is not None and metric_col in data["df"].columns:
+                df = data["df"]
+                real_duration = data["real_duration"]
+                cutoff_time = data["cutoff_time"]
+
                 ax.plot(
                     df["elapsed_seconds"],
                     df[metric_col],
                     color=config["color"],
                     linewidth=2,
+                    label=metric_title,
                 )
 
+                # Error Zone
                 if round(real_duration) < max_seconds:
                     ax.axvspan(real_duration, max_seconds, facecolor="red", alpha=0.08)
                     ax.axvspan(
@@ -261,88 +279,75 @@ def plot_strategies_comparison(
                         ha="center",
                         va="center",
                         color="red",
-                        fontsize=22,
+                        fontsize=16,
                         fontweight="bold",
                         alpha=0.5,
                     )
 
+                # Cutoff Line
                 if cutoff_time is not None and cutoff_time <= max_seconds:
                     ax.axvline(
                         x=cutoff_time,
                         color="black",
                         linestyle="--",
-                        linewidth=4,
+                        linewidth=2,
                         alpha=0.8,
                     )
-                    if row_idx == 0:
-                        y_pos = (
-                            config["ylim"][1]
-                            if config["ylim"][1]
-                            else df[metric_col].max()
-                        )
-                        ax.text(
-                            cutoff_time,
-                            y_pos * 0.95,
-                            "Network Cutoff  ",
-                            ha="right",
-                            va="top",
-                            color="black",
-                            fontweight="bold",
-                            fontsize=22,
-                        )
-            else:
-                if row_idx == int(n_rows / 2):
-                    ax.text(
-                        0.5,
-                        0.5,
-                        "N/A",
-                        ha="center",
-                        va="center",
-                        transform=ax.transAxes,
-                        color="gray",
+                    # Label just for the first plot to avoid clutter or if specifically needed
+                    y_pos = (
+                        config["ylim"][1] if config["ylim"][1] else df[metric_col].max()
                     )
+                    ax.text(
+                        cutoff_time,
+                        y_pos * 0.95,
+                        "Cutoff  ",
+                        ha="right",
+                        va="top",
+                        color="black",
+                        fontweight="bold",
+                        fontsize=12,
+                    )
+            else:
+                ax.text(
+                    0.5,
+                    0.5,
+                    "N/A",
+                    ha="center",
+                    va="center",
+                    transform=ax.transAxes,
+                    color="gray",
+                )
 
+            # Grid Setup
             ax.set_xlim(0, max_seconds)
-            ax.spines["bottom"].set_visible(True)
-            ax.spines["left"].set_visible(True)
-            ax.spines["top"].set_visible(False)
-            ax.spines["right"].set_visible(False)
-            ax.set_xticks([0, 40, 80, 120, 160, 200, 240, 280])
-            ax.tick_params(axis="both", which="major", labelsize=22)
-            ax.tick_params(axis="both", which="minor", labelsize=20)
+            ax.grid(axis="y", alpha=0.3)
+            ax.grid(axis="x", alpha=0.3)
             if config["ylim"][1] is not None:
                 ax.set_ylim(config["ylim"][0], config["ylim"][1])
             else:
                 ax.set_ylim(bottom=config["ylim"][0])
-            ax.grid(axis="y", alpha=0)
-            ax.grid(axis="x", alpha=0)
 
-            if col_idx == 0:
-                ax.set_ylabel(
-                    config["title"],
-                    fontweight="bold",
-                    rotation=0,
-                    ha="center",
-                    va="center",
-                    fontsize=24,
-                )
-                ax.yaxis.set_label_coords(-0.25, 0.5)
+        # Global Labels
+        fig.supxlabel("Time (s)", fontsize=16, fontweight="bold")
+        fig.supylabel(metric_title, fontsize=16, fontweight="bold")
 
-    fig.supxlabel("Time (s)", fontsize=25, fontweight="bold", y=-0.05)
-
-    plt.savefig(output_path, facecolor="white", bbox_inches="tight")
-    plt.close(fig)
-    print(f"Salvo em: {output_path}")
+        # Save specific file for this metric
+        output_filename = f"{base_filename}_{metric_col}.pdf"
+        final_path = os.path.join(output_dir, output_filename)
+        plt.savefig(final_path, facecolor="white", bbox_inches="tight")
+        plt.close(fig)
+        print(f"    Salvo: {final_path}")
 
 
 def main() -> None:
     """
-    Main entry point for generating and saving the resource usage comparison plot.
+    Main entry point for generating and saving the resource usage comparison plots.
 
     :return: None
     :rtype: None
     """
-    DATABASE_PATH = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
+    # DATABASE_PATH = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
+    DATABASE_PATH = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
     OUTPUTS_DIR = os.path.join(DATABASE_PATH, "outputs")
     PLOTS_DIR = os.path.join(DATABASE_PATH, "evaluation_results", "plots")
     os.makedirs(PLOTS_DIR, exist_ok=True)
@@ -355,15 +360,15 @@ def main() -> None:
     ]
     HOME_ID = 1
 
-    # OUTPUT_FILENAME = "lost_connection_experiment.png"
-    OUTPUT_FILENAME = "lost_connection_experiment.pdf"
-    OUTPUT_PATH = os.path.join(PLOTS_DIR, OUTPUT_FILENAME)
+    # Base filename without extension or metric suffix
+    BASE_FILENAME = "lost_connection_experiment"
 
     plot_strategies_comparison(
         OUTPUTS_DIR,
         PREFIXES,
         HOME_ID,
-        OUTPUT_PATH,
+        PLOTS_DIR,  # Pass directory
+        BASE_FILENAME,  # Pass base filename
         max_seconds=280,
         smoothing_window=60,
     )

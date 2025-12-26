@@ -127,6 +127,7 @@ def plot_metrics_boxplot(
 ) -> None:
     """
     Creates boxplots showing distribution of metrics across homes for each processing type.
+    Generates both a combined plot with all three metrics and individual plots for each metric.
 
     :param df: DataFrame with evaluation metrics.
     :type df: pd.DataFrame
@@ -139,18 +140,14 @@ def plot_metrics_boxplot(
     :raises KeyError: If required columns are missing in the DataFrame.
     :raises ValueError: If DataFrame is empty or processing types are not found.
     """
+    import matplotlib.patches
+    
     apply_plot_style(plot_attributes)
     colors = get_color_palette(plot_attributes)
 
     try:
-        fig, axes = plt.subplots(1, 3, figsize=(16, 4))
-
         metrics = ["precision", "recall", "f1_score"]
-        titles = [
-            "Precision",
-            "Recall",
-            "F1-Score",
-        ]
+        titles = ["Precision", "Recall", "F1-Score"]
 
         processing_types = plot_attributes.get(
             "processing_type_order", df["processing_type"].unique()
@@ -162,7 +159,18 @@ def plot_metrics_boxplot(
         if df.empty or not processing_types:
             raise ValueError("DataFrame is empty or no valid processing types found.")
 
-        legend_handles = []
+        legend_handles = [
+            matplotlib.patches.Patch(
+                facecolor=colors[i],
+                edgecolor="black",
+                label=processing_types[i].title(),
+                alpha=0.7,
+            )
+            for i in range(len(processing_types))
+        ]
+
+        fig, axes = plt.subplots(1, 3, figsize=(16, 4))
+
         for idx, (metric, title) in enumerate(zip(metrics, titles)):
             ax = axes[idx]
             data = [
@@ -186,17 +194,6 @@ def plot_metrics_boxplot(
                 median.set_color("black")
                 median.set_linewidth(1.6)
 
-            if idx == 0:
-                legend_handles = [
-                    mpl.patches.Patch(
-                        facecolor=colors[i],
-                        edgecolor="black",
-                        label=processing_types[i].title(),
-                        alpha=0.7,
-                    )
-                    for i in range(len(processing_types))
-                ]
-
             ax.set_ylim(0.2, 0.9)
             ax.set_xticklabels([])
             ax.set_yticklabels(
@@ -212,20 +209,6 @@ def plot_metrics_boxplot(
             if idx == 0:
                 ax.set_ylabel("Score", fontweight="bold", labelpad=10)
 
-        # for idx in range(len(axes) - 1):
-        #     pos1 = axes[idx].get_position()
-        #     pos2 = axes[idx + 1].get_position()
-        #     x_divider = pos1.x1 + 0.03
-        #     fig.add_artist(
-        #         plt.Line2D(
-        #             [x_divider, x_divider],
-        #             [0.3, 0.7],
-        #             transform=fig.transFigure,
-        #             color="gray",
-        #             linewidth=1,
-        #         )
-        #     )
-
         plt.tight_layout(rect=[0, 0.15, 1, 1])
         plt.figlegend(
             handles=legend_handles,
@@ -236,11 +219,67 @@ def plot_metrics_boxplot(
             ncol=4,
         )
         fig.subplots_adjust(wspace=0.15, right=0.97)
-        # save_path = os.path.join(output_dir, "metrics_boxplot.png")
         save_path = os.path.join(output_dir, "metrics_boxplot.pdf")
         plt.savefig(save_path, facecolor="white")
         plt.close()
         print(f"Saved: {save_path}")
+
+        for idx, (metric, title) in enumerate(zip(metrics, titles)):
+            fig_single, ax_single = plt.subplots(1, 1, figsize=(6, 4))
+
+            data = [
+                df[df["processing_type"] == pt][metric].values
+                for pt in processing_types
+            ]
+
+            bp = ax_single.boxplot(
+                data,
+                patch_artist=True,
+                labels=processing_types,
+                showfliers=False,
+                widths=0.8,
+            )
+
+            for patch, color in zip(bp["boxes"], colors[: len(processing_types)]):
+                patch.set_facecolor(color)
+                patch.set_alpha(0.7)
+
+            for median in bp["medians"]:
+                median.set_color("black")
+                median.set_linewidth(1.6)
+
+            ax_single.set_ylim(0.2, 0.9)
+            ax_single.set_xticklabels([])
+            ax_single.set_yticklabels(
+                [str(tick) for tick in [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]],
+                fontsize=14,
+            )
+            ax_single.grid(axis="y", alpha=0.75)
+            ax_single.grid(axis="x", alpha=0)
+            ax_single.spines["top"].set_visible(False)
+            ax_single.spines["left"].set_visible(False)
+            ax_single.spines["bottom"].set_visible(False)
+            ax_single.set_title(title, fontweight="bold", pad=10)
+            ax_single.set_ylabel("Score", fontweight="bold", labelpad=10)
+
+            if metric == "f1_score":
+                plt.tight_layout(rect=[0, 0.15, 1, 1])
+                plt.figlegend(
+                    handles=legend_handles,
+                    loc="lower center",
+                    bbox_to_anchor=(0.5, 0.02),
+                    frameon=True,
+                    fontsize=15,
+                    ncol=2,
+                )
+            else:
+                plt.tight_layout()
+
+            save_path_single = os.path.join(output_dir, f"{metric}_boxplot.pdf")
+            plt.savefig(save_path_single, facecolor="white")
+            plt.close()
+            print(f"Saved: {save_path_single}")
+
     except (KeyError, ValueError, TypeError) as e:
         traceback.print_exc()
         raise ValueError(f"Error generating metrics boxplot: {e}")
@@ -395,7 +434,8 @@ if __name__ == "__main__":
     """
     Main entry point for generating evaluation result plots.
     """
-    DATABASE_PATH: str = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
+    # DATABASE_PATH: str = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
+    DATABASE_PATH: str = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
     SUMMARY_CSV_PATH: str = os.path.join(
         DATABASE_PATH, "evaluation_results", "summary_all_homes.csv"
     )

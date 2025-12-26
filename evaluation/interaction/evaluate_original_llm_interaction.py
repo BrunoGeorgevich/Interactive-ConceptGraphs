@@ -1,15 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import torch.nn.functional as F
 from dotenv import load_dotenv
 from openai import OpenAI
 from glob import glob
-import numpy as np
 import traceback
-import open_clip
-import pickle
-import torch
 import json
-import gzip
 import csv
 import sys
 import os
@@ -18,162 +12,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
-from conceptgraph.slam.slam_classes import MapObjectList
+from conceptgraph.interaction.original_llm_interaction import OriginalLLMInteraction
 from evaluation.prompts import ORIGINAL_JUDGE_PROMPT
-
-
-class ConceptGraphRetriever:
-    """
-    Retriever class for querying objects from ConceptGraph SLAM results.
-
-    This class loads pre-processed SLAM results and provides methods to retrieve
-    the most relevant objects based on CLIP similarity to text queries.
-    """
-
-    def __init__(self, result_path: str, device: str = "cuda"):
-        """
-        Initializes the ConceptGraphRetriever with SLAM results and CLIP model.
-
-        :param result_path: Path to the gzipped pickle result file.
-        :type result_path: str
-        :param device: Device to use for CLIP model computations.
-        :type device: str
-        :raises FileNotFoundError: If the result file does not exist.
-        :raises RuntimeError: If loading the result or initializing CLIP fails.
-        :return: None
-        :rtype: None
-        """
-        self.result_path = result_path
-        self.device = device
-        self.objects = None
-        self.clip_model = None
-        self.clip_tokenizer = None
-        self._load_result()
-        self._initialize_clip()
-
-    def _load_result(self) -> None:
-        """
-        Loads the SLAM result file and extracts object data.
-
-        :raises FileNotFoundError: If the result file does not exist.
-        :raises RuntimeError: If the result file cannot be loaded or parsed.
-        :return: None
-        :rtype: None
-        """
-        if not os.path.exists(self.result_path):
-            raise FileNotFoundError(f"Result file not found: {self.result_path}")
-
-        try:
-            with gzip.open(self.result_path, "rb") as f:
-                results = pickle.load(f)
-
-            if not isinstance(results, dict):
-                raise RuntimeError("Results should be a dictionary.")
-
-            self.objects = MapObjectList()
-            self.objects.load_serializable(results["objects"])
-        except (OSError, pickle.PickleError, KeyError) as e:
-            traceback.print_exc()
-            raise RuntimeError(f"Failed to load result file: {e}")
-
-    def _initialize_clip(self) -> None:
-        """
-        Initializes the CLIP model and tokenizer.
-
-        :raises RuntimeError: If CLIP model initialization fails.
-        :return: None
-        :rtype: None
-        """
-        try:
-            self.clip_model, _, _ = open_clip.create_model_and_transforms(
-                "ViT-H-14", "laion2b_s32b_b79k"
-            )
-            self.clip_model = self.clip_model.to(self.device)
-            self.clip_tokenizer = open_clip.get_tokenizer("ViT-H-14")
-        except (RuntimeError, OSError) as e:
-            traceback.print_exc()
-            raise RuntimeError(f"Failed to initialize CLIP model: {e}")
-
-    def retrieve_top_k_objects(
-        self, query: str, k: int = 3, similarity_threshold: float = 0.23
-    ) -> list:
-        """
-        Retrieves the top-k most relevant objects for a given text query.
-
-        :param query: The text query to search for.
-        :type query: str
-        :param k: Number of top objects to retrieve.
-        :type k: int
-        :param similarity_threshold: Similarity threshold for considering relevant objects.
-        :type similarity_threshold: float
-        :raises ValueError: If query is empty or k is less than 1.
-        :raises RuntimeError: If object retrieval fails.
-        :return: List of dictionaries containing object information and similarity scores.
-        :rtype: list
-        """
-        if not query or not query.strip():
-            raise ValueError("Query cannot be empty.")
-        if k < 1:
-            raise ValueError("k must be at least 1.")
-
-        try:
-            text_queries_tokenized = self.clip_tokenizer([query]).to(self.device)
-            with torch.no_grad():
-                text_query_ft = self.clip_model.encode_text(text_queries_tokenized)
-                text_query_ft = text_query_ft / text_query_ft.norm(dim=-1, keepdim=True)
-                text_query_ft = text_query_ft.squeeze()
-
-            objects_clip_fts = self.objects.get_stacked_values_torch("clip_ft")
-            objects_clip_fts = objects_clip_fts.to(self.device)
-
-            similarities = F.cosine_similarity(
-                text_query_ft.unsqueeze(0), objects_clip_fts, dim=-1
-            )
-
-            top_k_indices = torch.topk(similarities, min(k, len(self.objects))).indices
-            top_k_indices = top_k_indices.cpu().numpy()
-
-            results = []
-            for idx in top_k_indices:
-                if similarities[idx].cpu().item() < similarity_threshold:
-                    continue
-                obj = self.objects[idx]
-                obj_class = self._get_most_common_class(obj)
-                bbox_center = obj["bbox"].center if obj.get("bbox") else [0, 0, 0]
-
-                results.append(
-                    {
-                        "index": int(idx),
-                        "class_name": obj.get("class_name", "unknown"),
-                        "most_common_class": obj_class,
-                        "similarity": float(similarities[idx].cpu().item()),
-                        "location": list(bbox_center),
-                    }
-                )
-
-            return results
-
-        except (RuntimeError, KeyError, AttributeError, TypeError) as e:
-            traceback.print_exc()
-            raise RuntimeError(f"Failed to retrieve objects: {e}")
-
-    def _get_most_common_class(self, obj: dict) -> str:
-        """
-        Gets the most common class for an object based on class_id.
-
-        :param obj: Object dictionary containing class information.
-        :type obj: dict
-        :return: Most common class name or 'unknown'.
-        :rtype: str
-        """
-        try:
-            obj_classes = np.asarray(obj.get("class_id", []))
-            if len(obj_classes) == 0:
-                return obj.get("class_name", "unknown")
-            values, counts = np.unique(obj_classes, return_counts=True)
-            return str(values[np.argmax(counts)])
-        except (ValueError, TypeError, AttributeError):
-            return obj.get("class_name", "unknown")
 
 
 def get_result_path(
@@ -315,6 +155,8 @@ def save_question_result(
     :param question_type: Type of question.
     :type question_type: str
     :param question_index: Index of the question within its type.
+    :type question_index: int
+    :param result: Dictionary containing the evaluation result.
     :type result: dict
     :raises RuntimeError: If writing the file fails.
     :return: None
@@ -432,6 +274,7 @@ def evaluate_with_judge(
     :rtype: dict
     """
     judge_input = json.dumps(input_data, indent=2, ensure_ascii=False)
+    system_prompt = ORIGINAL_JUDGE_PROMPT + "\n<RETRIEVAL_MODE>\nLLM\n</RETRIEVAL_MODE>"
 
     max_retries = 3
     for attempt in range(max_retries):
@@ -439,7 +282,7 @@ def evaluate_with_judge(
             response = openai_client.chat.completions.create(
                 model=model_id,
                 messages=[
-                    {"role": "system", "content": ORIGINAL_JUDGE_PROMPT},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": judge_input},
                 ],
                 temperature=temperature,
@@ -480,18 +323,18 @@ def evaluate_with_judge(
     raise RuntimeError("LLM evaluation failed unexpectedly.")
 
 
-def extract_query_from_question(question: dict) -> str:
+def extract_query_from_question(question: dict) -> str | list:
     """
-    Extracts the query string from a question dictionary.
+    Extracts the query string or messages list from a question dictionary.
 
     :param question: Question dictionary containing either 'query' or 'messages'.
     :type question: dict
     :raises ValueError: If no valid query can be extracted.
-    :return: The extracted query string.
-    :rtype: str
+    :return: The extracted query string or messages list.
+    :rtype: str | list
     """
     if "query" in question:
-        return question["query"]
+        return question["query"].replace("transitioningway", "transitioning")
     elif "messages" in question:
         return question["messages"]
     raise ValueError("No valid query found in question.")
@@ -499,21 +342,20 @@ def extract_query_from_question(question: dict) -> str:
 
 def process_single_question(
     question: dict,
-    retriever: ConceptGraphRetriever,
+    llm_interaction: OriginalLLMInteraction,
     openai_client: OpenAI,
     model_id: str,
     temperature: float,
     top_p: float,
     max_tokens: int,
-    similarity_threshold: float = 0.23,
 ) -> dict:
     """
-    Processes a single evaluation question using the ConceptGraphRetriever.
+    Processes a single evaluation question using the OriginalLLMInteraction.
 
     :param question: The question data containing either 'query' or 'messages'.
     :type question: dict
-    :param retriever: ConceptGraphRetriever instance for object retrieval.
-    :type retriever: ConceptGraphRetriever
+    :param llm_interaction: OriginalLLMInteraction instance for processing queries.
+    :type llm_interaction: OriginalLLMInteraction
     :param openai_client: OpenAI client for judge evaluation.
     :type openai_client: OpenAI
     :param model_id: Model identifier for the judge LLM.
@@ -524,8 +366,6 @@ def process_single_question(
     :type top_p: float
     :param max_tokens: Maximum tokens for the response.
     :type max_tokens: int
-    :param similarity_threshold: Similarity threshold for considering relevant objects.
-    :type similarity_threshold: float
     :raises ValueError: If the question format is invalid.
     :return: The complete evaluation result dictionary.
     :rtype: dict
@@ -537,75 +377,77 @@ def process_single_question(
         raise ValueError(f"Invalid question format: {e}")
 
     is_follow_up = isinstance(query, list)
+
     try:
         if isinstance(query, list):
-            top_objects = []
+            llm_responses = []
             for q in query:
                 if q["role"] != "user":
                     continue
-                objs = retriever.retrieve_top_k_objects(
-                    q["content"], k=3, similarity_threshold=similarity_threshold
+                most_relevant, top_3_classes, response = llm_interaction.process_query(
+                    q["content"].replace("transitioningway", "transitioning")
                 )
-                top_objects.append(objs)
+                llm_responses.append(response)
+
+            input_data = {
+                "messages": query,
+                "obtained_messages": [],
+                "is_follow_up": True,
+            }
+
+            for i, response in enumerate(llm_responses):
+                input_data["obtained_messages"].append(
+                    {
+                        "role": "user",
+                        "content": query[i * 2]["content"],
+                    }
+                )
+
+                if len(top_3_classes) < 3:
+                    top_3_classes += ["None"] * (3 - len(top_3_classes))
+
+                input_data["obtained_messages"].append(
+                    {
+                        "role": "robot",
+                        "most_relevant_object": most_relevant,
+                        "top_3_classes": top_3_classes,
+                    }
+                )
+
         elif isinstance(query, str):
-            top_objects = retriever.retrieve_top_k_objects(
-                query, k=3, similarity_threshold=similarity_threshold
+            most_relevant, top_3_classes, response = llm_interaction.process_query(
+                query.replace("transitioningway", "transitioning")
             )
-        else:
-            raise ValueError("Query must be a string or a list of strings.")
-    except (RuntimeError, ValueError):
-        traceback.print_exc()
-        top_objects = []
-
-    if is_follow_up:
-        input_data = {
-            "messages": query,
-            "obtained_messages": [],
-            "is_follow_up": True,
-        }
-
-        for i, objs in enumerate(top_objects):
-            input_data["obtained_messages"].append(
-                {
-                    "role": "user",
-                    "content": query[i * 2]["content"],
-                }
-            )
-            most_relevant = objs[0] if objs else "None"
-            top_3_classes = [obj.get("class_name", "None") for obj in objs]
 
             if len(top_3_classes) < 3:
                 top_3_classes += ["None"] * (3 - len(top_3_classes))
 
-            input_data["obtained_messages"].append(
-                {
-                    "role": "robot",
-                    "most_relevant_object": (
-                        most_relevant["class_name"]
-                        if most_relevant and "class_name" in most_relevant
-                        else "None"
-                    ),
-                    "top_3_classes": top_3_classes,
-                }
-            )
-    else:
-        most_relevant = top_objects[0] if top_objects else "None"
-        top_3_classes = [obj.get("class_name", "None") for obj in top_objects]
+            input_data = {
+                "query": query,
+                "expected_answer": question.get("expected_answer", ""),
+                "most_relevant_object": most_relevant,
+                "top_3_classes": top_3_classes,
+                "is_follow_up": is_follow_up,
+            }
+        else:
+            raise ValueError("Query must be a string or a list of messages.")
 
-        if len(top_3_classes) < 3:
-            top_3_classes += ["None"] * (3 - len(top_3_classes))
-
-        input_data = {
-            "query": query,
-            "expected_answer": question.get("expected_answer", ""),
-            "most_relevant_object": (
-                most_relevant["class_name"]
-                if most_relevant and "class_name" in most_relevant
-                else "None"
-            ),
-            "top_3_classes": top_3_classes,
-            "is_follow_up": is_follow_up,
-        }
+    except (RuntimeError, ValueError):
+        traceback.print_exc()
+        if isinstance(query, list):
+            input_data = {
+                "messages": query,
+                "obtained_messages": [],
+                "is_follow_up": True,
+            }
+        else:
+            input_data = {
+                "query": query,
+                "expected_answer": question.get("expected_answer", ""),
+                "most_relevant_object": "None",
+                "top_3_classes": ["None", "None", "None"],
+                "is_follow_up": is_follow_up,
+            }
 
     judge_result = evaluate_with_judge(
         input_data=input_data,
@@ -718,10 +560,11 @@ def evaluate_home(
     temperature: float,
     top_p: float,
     max_tokens: int,
+    llm_model_id: str,
     processing_type: str = "original",
 ) -> dict:
     """
-    Evaluates all questions for a single home using ConceptGraph retrieval.
+    Evaluates all questions for a single home using OriginalLLMInteraction.
 
     :param home_id: Identifier for the home.
     :type home_id: int
@@ -731,7 +574,7 @@ def evaluate_home(
     :type output_base_dir: str
     :param openai_client: OpenAI client for API calls.
     :type openai_client: OpenAI
-    :param model_id: Model identifier for the LLM.
+    :param model_id: Model identifier for the judge LLM.
     :type model_id: str
     :param temperature: Temperature parameter for generation.
     :type temperature: float
@@ -739,6 +582,8 @@ def evaluate_home(
     :type top_p: float
     :param max_tokens: Maximum tokens for the response.
     :type max_tokens: int
+    :param llm_model_id: Model identifier for OriginalLLMInteraction.
+    :type llm_model_id: str
     :param processing_type: Type of processing for result files.
     :type processing_type: str
     :return: Dictionary containing aggregated metrics for the home.
@@ -748,7 +593,7 @@ def evaluate_home(
     questions_files = glob(os.path.join(home_path, "evaluation_questions", "*.json"))
 
     result_path = get_result_path(dataset_base_path, home_id, processing_type)
-    retriever = None
+    llm_interaction = None
 
     home_metrics = {"home_id": home_id}
     all_results = []
@@ -779,18 +624,20 @@ def evaluate_home(
                     all_results.append(cached_result)
                     continue
 
-            if retriever is None:
+            if llm_interaction is None:
                 try:
-                    retriever = ConceptGraphRetriever(result_path)
+                    llm_interaction = OriginalLLMInteraction(result_path, llm_model_id)
                 except (FileNotFoundError, RuntimeError) as e:
                     traceback.print_exc()
-                    print(f"[Home {home_id:02d}] Failed to initialize retriever: {e}")
+                    print(
+                        f"[Home {home_id:02d}] Failed to initialize LLM interaction: {e}"
+                    )
                     return {"home_id": home_id, "error": str(e)}
 
             try:
                 result = process_single_question(
                     question=question,
-                    retriever=retriever,
+                    llm_interaction=llm_interaction,
                     openai_client=openai_client,
                     model_id=model_id,
                     temperature=temperature,
@@ -837,6 +684,7 @@ def worker_evaluate_home(
     top_p: float,
     max_tokens: int,
     timeout: float,
+    llm_model_id: str,
     processing_type: str = "original",
 ) -> dict | None:
     """
@@ -852,7 +700,7 @@ def worker_evaluate_home(
     :type api_key: str
     :param base_url: Base URL for OpenAI API.
     :type base_url: str
-    :param model_id: Model identifier for the LLM.
+    :param model_id: Model identifier for the judge LLM.
     :type model_id: str
     :param temperature: Temperature parameter for generation.
     :type temperature: float
@@ -862,6 +710,8 @@ def worker_evaluate_home(
     :type max_tokens: int
     :param timeout: Timeout for API calls.
     :type timeout: float
+    :param llm_model_id: Model identifier for OriginalLLMInteraction.
+    :type llm_model_id: str
     :param processing_type: Type of processing for result files.
     :type processing_type: str
     :return: Dictionary containing home metrics or None on failure.
@@ -883,6 +733,7 @@ def worker_evaluate_home(
             temperature=temperature,
             top_p=top_p,
             max_tokens=max_tokens,
+            llm_model_id=llm_model_id,
             processing_type=processing_type,
         )
     except (RuntimeError, OSError, ValueError) as e:
@@ -902,7 +753,8 @@ def run_parallel_evaluation(
     top_p: float,
     max_tokens: int,
     timeout: float,
-    max_workers: int = 4,
+    llm_model_id: str,
+    max_workers: int = 15,
     processing_type: str = "original",
 ) -> None:
     """
@@ -918,7 +770,7 @@ def run_parallel_evaluation(
     :type api_key: str
     :param base_url: Base URL for OpenAI API.
     :type base_url: str
-    :param model_id: Model identifier for the LLM.
+    :param model_id: Model identifier for the judge LLM.
     :type model_id: str
     :param temperature: Temperature parameter for generation.
     :type temperature: float
@@ -928,6 +780,8 @@ def run_parallel_evaluation(
     :type max_tokens: int
     :param timeout: Timeout for API calls.
     :type timeout: float
+    :param llm_model_id: Model identifier for OriginalLLMInteraction.
+    :type llm_model_id: str
     :param max_workers: Maximum number of parallel workers.
     :type max_workers: int
     :param processing_type: Type of processing for result files.
@@ -955,6 +809,7 @@ def run_parallel_evaluation(
                 top_p,
                 max_tokens,
                 timeout,
+                llm_model_id,
                 processing_type,
             ): home_id
             for home_id in home_ids
@@ -988,18 +843,19 @@ def run_parallel_evaluation(
 if __name__ == "__main__":
     load_dotenv()
 
-    DATASET_BASE_PATH: str = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
+    DATASET_BASE_PATH: str = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
     OUTPUT_BASE_DIR: str = os.path.join(
-        DATASET_BASE_PATH, "original_interaction_eval_results"
+        DATASET_BASE_PATH, "original_llm_interaction_eval_results"
     )
     PROCESSING_TYPE: str = "original"
-    OPENROUTER_MODEL_ID: str = "openai/gpt-oss-120b"
+    JUDGE_MODEL_ID: str = "openai/gpt-oss-120b"
+    LLM_MODEL_ID: str = "google/gemini-2.5-flash-lite"
     OPENROUTER_TEMPERATURE: float = 0.0
     OPENROUTER_TOP_P: float = 0.1
     OPENROUTER_MAX_TOKENS: int = 64000
     OPENROUTER_TIMEOUT: float = 60.0
     HOME_IDS: list = list(range(1, 31))
-    MAX_WORKERS: int = 10
+    MAX_WORKERS: int = 15
 
     api_key = os.environ.get("OPENROUTER_API_KEY", "")
     base_url = "https://openrouter.ai/api/v1"
@@ -1014,11 +870,12 @@ if __name__ == "__main__":
         home_ids=HOME_IDS,
         api_key=api_key,
         base_url=base_url,
-        model_id=OPENROUTER_MODEL_ID,
+        model_id=JUDGE_MODEL_ID,
         temperature=OPENROUTER_TEMPERATURE,
         top_p=OPENROUTER_TOP_P,
         max_tokens=OPENROUTER_MAX_TOKENS,
         timeout=OPENROUTER_TIMEOUT,
+        llm_model_id=LLM_MODEL_ID,
         max_workers=MAX_WORKERS,
         processing_type=PROCESSING_TYPE,
     )
