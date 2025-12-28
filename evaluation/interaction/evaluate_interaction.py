@@ -15,7 +15,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 
-from conceptgraph.interaction.system import SmartWheelchairSystem
+from conceptgraph.interaction.system import InteractionSystem
 from conceptgraph.interaction.schemas import SystemConfig
 from evaluation.prompts import SEMANTIC_JUDGE_PROMPT
 
@@ -355,7 +355,7 @@ def evaluate_with_judge(
 
 def process_single_question(
     question: dict,
-    system: SmartWheelchairSystem,
+    system: InteractionSystem,
     openai_client: OpenAI,
     model_id: str,
     temperature: float,
@@ -363,12 +363,12 @@ def process_single_question(
     max_tokens: int,
 ) -> dict:
     """
-    Processes a single evaluation question using the SmartWheelchairSystem and evaluates with the judge.
+    Processes a single evaluation question using the InteractionSystem and evaluates with the judge.
 
     :param question: The question data containing either 'query' or 'messages'.
     :type question: dict
-    :param system: Instance of SmartWheelchairSystem for processing queries.
-    :type system: SmartWheelchairSystem
+    :param system: Instance of InteractionSystem for processing queries.
+    :type system: InteractionSystem
     :param openai_client: OpenAI client for judge evaluation.
     :type openai_client: OpenAI
     :param model_id: Model identifier for the judge LLM.
@@ -587,7 +587,7 @@ def evaluate_home(
         debug_input_path=os.path.join("data", "input_debug.txt"),
         debug_output_path=os.path.join("data", "output_debug.txt"),
     )
-    system = SmartWheelchairSystem(config)
+    system = InteractionSystem(config)
 
     home_metrics = {
         "home_id": home_id,

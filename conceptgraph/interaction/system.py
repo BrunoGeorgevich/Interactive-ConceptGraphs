@@ -31,7 +31,7 @@ from conceptgraph.interaction.prompts import (
 )
 
 
-class SmartWheelchairSystem:
+class InteractionSystem:
     """
     Main controller for the Smart Wheelchair Navigation and Interaction System.
     """
@@ -593,7 +593,7 @@ if __name__ == "__main__":
                 f"[bold red]Warning: Dataset path '{DATASET_BASE_PATH}' does not exist.[/bold red]"
             )
         console.print("[cyan]Initializing Smart Wheelchair System...[/cyan]")
-        system = SmartWheelchairSystem(config)
+        system = InteractionSystem(config)
         system.start_interactive_session(initial_pose=(0.0, 0.0, 0.0))
 
     except Exception as e:

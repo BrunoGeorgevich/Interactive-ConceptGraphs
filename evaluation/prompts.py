@@ -199,6 +199,53 @@ Rules:
 """
 )
 
+TEMPORAL_CONSISTENCY_QUESTION_PROMPT = dedent(
+    """
+<TASK_DEFINITION>
+Generate {num_questions} "Temporal Consistency" scenarios. These scenarios evaluate the agent's ability to update its knowledge state based on new information that invalidates previous constraints (Non-Monotonic Reasoning).
+
+<SCENARIO_LOGIC>
+Each sample must strictly follow this 7-step interaction flow:
+1. **User:** Reports that a specific Object X in a specific Room A is broken/out of order (e.g., "The toilet in the main bathroom is broken").
+2. **Robot:** Confirms the information storage.
+3. **User:** Requests to use/go to Object X in Room A (the one reported broken).
+4. **Robot:** Refuses the request citing the breakage. IMPORTANT: If there is a similar object (Object X) in a different Room B (Context), the robot MUST suggest it as an alternative. If no alternative exists, it just refuses.
+5. **User:** Reports that Object X in Room A is now fixed/working again.
+6. **Robot:** Confirms the information update.
+7. **User:** Requests to use/go to Object X in Room A again (same request as step 3).
+8. **Robot:** Accepts the request and guides the user (since it is fixed).
+</SCENARIO_LOGIC>
+
+<RULES>
+1. **Context Grounding:** Object X must exist in the provided context and the combination of Object X in Room A must be unique.
+2. **State Persistence:** The test evaluates if the robot remembers the "broken" state in step 4 and the "fixed" state in step 8.
+3. **IDs Usage:** Use the Room Name completo to distinguish objects (e.g., "Kitchen 1", "Bedroom 0", etc).
+4. **Robot Capabilities:** The robot can only guide/escort. It cannot "bring" objects.
+5. **Single Object Guarantee:** Ensure the target is resolved to a specific instance via room constraints.  You must not create scenarios where multiple instances of Object X exist in Room A. Focus on objects that are single in the whole context.
+</RULES>
+</TASK_DEFINITION>
+
+<JSON_SCHEMA>
+{
+  "samples": [
+    {
+      "messages": [
+        { "role": "user", "content": "Statement that Object X in Room A is broken" },
+        { "role": "robot", "content": "Confirmation of recorded info" },
+        { "role": "user", "content": "Request to go to Object X in Room A" },
+        { "role": "robot", "content": "Refusal due to breakage (+ suggestion of alternative in Room B if available)" },
+        { "role": "user", "content": "Statement that Object X in Room A is fixed" },
+        { "role": "robot", "content": "Confirmation of update" },
+        { "role": "user", "content": "Request to go to Object X in Room A" },
+        { "role": "robot", "content": "Acceptance/Navigating to Object X" }
+      ]
+    }
+  ]
+}
+</JSON_SCHEMA>
+"""
+)
+
 SEMANTIC_JUDGE_PROMPT = dedent(
     """
 <ROLE>
@@ -209,10 +256,6 @@ SEMANTIC_JUDGE_PROMPT = dedent(
     Check the "is_follow_up" flag.
     Fields: "is_follow_up", "query", "expected_answer", "obtained_response", "messages", "obtained_messages".
 </INPUT_DATA>
-
-<ID_HANDLING_RULE>
-    **CRITICAL:** Strip all numerical suffixes/IDs (e.g., "bathroom_1" -> "Bathroom"). Compare only semantic Classes.
-</ID_HANDLING_RULE>
 
 <EVALUATION_LOGIC>
     Analyze the input based on the 'is_follow_up' flag.
@@ -353,6 +396,135 @@ ORIGINAL_JUDGE_PROMPT = dedent(
     4. **False:** ALL OTHER COMBINATIONS.
        *(e.g., T1 is False - if it didn't see the object class initially, the rest is invalid).*
 </SECTION 2: MULTI-TURN EVALUATION>
+
+<OUTPUT_FORMAT>
+    Output ONLY one single word: True, Partial, or False.
+</OUTPUT_FORMAT>
+    """
+)
+
+SEMANTIC_JUDGE_PROMPT_TEMPORAL = dedent(
+    """
+<ROLE>
+    You are an expert judge evaluating the "Temporal Consistency" and "Non-Monotonic Reasoning" capabilities of a robot.
+    Your task is to verify if the robot correctly updates its belief state: refusing a broken object and accepting it after it is reported fixed.
+</ROLE>
+
+<INPUT_DATA>
+    Fields: "messages" (Ground Truth/User Inputs) and "obtained_messages" (System Output).
+    The interaction consists of 4 logical pairs (User Request -> Robot Response).
+</INPUT_DATA>
+
+<ID_HANDLING_RULE>
+    **CRITICAL:** Strip all numerical suffixes/IDs (e.g., "bathroom_1" -> "Bathroom"). Compare only semantic Classes.
+</ID_HANDLING_RULE>
+
+<SCENARIO_STRUCTURE>
+    1. **Turn 1 (Info):** User reports Object X is broken. -> Robot should acknowledge.
+    2. **Turn 2 (Test - Broken):** User asks for Object X. -> Robot must REFUSE or offer an ALTERNATIVE (different room).
+    3. **Turn 3 (Info):** User reports Object X is fixed. -> Robot should acknowledge.
+    4. **Turn 4 (Test - Fixed):** User asks for Object X. -> Robot must ACCEPT and Navigate to Object X.
+</SCENARIO_STRUCTURE>
+
+<EVALUATION_LOGIC>
+    Analyze the `obtained_messages`.
+    
+    **Step 1: Addition Acknowledgements**
+    - Check if Robot acknowledges the "broken" and "fixed" reports in Turns 1 and 3 respectively.
+    **Success:** If it properly acknowledges both.
+    **Failure:** If it ignores either report.
+    
+    **Step 2: Refusing Broken**
+    - Check Robot's response in Turn 2. It should refuse, acknowledges OR announce to the user that the object is broken and/or suggest an alternative if available.
+    **Success:** If it refuses, acknowledges OR announces the problem and/or suggests an alternative. It does not need to explicitly refuse if it announces or acknowledges the broken state. Do not penalize for suggesting an alternative if it exists. Do not penalize for not refusing if it announces or acknowledges the broken state.
+    **Failure:** If it simply agrees to go to the broken object or accuses absence when it exists, without announce the problem.
+    
+    **Step 3: Accepting Fixed**
+    - Check Robot's response in Turn 4. It should agree to go to the now fixed object.
+    **Success:** If it agrees to go to the fixed object.
+    **Failure:** If it refuses again or accuses absence when it exists.
+
+</EVALUATION_LOGIC>
+
+<SCORING_CRITERIA>
+    **True** (Reasoning Capable):
+    - If all three steps succeed.
+
+    **Partial** (Visual Success / Logic Failure):
+    - If at least two of the three steps succeed.
+
+    **False** (Retrieval Failure):
+    - If only one or none of the steps succeed.
+</SCORING_CRITERIA>
+
+<OUTPUT_FORMAT>
+    Output ONLY one single word: True, Partial, or False.
+</OUTPUT_FORMAT>
+    """
+)
+
+ORIGINAL_JUDGE_PROMPT_TEMPORAL = dedent(
+    """
+<ROLE>
+    You are an expert judge evaluating a retrieval system on a "Temporal Consistency" task.
+    You must evaluate a sequence of 4 interactions to see if the system respects negative constraints (broken objects) and state updates (fixed objects).
+</ROLE>
+
+<INPUT_DATA>
+    Fields: "messages" (User inputs) and "obtained_messages" (System outputs containing 'most_relevant_object').
+    There are 4 distinct interactions in the list.
+</INPUT_DATA>
+
+<ID_HANDLING_RULE>
+    **CRITICAL:** Strip all numerical suffixes/IDs. Compare only semantic Classes.
+    "None", "null", "Unknown" are treated as Valid Negative responses.
+</ID_HANDLING_RULE>
+
+<EXPECTED_FLOW>
+    **Interaction 1 (User: "Object X is broken"):**
+    - Expected `most_relevant_object`: **None** (This is an informational statement, not a navigation command).
+
+    **Interaction 2 (User: "Go to Object X"):**
+    - Expected `most_relevant_object`: **None** (The object is broken, system should NOT retrieve it).
+
+    **Interaction 3 (User: "Object X is fixed"):**
+    - Expected `most_relevant_object`: **None** (Informational statement).
+
+    **Interaction 4 (User: "Go to Object X"):**
+    - Expected `most_relevant_object`: **Object X Class** (The object is fixed, system MUST retrieve it).
+</EXPECTED_FLOW>
+
+<EVALUATION_LOGIC>
+    Check the `most_relevant_object` for each of the 4 interactions in `obtained_messages`.
+
+    **Step 1: Addition Acknowledgements**
+    - Considering that the system does not provide explicit acknowledgements, we focus on the retrieval results.
+    - Check if the returning is "None" for Turns 1 and 3 respectively.
+    **Success:** If it properly returns "None" for both.
+    **Failure:** If it returns a specific object in either turn.
+    
+    **Step 2: Refusing Broken**
+    - The answer must be "None" in Turn 2. It should refuse to go to the broken object and/or suggest an ALTERNATIVE.
+    **Success:** If the answer is "None".
+    **Failure:** If it returns an object class (goes to broken object).
+    
+    **Step 3: Accepting Fixed**
+    - The answer must be Object X Class in Turn 4. It should agree to go to the now fixed object.
+    **Success:** If it returns Object X Class.
+    **Failure:** If it returns more than one class, "None", or a different object class.
+
+</EVALUATION_LOGIC>
+
+<SCORING_CRITERIA>
+    **True** (Reasoning Capable):
+    - If all three steps succeed.
+
+    **Partial** (Visual Success / Logic Failure):
+    - If at least two of the three steps succeed.
+
+    **False** (Retrieval Failure):
+    - If only one or none of the steps succeed.
+</SCORING_CRITERIA>
 
 <OUTPUT_FORMAT>
     Output ONLY one single word: True, Partial, or False.

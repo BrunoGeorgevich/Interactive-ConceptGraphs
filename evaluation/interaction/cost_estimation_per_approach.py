@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 from conceptgraph.interaction.original_llm_interaction import OriginalLLMInteraction
-from conceptgraph.interaction.system import SmartWheelchairSystem
+from conceptgraph.interaction.system import InteractionSystem
 from conceptgraph.interaction.schemas import SystemConfig
 from conceptgraph.inference.cost_estimator import CostEstimator
 
@@ -171,7 +171,7 @@ def estimate_smart_wheelchair_costs(
             dataset_base_path=dataset_base_path,
             use_additional_knowledge=use_additional_knowledge,
         )
-        system = SmartWheelchairSystem(config)
+        system = InteractionSystem(config)
 
         questions_files = glob(
             os.path.join(home_path, "evaluation_questions", "*_questions.json")

@@ -345,18 +345,14 @@ class SpatialContextManager:
         """
         px, py = self.world_to_map_coordinates(user_pos)
 
-        # 1. Direct lookup
         if 0 <= px < self.width and 0 <= py < self.height:
             region_id = self.region_mask[py, px]
             if region_id >= 0:
                 return self.unique_names.get(int(region_id), "Unknown Room")
 
-        # 2. Nearest Neighbor Fallback (if outside map or in Hallway/Negative ID)
         min_dist = float("inf")
         nearest_room_name = "Unknown Room"
 
-        # Use pixel coordinates for distance calculation against region centers
-        # merged_regions structure: {id: {'center': (cx, cy), ...}}
         for rid, data in self.merged_regions.items():
             center = data.get("center")  # Format (cx, cy)
             if center:

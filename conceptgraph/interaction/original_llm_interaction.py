@@ -325,7 +325,7 @@ if __name__ == "__main__":
     )
 
     llm_interaction = OriginalLLMInteraction(
-        pkl_file_path, model_id="google/gemini-2.5-flash-lite"
+        pkl_file_path, model_id="openai/gpt-4o"
     )
 
     try:

@@ -17,7 +17,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 from conceptgraph.interaction.schemas import SystemConfig
-from conceptgraph.interaction.system import SmartWheelchairSystem
+from conceptgraph.interaction.system import InteractionSystem
 from labs.utils import unity_to_ros_coordinates
 
 try:
@@ -597,7 +597,7 @@ def generate_knowledge_entry(
 
 
 def insert_knowledge_entry_to_system(
-    system: SmartWheelchairSystem,
+    system: InteractionSystem,
     entry: dict,
     lock: threading.Lock,
     success_list: list,
@@ -608,8 +608,8 @@ def insert_knowledge_entry_to_system(
     """
     Inserts a single knowledge entry into the system using the generated query.
 
-    :param system: Instance of SmartWheelchairSystem for processing queries.
-    :type system: SmartWheelchairSystem
+    :param system: Instance of InteractionSystem for processing queries.
+    :type system: InteractionSystem
     :param entry: Knowledge entry dictionary containing the query.
     :type entry: dict
     :param lock: Threading lock for synchronization.
@@ -1033,7 +1033,7 @@ def insert_knowledge_entries_to_database(
     skip_existing: bool,
 ) -> dict:
     """
-    Inserts all knowledge entries into the database using SmartWheelchairSystem in threads.
+    Inserts all knowledge entries into the database using InteractionSystem in threads.
 
     :param results: List of results from all homes containing knowledge entries.
     :type results: list[dict]
@@ -1082,7 +1082,7 @@ def insert_knowledge_entries_to_database(
                 debug_input_path=os.path.join("data", "input_debug.txt"),
                 debug_output_path=os.path.join("data", "output_debug.txt"),
             )
-            system = SmartWheelchairSystem(config)
+            system = InteractionSystem(config)
 
             success_list = []
             error_list = []
@@ -1294,7 +1294,7 @@ def run_false_negative_analysis(
                     debug_input_path=os.path.join("data", "input_debug.txt"),
                     debug_output_path=os.path.join("data", "output_debug.txt"),
                 )
-                system = SmartWheelchairSystem(config)
+                system = InteractionSystem(config)
 
                 success_list = []
                 error_list = []
@@ -1394,7 +1394,7 @@ if __name__ == "__main__":
     LOCAL_DATA_DIR: str = "data"
     HOME_IDS: list[int] = list(range(1, 31))
     MAX_WORKERS: int = 100
-    PREPARE_ADDITIONAL_KNOWLEDGE: bool = False
+    PREPARE_ADDITIONAL_KNOWLEDGE: bool = True
     INSERT_TO_DATABASE: bool = True
     SKIP_EXISTING_KNOWLEDGE: bool = True
     COORDINATE_TOLERANCE: float = 0.1

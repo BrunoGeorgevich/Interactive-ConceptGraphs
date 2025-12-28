@@ -37,6 +37,7 @@ AGENT_PROMPT_V3 = dedent(
 
         * **CASE B: Exactly One Perfect Candidate**
           - Output `<selected_object>`.
+          - If there is additional knowledge that contradicts the object's usability (e.g., "broken", "not working"), output `<possible_objects>` instead for user confirmation, saying that the object may be unusable.
 
         * **CASE C: Multiple Candidates (Evaluation Mode)**
           - Are there multiple matching objects (e.g., 3 beds)?
