@@ -138,7 +138,7 @@ def estimate_original_llm_costs(
         )
 
 
-def estimate_smart_wheelchair_costs(
+def estimate_interaction_system_costs(
     dataset_base_path: str,
     home_id: int,
     estimator: CostEstimator,
@@ -325,7 +325,7 @@ if __name__ == "__main__":
 
     costs_per_approach: dict[str, dict[int, dict]] = {
         "original_llm": {},
-        "smart_wheelchair": {},
+        "interaction_system": {},
     }
 
     print(f"Processing Home {HOME_ID:02d}...")
@@ -340,8 +340,8 @@ if __name__ == "__main__":
         traceback.print_exc()
 
     try:
-        costs_per_approach["smart_wheelchair"][HOME_ID] = (
-            estimate_smart_wheelchair_costs(
+        costs_per_approach["interaction_system"][HOME_ID] = (
+            estimate_interaction_system_costs(
                 DATASET_BASE_PATH,
                 HOME_ID,
                 estimator,
@@ -349,7 +349,7 @@ if __name__ == "__main__":
                 max_questions_per_file=MAX_QUESTIONS_PER_FILE,
             )
         )
-        print(f"  Smart Wheelchair: {costs_per_approach['smart_wheelchair'][HOME_ID]}")
+        print(f"  Smart Wheelchair: {costs_per_approach['interaction_system'][HOME_ID]}")
     except RuntimeError as exc:
         print(f"Failed to estimate smart wheelchair costs for home {HOME_ID}: {exc}")
         traceback.print_exc()

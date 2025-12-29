@@ -510,7 +510,7 @@ if __name__ == "__main__":
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {}
         for hid in HOME_IDS:
-            for mode in [EvalMode.SYSTEM]:
+            for mode in [EvalMode.SYSTEM, EvalMode.CLIP, EvalMode.LLM]:
                 future = executor.submit(
                     worker_wrapper,
                     hid,

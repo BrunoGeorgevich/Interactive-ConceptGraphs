@@ -346,8 +346,7 @@ def main() -> None:
     :return: None
     :rtype: None
     """
-    # DATABASE_PATH = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
-    DATABASE_PATH = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
+    DATABASE_PATH = "THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET"
     OUTPUTS_DIR = os.path.join(DATABASE_PATH, "outputs")
     PLOTS_DIR = os.path.join(DATABASE_PATH, "evaluation_results", "plots")
     os.makedirs(PLOTS_DIR, exist_ok=True)

@@ -243,8 +243,7 @@ def process_temporal_consistency(
 if __name__ == "__main__":
     load_dotenv()
 
-    # DATA_FOLDER: str = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
-    DATA_FOLDER: str = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
+    DATA_FOLDER: str = "THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET"
     NUM_QUESTIONS: int = 10
     OPENROUTER_MODEL_ID: str = "openai/gpt-oss-120b"
     OPENROUTER_TEMPERATURE: float = 0.0

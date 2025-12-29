@@ -860,7 +860,7 @@ def run_parallel_interaction_evaluation(
 
 if __name__ == "__main__":
     load_dotenv()
-    DATASET_BASE_PATH: str = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
+    DATASET_BASE_PATH: str = "THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET"
 
     # Configurações da API
     OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")

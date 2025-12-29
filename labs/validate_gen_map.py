@@ -7,7 +7,7 @@ from utils import read_dfs, unity_to_ros_coordinates, world_to_map
 
 
 if __name__ == "__main__":
-    DATA_FOLDER: str = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
+    DATA_FOLDER: str = "THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET"
     HOME: str = "Home01"
     EXPERIMENT: str = "Wandering"
 

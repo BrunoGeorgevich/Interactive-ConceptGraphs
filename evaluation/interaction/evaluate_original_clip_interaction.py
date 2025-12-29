@@ -989,7 +989,7 @@ def run_parallel_evaluation(
 if __name__ == "__main__":
     load_dotenv()
 
-    DATASET_BASE_PATH: str = THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET
+    DATASET_BASE_PATH: str = "THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET"
     OUTPUT_BASE_DIR: str = os.path.join(
         DATASET_BASE_PATH, "original_interaction_eval_results"
     )

@@ -339,6 +339,8 @@ class SemanticMemoryEngine:
         :type additional_info: List[dict]
         :raises VectorDbError: If insertion fails.
         """
+        if self.config.use_additional_knowledge is False:
+            return
         results = Parallel(n_jobs=-1, backend="threading")(
             delayed(_process_info_to_doc)(info) for info in additional_info
         )
