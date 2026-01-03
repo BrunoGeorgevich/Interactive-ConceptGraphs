@@ -50,8 +50,8 @@ def load_temporal_consistency_data(
         df_clip["Strategy"] = "ConceptGraphs (CLIP)"
         df_llm["Strategy"] = "ConceptGraphs (LLM)"
         df_system["Strategy"] = "HIPaMS without Learning"
-        df_system_without_ak["Strategy"] = "HIPaMS with Learning"
-        df_system_with_ak["Strategy"] = "HIPaMS with Learning + AK"
+        df_system_without_ak["Strategy"] = "HIPaMS"
+        df_system_with_ak["Strategy"] = "HIPaMS + Knowledge"
 
         df_combined = pd.concat(
             [df_clip, df_llm, df_system, df_system_without_ak, df_system_with_ak],
@@ -298,8 +298,8 @@ def plot_temporal_stacked_bar(df: pd.DataFrame, attrs: dict, out_dir: str) -> No
                 "ConceptGraphs (CLIP)",
                 "ConceptGraphs (LLM)",
                 "HIPaMS without Learning",
-                "HIPaMS with Learning",
-                "HIPaMS with Learning + AK",
+                "HIPaMS",
+                "HIPaMS + Knowledge",
             ]
         )
 
