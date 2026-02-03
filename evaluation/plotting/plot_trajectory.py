@@ -136,7 +136,7 @@ def generate_multiple_trajectory_maps(
 
 
 if __name__ == "__main__":
-    DATA_FOLDER: str = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
+    DATA_FOLDER: str = "THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET"
     OUTPUT_FOLDER = "trajectory_maps"
 
     HOMES = [f"Home{i:02d}" for i in range(1, 31)]

@@ -519,8 +519,7 @@ def calculate_metrics(results: list) -> dict:
         "true_rate": true_count / total,
         "partial_rate": partial_count / total,
         "false_rate": false_count / total,
-        # "success_rate": (true_count + partial_count * 0.5 + false_count * 0.0) / total,
-        "success_rate": (true_count + partial_count) / total,
+        "success_rate": (true_count + partial_count * 0.5 + false_count * 0.0) / total,
     }
 
 
@@ -844,7 +843,7 @@ def run_parallel_evaluation(
 if __name__ == "__main__":
     load_dotenv()
 
-    DATASET_BASE_PATH: str = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
+    DATASET_BASE_PATH: str = "THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET"
     OUTPUT_BASE_DIR: str = os.path.join(
         DATASET_BASE_PATH, "original_llm_interaction_eval_results"
     )

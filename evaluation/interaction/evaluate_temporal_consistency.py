@@ -489,7 +489,7 @@ def worker_wrapper(
 if __name__ == "__main__":
     load_dotenv()
 
-    DATASET_BASE_PATH = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
+    DATASET_BASE_PATH = "THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET"
     OUTPUT_BASE_DIR = os.path.join(
         DATASET_BASE_PATH, "interaction_eval_temporal_consistency"
     )

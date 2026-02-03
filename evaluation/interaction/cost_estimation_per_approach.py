@@ -289,7 +289,7 @@ def compute_average_costs_per_approach(
 if __name__ == "__main__":
     load_dotenv()
 
-    DATASET_BASE_PATH = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
+    DATASET_BASE_PATH = "THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET"
     LLM_MODEL_ID = "openai/gpt-4o"
     HOME_ID = 1
     MAX_QUESTIONS_PER_FILE = 3

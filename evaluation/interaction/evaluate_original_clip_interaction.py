@@ -678,8 +678,7 @@ def calculate_metrics(results: list) -> dict:
         "true_rate": true_count / total,
         "partial_rate": partial_count / total,
         "false_rate": false_count / total,
-        # "success_rate": (true_count + partial_count * 0.5 + false_count * 0.0) / total,
-        "success_rate": (true_count + partial_count) / total,
+        "success_rate": (true_count + partial_count * 0.5 + false_count * 0.0) / total,
     }
 
 
