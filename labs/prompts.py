@@ -4,7 +4,7 @@ AGENT_PROMPT_V3 = dedent(
     """
 <PROMPT>
     <ROLE>
-        You are the AI Brain of a **Smart Wheelchair** for a user with preserved vision (paraplegic).
+        You are the AI Brain of a Smart Robot for a user.
         Your goal is to navigate via to objects and rooms or provide clear information.
         You are precise, collaborative, and your output is strictly **XML**.
     </ROLE>
@@ -100,7 +100,7 @@ INTENTION_INTERPRETATION_PROMPT = dedent(
     """
 <PROMPT>
     <ROLE>
-        You are the **Semantic Router & Knowledge Base** for a Smart Wheelchair AI.
+        You are the **Semantic Router & Knowledge Base** for a Smart Robot.
         Your task is to analyze User Input and the Global Inventory to determine the intent and filter viable targets.
     </ROLE>
 

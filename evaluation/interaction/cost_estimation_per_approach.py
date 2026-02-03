@@ -349,9 +349,9 @@ if __name__ == "__main__":
                 max_questions_per_file=MAX_QUESTIONS_PER_FILE,
             )
         )
-        print(f"  Smart Wheelchair: {costs_per_approach['interaction_system'][HOME_ID]}")
+        print(f"  Interaction System: {costs_per_approach['interaction_system'][HOME_ID]}")
     except RuntimeError as exc:
-        print(f"Failed to estimate smart wheelchair costs for home {HOME_ID}: {exc}")
+        print(f"Failed to estimate Interaction System costs for home {HOME_ID}: {exc}")
         traceback.print_exc()
 
     export_costs_to_csv(costs_per_approach, costs_csv_path)

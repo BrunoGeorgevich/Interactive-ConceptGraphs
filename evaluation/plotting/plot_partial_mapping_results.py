@@ -139,7 +139,7 @@ def plot_metrics_boxplot(
     :raises ValueError: If DataFrame is empty or processing types are not found.
     """
     import matplotlib.patches
-    
+
     apply_plot_style(plot_attributes)
     colors = get_color_palette(plot_attributes)
 
@@ -167,7 +167,7 @@ def plot_metrics_boxplot(
             for i in range(len(processing_types))
         ]
 
-        fig, axes = plt.subplots(1, 3, figsize=(16, 4))
+        fig, axes = plt.subplots(1, 3, figsize=(12, 4))
 
         for idx, (metric, title) in enumerate(zip(metrics, titles)):
             ax = axes[idx]
@@ -217,7 +217,7 @@ def plot_metrics_boxplot(
             ncol=4,
         )
         fig.subplots_adjust(wspace=0.15, right=0.97)
-        save_path = os.path.join(output_dir, "metrics_boxplot.pdf")
+        save_path = os.path.join(output_dir, "partial_metrics_boxplot.pdf")
         plt.savefig(save_path, facecolor="white")
         plt.close()
         print(f"Saved: {save_path}")
@@ -260,20 +260,20 @@ def plot_metrics_boxplot(
             ax_single.set_title(title, fontweight="bold", pad=10)
             ax_single.set_ylabel("Score", fontweight="bold", labelpad=10)
 
-            # if metric == "f1_score":
-            plt.tight_layout(rect=[0, 0.15, 1, 1])
-            plt.figlegend(
-                handles=legend_handles,
-                loc="lower center",
-                bbox_to_anchor=(0.5, 0.02),
-                frameon=True,
-                fontsize=15,
-                ncol=2,
-            )
-            # else:
-            #     plt.tight_layout()
+            if metric == "f1_score":
+                plt.tight_layout(rect=[0, 0.15, 1, 1])
+                plt.figlegend(
+                    handles=legend_handles,
+                    loc="lower center",
+                    bbox_to_anchor=(0.5, 0.02),
+                    frameon=True,
+                    fontsize=15,
+                    ncol=2,
+                )
+            else:
+                plt.tight_layout()
 
-            save_path_single = os.path.join(output_dir, f"{metric}_boxplot.pdf")
+            save_path_single = os.path.join(output_dir, f"partial_{metric}_boxplot.pdf")
             plt.savefig(save_path_single, facecolor="white")
             plt.close()
             print(f"Saved: {save_path_single}")
@@ -388,7 +388,7 @@ def plot_tp_fn_fp_grouped_bar(
 
         plt.tight_layout()
         # save_path = os.path.join(output_dir, "tp_fn_fp_grouped_bar.png")
-        save_path = os.path.join(output_dir, "tp_fn_fp_grouped_bar.pdf")
+        save_path = os.path.join(output_dir, "partial_tp_fn_fp_grouped_bar.pdf")
         plt.savefig(save_path, bbox_inches="tight", facecolor="white")
         plt.close()
         print(f"Saved: {save_path}")
@@ -462,7 +462,7 @@ if __name__ == "__main__":
             "#1abc9c",
         ],
         "heatmap_cmap": "viridis",
-        "processing_type_order": ["original", "improved", "offline", "online"],
+        "processing_type_order": ["original", "improved"],
         "baseline_type": "original",
     }
 

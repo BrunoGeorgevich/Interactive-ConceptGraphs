@@ -289,6 +289,7 @@ def evaluate_with_judge(
     temperature: float,
     top_p: float,
     max_tokens: int,
+    judge_prompt: str = SEMANTIC_JUDGE_PROMPT,
 ) -> dict:
     """
     Evaluates the system's response using the semantic judge LLM.
@@ -317,7 +318,7 @@ def evaluate_with_judge(
             response = openai_client.chat.completions.create(
                 model=model_id,
                 messages=[
-                    {"role": "system", "content": SEMANTIC_JUDGE_PROMPT},
+                    {"role": "system", "content": judge_prompt},
                     {"role": "user", "content": judge_input},
                 ],
                 temperature=temperature,
@@ -361,6 +362,7 @@ def process_single_question(
     temperature: float,
     top_p: float,
     max_tokens: int,
+    judge_prompt: str = SEMANTIC_JUDGE_PROMPT,
 ) -> dict:
     """
     Processes a single evaluation question using the InteractionSystem and evaluates with the judge.
@@ -440,6 +442,7 @@ def process_single_question(
         temperature=temperature,
         top_p=top_p,
         max_tokens=max_tokens,
+        judge_prompt=judge_prompt,
     )
 
     result = {
@@ -503,6 +506,7 @@ def calculate_metrics(results: list) -> dict:
         "true_rate": true_count / total,
         "partial_rate": partial_count / total,
         "false_rate": false_count / total,
+        # "success_rate": (true_count + partial_count * 0.5 + false_count * 0.0) / total,
         "success_rate": (true_count + partial_count) / total,
     }
 
@@ -548,6 +552,9 @@ def evaluate_home(
     top_p: float,
     max_tokens: int,
     use_additional_knowledge: bool = False,
+    allowed_question_types: list | None = None,
+    judge_prompt: str = SEMANTIC_JUDGE_PROMPT,
+    enable_short_term_memory: bool = True,
 ) -> dict:
     """
     Evaluates all questions for a single home sequentially.
@@ -586,6 +593,7 @@ def evaluate_home(
         local_data_dir="data",
         debug_input_path=os.path.join("data", "input_debug.txt"),
         debug_output_path=os.path.join("data", "output_debug.txt"),
+        enable_short_term_memory=enable_short_term_memory,
     )
     system = InteractionSystem(config)
 
@@ -597,6 +605,9 @@ def evaluate_home(
 
     for questions_path in questions_files:
         question_type = extract_question_type_from_path(questions_path)
+
+        if allowed_question_types and question_type not in allowed_question_types:
+            continue
 
         try:
             with open(questions_path, "r", encoding="utf-8") as f:
@@ -634,6 +645,7 @@ def evaluate_home(
                     temperature=temperature,
                     top_p=top_p,
                     max_tokens=max_tokens,
+                    judge_prompt=judge_prompt,
                 )
                 save_question_result(
                     output_base_dir, home_id, question_type, idx, result
@@ -755,6 +767,9 @@ def worker_evaluate_home(
     max_tokens: int,
     timeout: float,
     use_additional_knowledge: bool = False,
+    allowed_question_types: list | None = None,
+    judge_prompt: str = SEMANTIC_JUDGE_PROMPT,
+    enable_short_term_memory: bool = True,
 ) -> dict | None:
     """
     Função Worker que roda em um processo separado.
@@ -780,6 +795,9 @@ def worker_evaluate_home(
             top_p=top_p,
             max_tokens=max_tokens,
             use_additional_knowledge=use_additional_knowledge,
+            allowed_question_types=allowed_question_types,
+            judge_prompt=judge_prompt,
+            enable_short_term_memory=enable_short_term_memory
         )
 
         print(f"[Done] Finalizada Home {home_id:02d}")
@@ -878,7 +896,14 @@ if __name__ == "__main__":
     # Se for apenas CPU/API, pode usar cpu_count() ou um valor como 4 a 8.
     MAX_WORKERS = 60
     USE_ADDITIONAL_KNOWLEDGE = True
-    OUTPUT_BASE_DIR: str = os.path.join(DATASET_BASE_PATH, "interaction_eval_results" if not USE_ADDITIONAL_KNOWLEDGE else "interaction_eval_results_with_ak")
+    OUTPUT_BASE_DIR: str = os.path.join(
+        DATASET_BASE_PATH,
+        (
+            "interaction_eval_results"
+            if not USE_ADDITIONAL_KNOWLEDGE
+            else "interaction_eval_results_with_ak"
+        ),
+    )
 
     run_parallel_interaction_evaluation(
         dataset_base_path=DATASET_BASE_PATH,

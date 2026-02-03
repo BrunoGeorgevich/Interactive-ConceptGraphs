@@ -421,8 +421,12 @@ def main() -> None:
     :rtype: None
     """
     DATABASE_PATH = r"d:\Documentos\Datasets\Robot@VirtualHomeLarge"
-    DATA_DIR = os.path.join(DATABASE_PATH, "interaction_eval_temporal_consistency")
-    OUTPUT_DIR = os.path.join(DATABASE_PATH, "evaluation_results", "plots_temporal")
+    DATA_DIR = os.path.join(
+        DATABASE_PATH, "results", "interaction_eval_temporal_consistency"
+    )
+    OUTPUT_DIR = os.path.join(
+        DATABASE_PATH, "results", "evaluation_results", "plots_temporal"
+    )
 
     PATH_CLIP = os.path.join(DATA_DIR, "summary_clip.csv")
     PATH_LLM = os.path.join(DATA_DIR, "summary_llm.csv")

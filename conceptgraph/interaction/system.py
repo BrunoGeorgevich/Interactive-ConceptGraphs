@@ -33,7 +33,7 @@ from conceptgraph.interaction.prompts import (
 
 class InteractionSystem:
     """
-    Main controller for the Smart Wheelchair Navigation and Interaction System.
+    Main controller for the Navigation and Interaction System.
     """
 
     def __init__(self, config: SystemConfig) -> None:
@@ -322,9 +322,15 @@ class InteractionSystem:
         scene_tree = self.spatial_manager.scene_manager.get_text_representation(
             request.user_pose
         )
-        history_str = "\n".join(
-            [f"State: {h['state']}\nUser: {h['user']}\nBot: {h['bot']}" for h in self.chat_history]
-        )
+
+        history_str = ""
+        if self.config.enable_short_term_memory:
+            history_str = "\n".join(
+                [
+                    f"State: {h['state']}\nUser: {h['user']}\nBot: {h['bot']}"
+                    for h in self.chat_history
+                ]
+            )
 
         intention_input = (
             f"<CURRENT_ROOM>{room_name}</CURRENT_ROOM>\n"
@@ -447,9 +453,14 @@ class InteractionSystem:
         ]
 
         if should_run_bot:
-            history_str = "\n".join(
-                [f"State: {h['state']}\nUser: {h['user']}\nBot: {h['bot']}" for h in self.chat_history]
-            )
+            history_str = ""
+            if self.config.enable_short_term_memory:
+                history_str = "\n".join(
+                    [
+                        f"State: {h['state']}\nUser: {h['user']}\nBot: {h['bot']}"
+                        for h in self.chat_history
+                    ]
+                )
             rag_context_str = json.dumps(rag_docs, indent=2, ensure_ascii=False)
 
             bot_input = f"""
@@ -547,7 +558,11 @@ class InteractionSystem:
                     traceback.print_exc()
 
         self.last_bot_message = final_text or ""
-        self.chat_history.append({"state": state, "user": request.query, "bot": final_text or ""})
+
+        if self.config.enable_short_term_memory:
+            self.chat_history.append(
+                {"state": state, "user": request.query, "bot": final_text or ""}
+            )
         if len(self.chat_history) > 5:
             self.chat_history.pop(0)
 
@@ -578,7 +593,7 @@ if __name__ == "__main__":
         dataset_base_path=DATASET_BASE_PATH,
         prefix="online",
         qdrant_url="http://localhost:6333",
-        force_recreate_table=False,
+        force_recreate_table=True,
         local_data_dir="data",
         use_additional_knowledge=True,
         debug_input_path=os.path.join("data", "input_debug.txt"),
@@ -592,7 +607,7 @@ if __name__ == "__main__":
             console.print(
                 f"[bold red]Warning: Dataset path '{DATASET_BASE_PATH}' does not exist.[/bold red]"
             )
-        console.print("[cyan]Initializing Smart Wheelchair System...[/cyan]")
+        console.print("[cyan]Initializing HARBIS System...[/cyan]")
         system = InteractionSystem(config)
         system.start_interactive_session(initial_pose=(0.0, 0.0, 0.0))
 

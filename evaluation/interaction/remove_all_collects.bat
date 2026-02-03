@@ -8,7 +8,7 @@ for /l %%i in (1,1,30) do (
     if !house_num! lss 10 (
         set "house_num=0!house_num!"
     )
-    curl.exe -X DELETE "http://localhost:6333/collections/House_!house_num!_online"
+    @REM curl.exe -X DELETE "http://localhost:6333/collections/House_!house_num!_online"
     curl.exe -X DELETE "http://localhost:6333/collections/House_!house_num!_online_AD"
     endlocal
 )

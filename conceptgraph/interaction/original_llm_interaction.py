@@ -312,7 +312,7 @@ class OriginalLLMInteraction:
 
 if __name__ == "__main__":
     load_dotenv()
-    DATABASE_PATH = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
+    DATABASE_PATH = "THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET"
     HOME_ID = 1
     pkl_file_path = os.path.join(
         DATABASE_PATH,

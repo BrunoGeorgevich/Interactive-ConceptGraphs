@@ -1386,8 +1386,8 @@ def run_false_negative_analysis(
 
 if __name__ == "__main__":
     load_dotenv()
-    DATABASE_PATH: str = "THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET"
-    EVALUATION_OUTPUT_DIR: str = os.path.join(DATABASE_PATH, "evaluation_results")
+    DATABASE_PATH: str = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
+    EVALUATION_OUTPUT_DIR: str = os.path.join(DATABASE_PATH, "results", "evaluation_results")
     RESULTS_OUTPUT_DIR: str = os.path.join(
         DATABASE_PATH, "additional_knowledge_results"
     )

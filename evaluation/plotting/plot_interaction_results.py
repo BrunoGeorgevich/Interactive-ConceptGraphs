@@ -631,28 +631,37 @@ def plot_06_heatmap_home_vs_strategy(
 
 if __name__ == "__main__":
 
-    DATABASE_PATH = "THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET"
+    # DATABASE_PATH = "THIS PATH MUST POINT TO THE ROOT FOLDER OF YOUR DATASET"
+    DATABASE_PATH: str = r"D:\Documentos\Datasets\Robot@VirtualHomeLarge"
 
     PATH_AK = os.path.join(
         DATABASE_PATH,
+        "results",
         "interaction_eval_results_with_ak",
         "summary_interaction_ak_eval.csv",
     )
     PATH_IMP = os.path.join(
-        DATABASE_PATH, "interaction_eval_results", "summary_interaction_eval.csv"
+        DATABASE_PATH,
+        "results",
+        "interaction_eval_results",
+        "summary_interaction_eval.csv",
     )
     PATH_CLIP_ORIG = os.path.join(
         DATABASE_PATH,
+        "results",
         "original_clip_interaction_eval_results",
         "summary_original_interaction_eval.csv",
     )
     PATH_LLM_ORIG = os.path.join(
         DATABASE_PATH,
+        "results",
         "original_llm_interaction_eval_results",
         "summary_original_interaction_eval.csv",
     )
 
-    OUTPUT_DIR = os.path.join(DATABASE_PATH, "evaluation_results", "plots_comparison")
+    OUTPUT_DIR = os.path.join(
+        DATABASE_PATH, "results", "evaluation_results", "plots_comparison"
+    )
 
     plot_attributes = {
         "style": "whitegrid",

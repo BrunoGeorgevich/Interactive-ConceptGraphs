@@ -15,6 +15,7 @@ class SystemConfig:
     local_data_dir: str = "data"
     force_recreate_table: bool = False
     use_additional_knowledge: bool = True
+    enable_short_term_memory: bool = True
 
     remote_model_id: str = "openai/gpt-oss-120b:nitro"
     local_model_id: str = "openai/gpt-oss-20b"
